@@ -115,7 +115,12 @@ class DatabaseWrapper(BaseDatabaseWrapper):
     def __init__(self, *args, **kwargs):
         super(DatabaseWrapper, self).__init__(*args, **kwargs)
         
-        self.features = DatabaseFeatures()
+        try:
+            # django < 1.3
+            self.features = DatabaseFeatures()
+        except TypeError:
+            # django >= 1.3
+            self.features = DatabaseFeatures(self)
         self.ops = DatabaseOperations()
         
         self.client = BaseDatabaseClient(self)
