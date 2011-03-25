@@ -23,12 +23,15 @@ class BigAutoField(AutoField):
             raise ValidationError(
                 _("This value must be a long."))
 
-    def get_db_prep_value(self, value):
+    def get_db_prep_value(self, value, connection=None, prepared=False):
         if value is None:
             return None
         return long(value)
 
 class BigForeignKey(ForeignKey):
     """A ForeignKey field that points to a BigAutoField or BigIntegerField"""
-    def db_type(self):
-        return BigIntegerField().db_type()
+    def db_type(self, connection=None):
+        try:
+            return BigIntegerField().db_type(connection=connection)
+        except AttributeError:
+            return BigIntegerField().db_type()
