@@ -112,13 +112,21 @@ class DatabaseCreation(BaseDatabaseCreation):
             print "Skipping Test DB destruction"    
         
     def _test_database_create(self, settings):
+        if self.connection.settings_dict.has_key('TEST_CREATE'):
+            return self.connection.settings_dict.get('TEST_CREATE', True)
         if hasattr(settings, 'TEST_DATABASE_CREATE'):
             return settings.TEST_DATABASE_CREATE
         else:
             return True
 
     def _test_database_name(self, settings):
-        if hasattr(settings, 'TEST_DATABASE_NAME') and settings.TEST_DATABASE_NAME:
-            return settings.TEST_DATABASE_NAME
-        else:
-            return TEST_DATABASE_PREFIX + settings.DATABASE_NAME
+        try:
+            name = TEST_DATABASE_PREFIX + self.connection.settings_dict['NAME']
+            if self.connection.settings_dict['TEST_NAME']:
+                name = self.connection.settings_dict['TEST_NAME']
+        except AttributeError:
+            if hasattr(settings, 'TEST_DATABASE_NAME') and settings.TEST_DATABASE_NAME:
+                name = settings.TEST_DATABASE_NAME
+            else:
+                name = TEST_DATABASE_PREFIX + settings.DATABASE_NAME
+        return name
