@@ -47,7 +47,7 @@ class DatabaseOperations(BaseDatabaseOperations):
         return '[%s]' % name
 
     def random_function_sql(self):
-        return 'RAND()'
+        return 'NEWID()'
 
     def regex_lookup(self, lookup_type):
         # Case sensitivity

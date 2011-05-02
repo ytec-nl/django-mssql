@@ -148,3 +148,17 @@ class Bug93TestCase(TestCase):
 
         dates = Bug93Table.objects.filter(dt__year='2010')
         self.assertTrue(dates.count() == 2)
+
+class RandomOrderTestCase(TestCase):
+    def testRandomOrder(self):
+        """
+        Check that multiple results with order_by('?') return
+        different orders.
+        """
+        for x in xrange(1,20):
+            Bug69Table1.objects.create(id=x)
+
+        a = list(Bug69Table1.objects.all().order_by('?'))
+        b = list(Bug69Table1.objects.all().order_by('?'))
+        
+        self.assertNotEquals(a, b)
