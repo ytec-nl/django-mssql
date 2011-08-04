@@ -139,6 +139,10 @@ class DatabaseWrapper(BaseDatabaseWrapper):
                                 make_connection_string(self.settings_dict),
                                 self.command_timeout
                               )
+            # Provide DatabaseOperations with SQL Version
+            setattr(self.ops, 'is_sql2005', self.connection.is_sql2005)
+            setattr(self.ops, 'is_sql2008', self.connection.is_sql2008)
+            
             connection_created.send(sender=self.__class__)
 
         return Database.Cursor(self.connection)
