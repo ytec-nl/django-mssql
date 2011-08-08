@@ -86,7 +86,7 @@ def make_connection_string(settings):
     options = settings.OPTIONS
     if options:
         if 'use_mars' in options and options['use_mars']:
-            parts.append("MultipleActiveResultSets=true")
+            parts.append("MARS Connection=True")
             
         if 'extra_params' in options:
             parts.append(options['extra_params'])
