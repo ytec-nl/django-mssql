@@ -135,7 +135,7 @@ class DatabaseOperations(BaseDatabaseOperations):
 
         # SQL Server 2005 doesn't support microseconds
         if self.is_sql2005:
-           value = value.replace(microseconds=0)
+           value = value.replace(microsecond=0)
 
         return value
     

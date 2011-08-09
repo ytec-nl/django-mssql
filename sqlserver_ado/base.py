@@ -133,6 +133,9 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         except ValueError:   
             self.command_timeout = 30
         
+        with self._cursor() as cur:
+            pass
+        
     def _cursor(self):
         if self.connection is None:
             self.connection = Database.connect(
