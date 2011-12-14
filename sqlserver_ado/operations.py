@@ -10,17 +10,7 @@ class DatabaseOperations(BaseDatabaseOperations):
         return "DATEPART(%s, %s)" % (lookup_type, self.quote_name(field_name))
 
     def date_trunc_sql(self, lookup_type, field_name):
-    	quoted_field_name = self.quote_name(field_name)
-
-        if lookup_type == 'year':
-            return "Convert(datetime, Convert(varchar, DATEPART(year, %s)) + '/01/01')" % quoted_field_name
-
-        if lookup_type == 'month':
-            return "Convert(datetime, Convert(varchar, DATEPART(year, %s)) + '/' + Convert(varchar, DATEPART(month, %s)) + '/01')" %\
-                (quoted_field_name, quoted_field_name)
-
-        if lookup_type == 'day':
-            return "Convert(datetime, Convert(varchar(12), %s))" % quoted_field_name
+        return "DATEADD(%s, DATEDIFF(%s, 0, %s), 0)" % (lookup_type, lookup_type, field_name)
 
     def last_insert_id(self, cursor, table_name, pk_name):
         cursor.execute("SELECT CAST(IDENT_CURRENT(%s) as bigint)", [self.quote_name(table_name)])
