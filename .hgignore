@@ -2,3 +2,4 @@
 build/ 
 dist/ 
 django_mssql.egg-info/ 
+.*\.orig
