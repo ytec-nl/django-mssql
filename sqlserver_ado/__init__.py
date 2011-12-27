@@ -1,6 +1,6 @@
 import os.path
 
-VERSION = (1, 0, 1, 'stable')
+VERSION = [1, 0, 1, 'stable']
 
 
 def get_version():
@@ -20,5 +20,7 @@ def get_version():
         except:
             # mercurial module missing or repository not found
             build_info = 'dev-unknown'
-    v = VERSION[:VERSION.index('dev')] + (build_info,)
+        v = VERSION[:-1] + [build_info]
+    else:
+        v = VERSION[:-1]
     return '.'.join(map(str, v))
