@@ -1,6 +1,6 @@
 import os.path
 
-VERSION = (1, 0, 0, 'stable')
+VERSION = (1, 0, 1, 'stable')
 
 
 def get_version():
