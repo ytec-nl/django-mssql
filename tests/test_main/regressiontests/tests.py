@@ -1,5 +1,6 @@
 import datetime
 import decimal
+from django.core.exceptions import ImproperlyConfigured
 from django.db import models
 from django.test import TestCase
 
@@ -162,3 +163,73 @@ class RandomOrderTestCase(TestCase):
         b = list(Bug69Table1.objects.all().order_by('?'))
         
         self.assertNotEquals(a, b)
+
+class ConnectionStringTestCase(TestCase):
+    def assertInString(self, conn_string, pattern):
+        """
+        Asserts that the pattern is found in the string.
+        """
+        found = conn_string.find(pattern) != -1
+        self.assertTrue(found,
+            "pattern \"%s\" was not found in connection string \"%s\"" % (pattern, conn_string))
+
+    def assertNotInString(self, conn_string, pattern):
+        """
+        Asserts that the pattern is found in the string.
+        """
+        found = conn_string.find(pattern) != -1
+        self.assertFalse(found,
+            "pattern \"%s\" was found in connection string \"%s\"" % (pattern, conn_string))
+
+    def get_conn_string(self, data={}):
+        db_settings = {
+           'NAME': 'db_name',
+           'ENGINE': 'sqlserver_ado',
+           'HOST': 'myhost',
+           'PORT': '',
+           'USER': '',
+           'PASSWORD': '',
+           'OPTIONS' : {
+               'provider': 'SQLOLEDB',
+               'use_mars': True,
+           },
+        }
+        db_settings.update(data)
+        from sqlserver_ado.base import make_connection_string
+        return make_connection_string(db_settings)
+
+    def test_default(self):
+        conn_string = self.get_conn_string()
+        self.assertInString(conn_string, 'Initial Catalog=db_name')
+        self.assertInString(conn_string, '=myhost;')
+        self.assertInString(conn_string, 'Integrated Security=SSPI')
+        self.assertInString(conn_string, 'PROVIDER=SQLOLEDB')
+        self.assertNotInString(conn_string, 'UID=')
+        self.assertNotInString(conn_string, 'PWD=')
+        self.assertInString(conn_string, 'MARS Connection=True')
+
+    def test_require_database_name(self):
+        """Database NAME setting is required"""
+        self.assertRaises(ImproperlyConfigured, self.get_conn_string, {'NAME': ''})
+
+    def test_user_pass(self):
+        """Validate username and password in connection string"""
+        conn_string = self.get_conn_string({'USER': 'myuser', 'PASSWORD': 'mypass'})
+        self.assertInString(conn_string, 'UID=myuser;')
+        self.assertInString(conn_string, 'PWD=mypass;')
+        self.assertNotInString(conn_string, 'Integrated Security=SSPI')
+
+    def test_port(self):
+        """Test the PORT setting to make sure it properly updates the connection string"""
+        self.assertRaises(ImproperlyConfigured, self.get_conn_string,
+            {'HOST': 'myhost', 'PORT': 1433})
+        self.assertRaises(ImproperlyConfigured, self.get_conn_string, {'HOST': 'myhost', 'PORT': 'a'})
+
+        conn_string = self.get_conn_string({'HOST': '127.0.0.1', 'PORT': 1433})
+        self.assertInString(conn_string, '=127.0.0.1,1433;')
+
+    def test_extra_params(self):
+        """Test extra_params OPTIONS"""
+        extras = 'Some=Extra;Stuff Goes=here'
+        conn_string = self.get_conn_string({'OPTIONS': {'extra_params': extras}})
+        self.assertInString(conn_string, extras)
