@@ -137,15 +137,13 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         except ValueError:   
             self.command_timeout = 30
         
-        with self._cursor() as cur:
-            pass
-        
     def _cursor(self):
         if self.connection is None:
             self.connection = Database.connect(
                                 make_connection_string(self.settings_dict),
                                 self.command_timeout
                               )
+
             # Provide DatabaseOperations with SQL Version
             setattr(self.ops, 'is_sql2005', self.connection.is_sql2005)
             setattr(self.ops, 'is_sql2008', self.connection.is_sql2008)
