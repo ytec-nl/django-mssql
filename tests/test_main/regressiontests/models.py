@@ -401,3 +401,9 @@ class Bug93Table(models.Model):
     """
     d = models.DateField()
     dt = models.DateTimeField()
+
+class IntegerIdTable(models.Model):
+    """
+    Simple table consisting of only an Integer ID primary key
+    """
+    id = models.IntegerField(primary_key=True)

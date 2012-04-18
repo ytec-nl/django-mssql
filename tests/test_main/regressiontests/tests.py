@@ -4,7 +4,7 @@ from django.core.exceptions import ImproperlyConfigured
 from django.db import models
 from django.test import TestCase
 
-from regressiontests.models import Bug69Table1, Bug69Table2, Bug70Table, Bug93Table
+from regressiontests.models import Bug69Table1, Bug69Table2, Bug70Table, Bug93Table, IntegerIdTable
 
 class Bug38Table(models.Model):
     d = models.DecimalField(max_digits=5, decimal_places=2)
@@ -150,19 +150,27 @@ class Bug93TestCase(TestCase):
         dates = Bug93Table.objects.filter(dt__year='2010')
         self.assertTrue(dates.count() == 2)
 
-class RandomOrderTestCase(TestCase):
+class BasicFunctionalityTestCase(TestCase):
     def testRandomOrder(self):
         """
         Check that multiple results with order_by('?') return
         different orders.
         """
         for x in xrange(1,20):
-            Bug69Table1.objects.create(id=x)
+            IntegerIdTable.objects.create(id=x)
 
-        a = list(Bug69Table1.objects.all().order_by('?'))
-        b = list(Bug69Table1.objects.all().order_by('?'))
+        a = list(IntegerIdTable.objects.all().order_by('?'))
+        b = list(IntegerIdTable.objects.all().order_by('?'))
         
         self.assertNotEquals(a, b)
+
+    def testRawUsingRowNumber(self):
+        """Issue 120: raw requests failing due to missing slicing logic"""
+        for x in xrange(1,5):
+            IntegerIdTable.objects.create(id=x)
+        
+        objs = IntegerIdTable.objects.raw("SELECT [id] FROM [regressiontests_IntegerIdTable]")
+        self.assertEquals(len(list(objs)), 4)
 
 class ConnectionStringTestCase(TestCase):
     def assertInString(self, conn_string, pattern):

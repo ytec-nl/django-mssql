@@ -45,7 +45,7 @@ class SQLCompiler(compiler.SQLCompiler):
     def resolve_columns(self, row, fields=()):
         # If the results are sliced, the resultset will have an initial 
         # "row number" column. Remove this column before the ORM sees it.
-        if self._using_row_number:
+        if getattr(self, '_using_row_number', False):
             return row[1:]
         return row
 
