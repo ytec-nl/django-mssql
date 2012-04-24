@@ -28,9 +28,10 @@ Django Version
 
 The current version of django-mssql supports Django 1.2 thru 1.3.1. Django versions
 1.0 and 1.1 are no longer actively supported, but working versions may be
-found in the branches ``legacy-1.0`` and ``legacy-1.1``.
+found with the tags ``legacy-1.0`` and ``legacy-1.1``.
 
 References
 ----------
 
-  * DB-API 2.0 specification: http://www.python.org/dev/peps/pep-0249/
+    * Django-mssql on PyPi: http://pypi.python.org/pypi/django-mssql
+    * DB-API 2.0 specification: http://www.python.org/dev/peps/pep-0249/
