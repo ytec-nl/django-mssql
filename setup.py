@@ -116,7 +116,7 @@ setup(
     url='https://bitbucket.org/Manfre/django-mssql',
     license='MIT',
     description="Django backend database support for MS SQL 2005 and up.",
-    long_description=read('README.txt'),
+    long_description=read('README.rst'),
     author='Michael Manfre',
     author_email='mmanfre@gmail.com',
     packages=find_packages(),

@@ -1,0 +1,36 @@
+Django MSSQL Database Backend
+=============================
+
+`Django-mssql`_ provies a Django database backend for Microsoft SQL Server.
+
+.. _`Django-mssql`: https://bitbucket.org/Manfre/django-mssql
+
+Requirements
+------------
+
+    * Python 2.6, 2.7
+    * PyWin32_
+
+.. _PyWin32: http://sourceforge.net/projects/pywin32/
+
+SQL Server Versions
+-------------------
+
+Supported Versions:
+    * 2005
+    * 2008
+    * 2008r2
+
+The SQL Server version will be detected upon initial connection.
+
+Django Version
+--------------
+
+The current version of django-mssql supports Django 1.2 thru 1.3.1. Django versions
+1.0 and 1.1 are no longer actively supported, but working versions may be
+found in the branches ``legacy-1.0`` and ``legacy-1.1``.
+
+References
+----------
+
+  * DB-API 2.0 specification: http://www.python.org/dev/peps/pep-0249/
