@@ -124,13 +124,12 @@ class DatabaseOperations(BaseDatabaseOperations):
             raise ValueError("SQL Server 2005 does not support timezone-aware datetimes.")
 
         # SQL Server 2005 doesn't support microseconds
-        if self.is_sql2005:
+        if self.is_sql2005():
            value = value.replace(microsecond=0)
-
         return value
     
     def value_to_db_time(self, value):
-        if not self.is_sql2005:
+        if not self.is_sql2005():
             return value
 
         # MS SQL 2005 doesn't support microseconds
@@ -139,7 +138,7 @@ class DatabaseOperations(BaseDatabaseOperations):
             return None
         
         return value.replace(microsecond=0)
-	        
+
     def value_to_db_decimal(self, value, max_digits, decimal_places):
         if value is None or value == '':
             return None

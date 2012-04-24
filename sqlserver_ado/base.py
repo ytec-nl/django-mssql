@@ -137,17 +137,37 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         except ValueError:   
             self.command_timeout = 30
         
+        self.ops.is_sql2005 = self.is_sql2005
+        self.ops.is_sql2008 = self.is_sql2008
+
+    def __connect(self):
+        """Connect to the database"""
+        self.connection = Database.connect(
+            make_connection_string(self.settings_dict),
+            self.command_timeout
+        )
+        connection_created.send(sender=self.__class__)
+        return self.connection
+
+    def is_sql2005(self):
+        """
+        Returns True if the current connection is SQL2005. Establishes a
+        connection if needed.
+        """
+        if not self.connection:
+            self.__connect()
+        return self.connection.is_sql2005
+
+    def is_sql2008(self):
+        """
+        Returns True if the current connection is SQL2008. Establishes a
+        connection if needed.
+        """
+        if not self.connection:
+            self.__connect()
+        return self.connection.is_sql2008        
+
     def _cursor(self):
         if self.connection is None:
-            self.connection = Database.connect(
-                                make_connection_string(self.settings_dict),
-                                self.command_timeout
-                              )
-
-            # Provide DatabaseOperations with SQL Version
-            setattr(self.ops, 'is_sql2005', self.connection.is_sql2005)
-            setattr(self.ops, 'is_sql2008', self.connection.is_sql2008)
-            
-            connection_created.send(sender=self.__class__)
-
+            self.__connect()
         return Database.Cursor(self.connection)
