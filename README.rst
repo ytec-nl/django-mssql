@@ -3,15 +3,13 @@ Django MSSQL Database Backend
 
 `Django-mssql`_ provies a Django database backend for Microsoft SQL Server.
 
-.. _`Django-mssql`: https://bitbucket.org/Manfre/django-mssql
+Documentation is available at `django-mssql.readthedocs.org`_.
 
 Requirements
 ------------
 
     * Python 2.6, 2.7
     * PyWin32_
-
-.. _PyWin32: http://sourceforge.net/projects/pywin32/
 
 SQL Server Versions
 -------------------
@@ -35,3 +33,8 @@ References
 
     * Django-mssql on PyPi: http://pypi.python.org/pypi/django-mssql
     * DB-API 2.0 specification: http://www.python.org/dev/peps/pep-0249/
+
+
+.. _`Django-mssql`: https://bitbucket.org/Manfre/django-mssql
+.. _django-mssql.readthedocs.org: http://django-mssql.readthedocs.org/
+.. _PyWin32: http://sourceforge.net/projects/pywin32/
