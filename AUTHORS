@@ -7,6 +7,7 @@ for the ado_mssql backend that shipped with early versions of Django.
 Contributors:
 blp330
 Cedric Collins
+Django Compressor authors (django_compressor has a good project structure)
 django-pyodbc team for cross pollination
 Paul Tax
 nicked
