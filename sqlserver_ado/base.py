@@ -47,7 +47,7 @@ def make_connection_string(settings):
             elif hasattr(d, 'DATABASE_' + name):
                 result = getattr(d, 'DATABASE_' + name)
             else:
-                result = getattr(d, name)
+                result = getattr(d, name, None)
             return result    
             
     settings = wrap(settings) 
@@ -61,7 +61,7 @@ def make_connection_string(settings):
     # http://www.connectionstrings.com/?carrier=sqlserver
 
     # If a port is given, force a TCP/IP connection. The host should be an IP address in this case.
-    if settings.PORT != '':
+    if settings.PORT:
         if not _looks_like_ipaddress(db_host):
             raise ImproperlyConfigured("When using DATABASE PORT, DATABASE HOST must be an IP address.")
         try:
