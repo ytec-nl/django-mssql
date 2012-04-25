@@ -1,0 +1,15 @@
+Management Commands
+===================
+
+Adding ``sql_app`` to your ``INSTALLED_APPS`` adds the following custom 
+management commands.
+
+dbgui
+-----
+
+This will launch SQL Management Studio, connected to your project's 
+default database.
+
+    .. code-block:: cmd
+    
+        python manage.py dbgui

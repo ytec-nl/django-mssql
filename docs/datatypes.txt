@@ -1,0 +1,76 @@
+Datatypes
+=========
+
+There are known issues related to Python/DB data types.
+
+Dates and Times
+---------------
+
+Earliest Year
+~~~~~~~~~~~~~
+
+SQL Server provides two datetime types: `datetime and smalldatetime`_.
+
+.. _`datetime and smalldatetime`: http://msdn.microsoft.com/en-us/library/ms187819.aspx
+
+This backend always uses datetime, which supports dates back to 
+January 1, 1753.
+
+Django previously only supported dates back to 1900, but recent revisions 
+7946 + 7950 changed this behavior. If you need to store historical data in 
+datetime fields, then SQL Server 2005 will have a problem. 
+(I'd welcome bugs/repro cases/patches on this issue.)
+
+SQL Server 2008 introduces a datetime2_ type, with support for fractional 
+seconds and the full range of Python datetime dates. To use this time, edit 
+your local creation.py/introspection.py files to use this datatype instead.
+
+.. _datetime2: http://msdn.microsoft.com/en-us/library/ms180878(SQL.100).aspx
+
+Bare Times
+~~~~~~~~~~
+
+SQL Server 2005 doesn't have a bare "time" datatype, only a datetime. SQL 
+Server 2008 introduces a time type, but this isn't used by this backend.
+
+bigint
+------
+
+Prior to Django 1.3, ``bigint`` was not provided. This backend provided model
+fields to allow using the ``bigint`` datatype.
+
+.. currentmodule:: sqlserver_ado.fields
+
+.. class:: BigAutoField
+
+This is a ``django.db.models.AutoField`` for the ``bigint`` datatype.
+
+
+.. class:: BigIntegerField
+
+This was previously an ``django.db.models.IntegerField`` that specified the
+``bigint`` datatype. As of Django 1.3, ``django.db.models.BigIntegerField``
+is provided and should be used instead.
+
+
+.. class:: BigForeignKey
+
+This is a ``django.db.models.ForeignKey`` that should be used to reference
+either a ``BigAutoField`` or a ``BigIntegerField``.
+
+.. note:
+    If your (legacy) database using bigints for primary keys, then you'll 
+    need to replace any introspected ``ForeignKey`` fields with 
+    ``BigForeignKey`` for things to work as expected.
+
+
+Unsupported Types
+-----------------
+
+These types may behave oddly in a Django application, as they have limits 
+smaller than what Django expects from similar types:
+
+- smalldatetime
+- smallmoney
+- tinyint
+- real

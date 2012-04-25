@@ -1,0 +1,13 @@
+Adam Vandenburg
+Michael Manfre
+
+The django-mssql project was started by Adam Vandenburg, as a replacement
+for the ado_mssql backend that shipped with early versions of Django.
+
+Contributors:
+blp330
+Cedric Collins
+django-pyodbc team for cross pollination
+Paul Tax
+nicked
+zuerchertech

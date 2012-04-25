@@ -1,0 +1,39 @@
+Testing
+=======
+
+All tests are contained in the ``tests`` folder.
+
+DB-API
+------
+
+The folder ``tests/api/`` contains a test suite for checking DB-API 2
+conformance.
+
+    .. code-block:: cmd
+        python run.py
+
+Django Support
+--------------
+
+Database Introspection
+~~~~~~~~~~~~~~~~~~~~~~
+
+Located in folder ``tests/test_inspectdb``. These tests verify the 
+database introspection.
+
+To run:
+
+- set up the SQLINSTANCE
+- ``python manage.py inspectdb``
+
+
+Main Tests
+~~~~~~~~~~
+
+The tests for basic functionality and regressions are located in the 
+``tests/test_main/`` folder.
+
+To run:
+    
+- set up the SQLINSTANCE
+- ``python manage.py test``

@@ -1,0 +1,115 @@
+Settings
+========
+
+DATABASES
+---------
+
+Please see the `Django documentation on DATABASES settings`_ for a complete 
+list of available settings. `Django-mssql` builds upon these settings.
+ 
+ .. _`Django documentation on DATABASES settings`: https://docs.djangoproject.com/en/1.4/ref/settings/#databases
+ 
+ 
+This is an example of a typical configuration::
+
+    DATABASES = {
+        'default': {
+            'NAME': 'my_database',
+            'ENGINE': 'sqlserver_ado',
+            'HOST': 'dbserver\\ss2008',
+            'USER': '',
+            'PASSWORD': '',
+            'OPTIONS' : {
+                'provider': 'SQLOLEDB',
+                'use_mars': True,
+            },
+        }
+    }
+
+
+ENGINE
+~~~~~~
+
+This value must be set to ``sqlserver_ado``.
+
+HOST
+~~~~
+
+Default: ``'127.0.0.1'``
+
+This defines the Microsoft SQL Server to establish a connection. This value 
+can be a hostname or IP address.
+
+PORT
+~~~~
+
+Default: ``''`` (Empty string)
+
+This defines the network port to use when connecting to the server. If not 
+defined, the standard Microsoft SQL Server port will be used.
+
+NAME
+~~~~
+
+This is the name of the SQL server database.
+
+USER
+~~~~
+
+Default: ``''`` (Empty string)
+
+This defines the name of the user to use when authenticating to the server.
+When empty, a trusted connection (SSPI) will be used.
+
+PASSWORD
+~~~~~~~~
+
+Default: ``''`` (Empty string)
+
+When a `USER`_ is defined, this field should be the plain text password 
+to use when authenticating.
+
+.. note: 
+    Any user or service that can read the configuration file can 
+    will be able to see the plain-text password. Trusted connections are 
+    recommended.
+
+OPTIONS
+-------
+
+``Django-mssql`` provides a few extra ``OPTIONS`` that are specific to this
+backend.
+
+use_mars
+~~~~~~~~
+
+Default: ``False``
+
+Set to ``True`` to enable `Multiple Active Recordsets`. It is recommended 
+to enable MARS to avoid seeing the "Cannot create new connection because 
+in manual or distributed transaction mode" error.
+
+.. note:
+    This will only set the appropriate connection string value for 
+    the "SQLOLEDB" provider. If you are using a different provider, you 
+    will need to add the appropriate connection string value to 
+    `extra_params`_.
+
+
+.. _`extra_params`: OPTIONS-EXTRA_PARAMS
+
+extra_params
+~~~~~~~~~~~~
+
+Default: ``''`` (Empty string)
+
+This value will be appended to the generated connection string. Use this to
+provide any specific connection settings that are not controllable with the
+other settings.
+
+provider
+~~~~~~~~
+
+Default: ``'SQLOLEDB'``
+
+The SQL provider to use when connecting to the database.

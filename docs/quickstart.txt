@@ -1,0 +1,54 @@
+Quickstart
+==========
+
+Installation
+------------
+
+* Install ``django-mssql`` with your favorite Python package manager::
+
+    pip install django-mssql
+
+
+* Add the DATABASES configuration.
+
+    .. code-block:: django
+    
+        DATABASES = {
+            'default': {
+                'NAME': 'my_database',
+                'ENGINE': 'sqlserver_ado',
+                'HOST': 'dbserver\\ss2008',
+                'USER': '',
+                'PASSWORD': '',
+                'OPTIONS' : {
+                    'provider': 'SQLOLEDB',
+                    'use_mars': True,
+                },
+            }
+        }
+
+    .. note:: Although the project is named ``django-mssql`` the python module is named ``sqlserver_ado``.
+
+Dependencies
+------------
+
+Django
+^^^^^^
+
+Django_ 1.2 and newer are supported by the current release. Support for Django 1.1 requires getting code from tag ``legacy-1.1``.
+
+.. _Django: http://www.djangoproject.com/
+
+Python
+^^^^^^
+
+This backend requires Python 2.6 or newer. Python 3.x support will be investigated when Django supports it.
+
+PyWin32
+^^^^^^^
+
+PyWin32_ build 212 or newer is required.
+
+.. _PyWin32: http://sourceforge.net/projects/pywin32/
+
+
