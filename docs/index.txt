@@ -17,3 +17,4 @@ Contents:
     commands
     datatypes
     testing
+    changelog

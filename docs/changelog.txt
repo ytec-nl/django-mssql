@@ -1,0 +1,8 @@
+Changelog
+=========
+
+
+v1.1 (in development)
+---------------------
+
+- Updated SQLInsertCompiler to work with Django 1.4
