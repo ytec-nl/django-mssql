@@ -204,21 +204,37 @@ class SQLInsertCompiler(compiler.SQLInsertCompiler, SQLCompiler):
         if not hasattr(self, 'return_id'):
             self.return_id = False
 
-        sql, params = super(SQLInsertCompiler, self).as_sql(*args, **kwargs)
+        result = super(SQLInsertCompiler, self).as_sql(*args, **kwargs)
+        if isinstance(result, list):
+            # Django 1.4 wraps return in list
+            sql, params = result[0]
+            return [(self._identity_insert(sql), params)]
+        
+        sql, params = result
+        return self._identity_insert(sql), params
 
+    def _identity_insert(self, sql):
+        """
+        Wrap the passed SQL with IDENTITY_INSERT statements.
+        """
         meta = self.query.get_meta()
         
-        if meta.has_auto_field:
-            # db_column is None if not explicitly specified by model field
-            auto_field_column = meta.auto_field.db_column or meta.auto_field.column
+        if not meta.has_auto_field:
+            return sql
 
-            if auto_field_column in self.query.columns:
-                quoted_table = self.connection.ops.quote_name(meta.db_table)
-                sql = "SET IDENTITY_INSERT %s ON;%s;SET IDENTITY_INSERT %s OFF" %\
-                    (quoted_table, sql, quoted_table)
+        if hasattr(self.query, 'fields'):
+            # django 1.4 added fields
+            inserting_auto_field = meta.auto_field in self.query.fields
+        else:
+            column = meta.auto_field.db_column or meta.auto_field.column
+            inserting_auto_field = column in self.query.columns
 
-        return sql, params
+        if inserting_auto_field:
+            quoted_table = self.connection.ops.quote_name(meta.db_table)
+            sql = "SET IDENTITY_INSERT %s ON;%s;SET IDENTITY_INSERT %s OFF" %\
+                (quoted_table, sql, quoted_table)
 
+        return sql
 
 class SQLDeleteCompiler(compiler.SQLDeleteCompiler, SQLCompiler):
     pass
