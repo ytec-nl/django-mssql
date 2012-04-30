@@ -24,7 +24,7 @@ The SQL Server version will be detected upon initial connection.
 Django Version
 --------------
 
-The current version of django-mssql supports Django 1.2 thru 1.3.1. Django versions
+The current version of django-mssql supports Django 1.2 thru 1.4. Django versions
 1.0 and 1.1 are no longer actively supported, but working versions may be
 found with the tags ``legacy-1.0`` and ``legacy-1.1``.
 
