@@ -15,6 +15,7 @@ IntegrityError = Database.IntegrityError
 
 class DatabaseFeatures(BaseDatabaseFeatures):
     uses_custom_query_class = True
+    has_bulk_insert = True
 
 # IP Address recognizer taken from:
 # http://mail.python.org/pipermail/python-list/2006-March/375505.html

@@ -154,3 +154,10 @@ class DatabaseOperations(BaseDatabaseOperations):
         first = datetime.datetime(value, 1, 1)
         second = datetime.datetime(value, 12, 31, 23, 59, 59, 999)
         return [first, second]
+
+    def bulk_insert_sql(self, fields, num_values):
+        """
+        Format the SQL for bulk insert
+        """
+        items_sql = "(%s)" % ", ".join(["%s"] * len(fields))
+        return "VALUES " + ", ".join([items_sql] * num_values)
