@@ -161,3 +161,9 @@ class DatabaseOperations(BaseDatabaseOperations):
         """
         items_sql = "(%s)" % ", ".join(["%s"] * len(fields))
         return "VALUES " + ", ".join([items_sql] * num_values)
+
+    def max_name_length(self):
+        """
+        MSSQL supports identifier names up to 128
+        """
+        return 128
