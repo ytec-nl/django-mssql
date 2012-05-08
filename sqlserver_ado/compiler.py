@@ -1,5 +1,7 @@
 from django.db.models.sql import compiler
+import datetime
 import re
+
 
 # query_class returns the base class to use for Django queries.
 # The custom 'SqlServerQuery' class derives from django.db.models.sql.query.Query
@@ -46,8 +48,19 @@ class SQLCompiler(compiler.SQLCompiler):
         # If the results are sliced, the resultset will have an initial 
         # "row number" column. Remove this column before the ORM sees it.
         if getattr(self, '_using_row_number', False):
-            return row[1:]
-        return row
+            row = row[1:]
+        
+        if not fields:
+            return row
+
+        new_row = []
+        for value, field in zip(row, fields):
+            internal_type = field.get_internal_type()
+            if internal_type == 'DateField' and isinstance(value, datetime.datetime):
+                new_row.append(value.date())
+            else:
+                new_row.append(value)
+        return new_row
 
     def as_sql(self, with_limits=True, with_col_aliases=False):
         self._using_row_number = False
