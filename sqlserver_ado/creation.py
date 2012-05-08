@@ -32,6 +32,9 @@ class DatabaseCreation(BaseDatabaseCreation):
     }
 
     def _create_master_connection(self):
+        """
+        Create a transactionless connection to 'master' database.
+        """
         from base import DatabaseWrapper
         
         master_settings = self.connection.settings_dict
@@ -39,6 +42,9 @@ class DatabaseCreation(BaseDatabaseCreation):
         return DatabaseWrapper(master_settings, use_transactions=False)
 
     def _create_test_db(self, verbosity=1, autoclobber=False):
+        """
+        Create the test databases using a connection to database 'master'.
+        """
         test_database_name = self._test_database_name(settings)
         
         if not self._test_database_create(settings):
@@ -63,7 +69,9 @@ class DatabaseCreation(BaseDatabaseCreation):
         
 
     def _destroy_test_db(self, test_database_name, verbosity=1):
-        "Internal implementation - remove the test db tables."
+        """
+        Drop the test databases using a connection to database 'master'.
+        """
     
         if not self._test_database_create(settings):
             print "Skipping Test DB destruction"    
@@ -79,6 +87,9 @@ class DatabaseCreation(BaseDatabaseCreation):
             
         
     def _test_database_create(self, settings):
+        """
+        Check the settings to see if the test database should be created.
+        """
         if self.connection.settings_dict.has_key('TEST_CREATE'):
             return self.connection.settings_dict.get('TEST_CREATE', True)
         if hasattr(settings, 'TEST_DATABASE_CREATE'):
@@ -87,6 +98,9 @@ class DatabaseCreation(BaseDatabaseCreation):
             return True
 
     def _test_database_name(self, settings):
+        """
+        Get the test database name.
+        """
         try:
             name = TEST_DATABASE_PREFIX + self.connection.settings_dict['NAME']
             if self.connection.settings_dict['TEST_NAME']:
