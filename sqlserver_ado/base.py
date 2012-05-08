@@ -114,6 +114,8 @@ class DatabaseWrapper(BaseDatabaseWrapper):
     }
 
     def __init__(self, *args, **kwargs):
+        self.use_transactions = kwargs.pop('use_transactions', None)
+        
         super(DatabaseWrapper, self).__init__(*args, **kwargs)
         
         try:
@@ -145,7 +147,8 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         """Connect to the database"""
         self.connection = Database.connect(
             make_connection_string(self.settings_dict),
-            self.command_timeout
+            self.command_timeout,
+            use_transactions=self.use_transactions,
         )
         connection_created.send(sender=self.__class__)
         return self.connection

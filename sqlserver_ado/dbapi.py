@@ -112,7 +112,7 @@ class _DbType(object):
     def __ne__(self, other): return other not in self.values
 
 
-def connect(connection_string, timeout=30):
+def connect(connection_string, timeout=30, use_transactions=None):
     """Connect to a database.
 
     connection_string -- An ADODB formatted connection string, see:
@@ -125,7 +125,10 @@ def connect(connection_string, timeout=30):
         c.CommandTimeout = timeout
         c.ConnectionString = connection_string
         c.Open()
-        useTransactions = _use_transactions(c)
+        if use_transactions is None:
+            useTransactions = _use_transactions(c)
+        else:
+            useTransactions = use_transactions
         return Connection(c, useTransactions)
     except Exception, e:
         raise OperationalError(e, "Error opening connection: " + connection_string)
@@ -492,7 +495,7 @@ class Cursor(object):
             except KeyError:
                 _message = u'Failed to map python type "%s" to an ADO type' % (value.__class__.__name__,)
                 self._raiseCursorError(DataError, _message)
-            except:    
+            except:
                 _message = u'Creating Parameter p%i, %s' % (i, _ado_type(value))
                 self._raiseCursorError(DataError, _message)
 
