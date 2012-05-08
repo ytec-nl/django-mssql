@@ -207,8 +207,8 @@ class SQLInsertCompiler(compiler.SQLInsertCompiler, SQLCompiler):
         result = super(SQLInsertCompiler, self).as_sql(*args, **kwargs)
         if isinstance(result, list):
             # Django 1.4 wraps return in list
-            sql, params = result[0]
-            return [(self._identity_insert(sql), params)]
+            return [(self._identity_insert(x[0]), x[1]) \
+                for x in result]
         
         sql, params = result
         return self._identity_insert(sql), params
