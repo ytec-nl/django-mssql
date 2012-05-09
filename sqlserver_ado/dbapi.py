@@ -36,8 +36,8 @@ try:
 except ImportError:
     from django.utils import _decimal as decimal
 
-from django.db.utils import IntegrityError as DjangoIntegrityError
-
+from django.db.utils import IntegrityError as DjangoIntegrityError, \
+    DatabaseError as DjangoDatabaseError
 import pythoncom
 import win32com.client
 
@@ -95,7 +95,8 @@ class Error(StandardError): pass
 class Warning(StandardError): pass
 
 class InterfaceError(Error): pass
-class DatabaseError(Error): pass
+
+class DatabaseError(DjangoDatabaseError, Error): pass
 
 class InternalError(DatabaseError): pass
 class OperationalError(DatabaseError): pass
