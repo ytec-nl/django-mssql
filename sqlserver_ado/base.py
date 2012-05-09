@@ -200,6 +200,6 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         if not table_names:
             cursor.execute('DBCC CHECKCONSTRAINTS')
         else:
-            qn = self.connection.ops.quote_name
+            qn = self.ops.quote_name
             for name in table_names:
                 cursor.execute('DBCC CHECKCONSTRAINTS({0})'.format(name))
