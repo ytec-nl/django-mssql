@@ -196,6 +196,8 @@ def _configure_parameter(p, value):
             p.NumericScale = 0
             p.Precision = digit_count + exponent
 
+    elif isinstance(value, datetime.time):
+            p.Value = datetime.datetime(1,1,1, value.hour, value.minute, value.second)
     else:
         # For any other type, set the value and let pythoncom do the right thing.
         p.Value = value
@@ -502,7 +504,7 @@ class Cursor(object):
             try:
                 _configure_parameter(p, value)
                 self.cmd.Parameters.Append(p)
-            except:
+            except Exception as e:
                 _message = u'Converting Parameter %s: %s, %s\n' %\
                     (p.Name, ado_type_name(p.Type), repr(value))
 

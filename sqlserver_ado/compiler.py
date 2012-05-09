@@ -58,6 +58,8 @@ class SQLCompiler(compiler.SQLCompiler):
             internal_type = field.get_internal_type()
             if internal_type == 'DateField' and isinstance(value, datetime.datetime):
                 new_row.append(value.date())
+            elif internal_type == 'TimeField' and isinstance(value, datetime.datetime):
+                new_row.append(value.time())    
             else:
                 new_row.append(value)
         return new_row
