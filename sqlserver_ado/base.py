@@ -15,7 +15,7 @@ IntegrityError = Database.IntegrityError
 
 class DatabaseFeatures(BaseDatabaseFeatures):
     uses_custom_query_class = True
-    has_bulk_insert = True
+    has_bulk_insert = False
     
     supports_timezones = False
 
