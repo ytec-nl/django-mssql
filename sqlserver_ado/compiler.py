@@ -222,34 +222,44 @@ class SQLInsertCompiler(compiler.SQLInsertCompiler, SQLCompiler):
         result = super(SQLInsertCompiler, self).as_sql(*args, **kwargs)
         if isinstance(result, list):
             # Django 1.4 wraps return in list
-            return [(self._identity_insert(x[0]), x[1]) \
-                for x in result]
+            return [self._fix_insert(x[0], x[1]) for x in result]
         
         sql, params = result
-        return self._identity_insert(sql), params
+        return self._fix_insert(sql, params)
 
-    def _identity_insert(self, sql):
+    def _fix_insert(self, sql, params):
         """
-        Wrap the passed SQL with IDENTITY_INSERT statements.
+        Wrap the passed SQL with IDENTITY_INSERT statements and apply
+        other necessary fixes.
         """
         meta = self.query.get_meta()
         
-        if not meta.has_auto_field:
-            return sql
-
-        if hasattr(self.query, 'fields'):
-            # django 1.4 added fields
-            inserting_auto_field = meta.auto_field in self.query.fields
-        else:
-            column = meta.auto_field.db_column or meta.auto_field.column
-            inserting_auto_field = column in self.query.columns
-
-        if inserting_auto_field:
+        if meta.has_auto_field:
+            if hasattr(self.query, 'fields'):
+                # django 1.4 replaced columns with fields
+                fields = self.query.fields
+                auto_field = meta.auto_field
+            else:
+                # < django 1.4
+                fields = self.query.columns
+                auto_field = meta.auto_field.db_column or meta.auto_field.column
+    
+            auto_in_fields = auto_field in fields
+    
             quoted_table = self.connection.ops.quote_name(meta.db_table)
-            sql = "SET IDENTITY_INSERT %s ON;%s;SET IDENTITY_INSERT %s OFF" %\
-                (quoted_table, sql, quoted_table)
+            if not fields or (auto_in_fields and len(fields) == 1 and not params):
+                # convert format when inserting only the primary key without 
+                # specifying a value
+                sql = 'INSERT INTO {0} DEFAULT VALUES'.format(
+                    quoted_table
+                )
+                params = []
+            elif auto_in_fields:
+                # wrap with identity insert
+                sql = "SET IDENTITY_INSERT %s ON;%s;SET IDENTITY_INSERT %s OFF" %\
+                    (quoted_table, sql, quoted_table)
 
-        return sql
+        return sql, params
 
 class SQLDeleteCompiler(compiler.SQLDeleteCompiler, SQLCompiler):
     pass
