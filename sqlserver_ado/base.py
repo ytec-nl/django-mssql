@@ -177,3 +177,29 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         if self.connection is None:
             self.__connect()
         return Database.Cursor(self.connection)
+
+    def disable_constraint_checking(self):
+        """
+        Turn off constraint checking for every table
+        """
+        cursor = self.connection.cursor()
+        cursor.execute('EXEC sp_msforeachtable "ALTER TABLE ? NOCHECK CONSTRAINT all"')
+
+    def enable_constraint_checking(self):
+        """
+        Turn on constraint checking for every table
+        """
+        cursor = self.connection.cursor()
+        cursor.execute('EXEC sp_msforeachtable "ALTER TABLE ? WITH CHECK CHECK CONSTRAINT all"')
+
+    def check_constraints(self, table_names=None):
+        """
+        Check the table constraints.
+        """
+        cursor = self.connection.cursor()
+        if not table_names:
+            cursor.execute('DBCC CHECKCONSTRAINTS')
+        else:
+            qn = self.connection.ops.quote_name
+            for name in table_names:
+                cursor.execute('DBCC CHECKCONSTRAINTS({0})'.format(name))
