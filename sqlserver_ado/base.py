@@ -152,7 +152,7 @@ class DatabaseWrapper(BaseDatabaseWrapper):
             self.command_timeout,
             use_transactions=self.use_transactions,
         )
-        connection_created.send(sender=self.__class__)
+        connection_created.send(sender=self.__class__, connection=self)
         return self.connection
 
     def is_sql2005(self):
