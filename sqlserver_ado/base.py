@@ -202,4 +202,6 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         else:
             qn = self.ops.quote_name
             for name in table_names:
-                cursor.execute('DBCC CHECKCONSTRAINTS({0})'.format(name))
+                cursor.execute('DBCC CHECKCONSTRAINTS({0})'.format(
+                    qn(name)
+                ))
