@@ -49,20 +49,19 @@ class SQLCompiler(compiler.SQLCompiler):
         # "row number" column. Remove this column before the ORM sees it.
         if getattr(self, '_using_row_number', False):
             row = row[1:]
-        
-        if not fields:
-            return row
+       
+        values = []
+        index_extra_select = len(self.query.extra_select.keys())
+        for value, field in map(None, row[index_extra_select:], fields):
+            if field:
+                internal_type = field.get_internal_type()
+                if internal_type == 'DateField' and isinstance(value, datetime.datetime):
+                    value = value.date()
+                elif internal_type == 'TimeField' and isinstance(value, datetime.datetime):
+                    value = value.time()
+            values.append(value)
 
-        new_row = []
-        for value, field in zip(row, fields):
-            internal_type = field.get_internal_type()
-            if internal_type == 'DateField' and isinstance(value, datetime.datetime):
-                new_row.append(value.date())
-            elif internal_type == 'TimeField' and isinstance(value, datetime.datetime):
-                new_row.append(value.time())    
-            else:
-                new_row.append(value)
-        return new_row
+        return row[:index_extra_select] + tuple(values)
 
     def as_sql(self, with_limits=True, with_col_aliases=False):
         self._using_row_number = False
