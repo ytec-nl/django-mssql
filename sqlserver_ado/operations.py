@@ -9,6 +9,24 @@ class DatabaseOperations(BaseDatabaseOperations):
     def date_extract_sql(self, lookup_type, field_name):
         return "DATEPART(%s, %s)" % (lookup_type, self.quote_name(field_name))
 
+    def date_interval_sql(self, sql, connector, timedelta):
+        """
+        implements the interval functionality for expressions
+        format for SQL Server.
+        """
+        sign = 1 if connector == '+' else -1
+        seconds = ((timedelta.days * 86400) + timedelta.seconds) * sign
+        out = sql
+        if seconds:
+            out = u'DATEADD(SECOND, {0}, {1})'.format(seconds, sql)
+        if timedelta.microseconds:
+            # DATEADD with datetime doesn't support ms, must cast up
+            out = u'DATEADD(MICROSECOND, {ms}, CAST({sql} as datetime2))'.format(
+                ms=timedelta.microseconds * sign,
+                sql=out,
+            )
+        return out
+
     def date_trunc_sql(self, lookup_type, field_name):
         return "DATEADD(%s, DATEDIFF(%s, 0, %s), 0)" % (lookup_type, lookup_type, field_name)
 
