@@ -18,6 +18,7 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     has_bulk_insert = False
     
     supports_timezones = False
+    
 
 # IP Address recognizer taken from:
 # http://mail.python.org/pipermail/python-list/2006-March/375505.html
@@ -182,21 +183,30 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         """
         Turn off constraint checking for every table
         """
-        cursor = self.connection.cursor()
+        if self.connection:
+            cursor = self.connection.cursor()
+        else:
+            cursor = self._cursor()
         cursor.execute('EXEC sp_msforeachtable "ALTER TABLE ? NOCHECK CONSTRAINT all"')
 
     def enable_constraint_checking(self):
         """
         Turn on constraint checking for every table
         """
-        cursor = self.connection.cursor()
+        if self.connection:
+            cursor = self.connection.cursor()
+        else:
+            cursor = self._cursor()
         cursor.execute('EXEC sp_msforeachtable "ALTER TABLE ? WITH CHECK CHECK CONSTRAINT all"')
 
     def check_constraints(self, table_names=None):
         """
         Check the table constraints.
         """
-        cursor = self.connection.cursor()
+        if self.connection:
+            cursor = self.connection.cursor()
+        else:
+            cursor = self._cursor()
         if not table_names:
             cursor.execute('DBCC CHECKCONSTRAINTS')
         else:
