@@ -8,3 +8,4 @@ v1.1 (in development)
 - Updated SQLInsertCompiler to work with Django 1.4
 - Added support for ``disable_constraint_checking``, which is required for ``loaddata`` to work properly.
 - Implemented ``DatabaseOperations.date_interval_sql`` to allow using expressions like ``end__lte=F('start')+delta``.
+- Fixed date part extraction for ``week_day``.

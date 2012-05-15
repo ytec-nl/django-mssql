@@ -7,7 +7,12 @@ class DatabaseOperations(BaseDatabaseOperations):
     compiler_module = "sqlserver_ado.compiler"
     
     def date_extract_sql(self, lookup_type, field_name):
-        return "DATEPART(%s, %s)" % (lookup_type, self.quote_name(field_name))
+        if lookup_type == 'week_day':
+            lookup_type = 'weekday'
+        return 'DATEPART({0}, {1})'.format(
+            lookup_type,
+            self.quote_name(field_name),
+        )
 
     def date_interval_sql(self, sql, connector, timedelta):
         """
