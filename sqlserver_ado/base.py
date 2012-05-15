@@ -101,6 +101,8 @@ def make_connection_string(settings):
     return ";".join(parts)
 
 class DatabaseWrapper(BaseDatabaseWrapper):
+    vendor = 'microsoft'
+    
     operators = {
         "exact": "= %s",
         "iexact": "LIKE %s ESCAPE '\\'",
