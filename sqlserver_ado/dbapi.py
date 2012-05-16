@@ -36,8 +36,11 @@ try:
 except ImportError:
     from django.utils import _decimal as decimal
 
+from django.conf import settings
 from django.db.utils import IntegrityError as DjangoIntegrityError, \
     DatabaseError as DjangoDatabaseError
+from django.utils import timezone
+
 import pythoncom
 import win32com.client
 
@@ -668,8 +671,12 @@ def _cvtComDate(comDate):
     day_count = int(date_as_float)
     fraction_of_day = abs(date_as_float - day_count)
 
-    return (datetime.datetime.fromordinal(day_count + _ordinal_1899_12_31) +
+    dt = (datetime.datetime.fromordinal(day_count + _ordinal_1899_12_31) +
         datetime.timedelta(milliseconds=fraction_of_day * _milliseconds_per_day))
+    
+    if settings.USE_TZ:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt
 
 _variantConversions = MultiMap(
     {

@@ -1,6 +1,8 @@
-from django.db.backends import BaseDatabaseOperations
 import datetime
 import time
+from django.conf import settings
+from django.db.backends import BaseDatabaseOperations
+from django.utils import timezone
 
 
 class DatabaseOperations(BaseDatabaseOperations):
@@ -143,8 +145,11 @@ class DatabaseOperations(BaseDatabaseOperations):
         if value is None:
             return None
             
-        if value.tzinfo is not None:
-            raise ValueError("SQL Server 2005 does not support timezone-aware datetimes.")
+        if timezone.is_aware(value):
+            if settings.USE_TZ:
+                value = value.astimezone(timezone.utc).replace(tzinfo=None)
+            else:
+                raise ValueError("SQL Server backend does not support timezone-aware datetimes.")
 
         # SQL Server 2005 doesn't support microseconds
         if self.is_sql2005():
@@ -154,6 +159,9 @@ class DatabaseOperations(BaseDatabaseOperations):
     def value_to_db_time(self, value):
         if not self.is_sql2005():
             return value
+
+        if timezone.is_aware(value):
+            raise ValueError("SQL Server backend does not support timezone-aware times.")
 
         # MS SQL 2005 doesn't support microseconds
         #...but it also doesn't really suport bare times

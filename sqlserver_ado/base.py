@@ -18,7 +18,9 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     has_bulk_insert = False
     
     supports_timezones = False
+    supports_sequence_reset = False
     
+    query_needed_to_fetch_return_id = True
 
 # IP Address recognizer taken from:
 # http://mail.python.org/pipermail/python-list/2006-March/375505.html
