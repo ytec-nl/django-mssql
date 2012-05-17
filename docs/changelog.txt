@@ -10,3 +10,5 @@ v1.1 (in development)
 - Implemented ``DatabaseOperations.date_interval_sql`` to allow using expressions like ``end__lte=F('start')+delta``.
 - Fixed date part extraction for ``week_day``.
 - DatabaseWrapper reports vendor as 'microsoft'.
+- AVG function now matches core backend behaviors and will auto-cast to ``float``, instead of maintaining datatype. 
+  Set database ``OPTIONS`` setting ``disable_avg_cast`` to turn off the auto-cast behavior.

@@ -42,7 +42,6 @@ def _get_order_limit_offset(sql):
 def _remove_order_limit_offset(sql):
     return _re_order_limit_offset.sub('',sql).split(None, 1)[1]
 
-
 class SQLCompiler(compiler.SQLCompiler):
     def resolve_columns(self, row, fields=()):
         # If the results are sliced, the resultset will have an initial 
@@ -63,7 +62,27 @@ class SQLCompiler(compiler.SQLCompiler):
 
         return row[:index_extra_select] + tuple(values)
 
+    def _fix_aggregates(self):
+        """
+        MSSQL doesn't match the behavior of the other backends on a few of
+        the aggregate functions; different return type behavior, different
+        function names, etc.
+        
+        MSSQL's implementation of AVG maintains datatype without proding. To
+        match behavior of other django backends, it needs to not drop remainders.
+        E.g. AVG([1, 2]) needs to yield 1.5, not 1
+        """
+        if self.connection.cast_avg_to_float:
+            for alias, aggregate in self.query.aggregate_select.items():
+                if aggregate.sql_function == 'AVG':
+                    # Embed the CAST in the template on this query to
+                    # maintain multi-db support.
+                    self.query.aggregate_select[alias].sql_template = \
+                        '%(function)s(CAST(%(field)s AS FLOAT))'
+
     def as_sql(self, with_limits=True, with_col_aliases=False):
+        self._fix_aggregates()
+        
         self._using_row_number = False
         
         # Get out of the way if we're not a select query or there's no limiting involved.
@@ -267,7 +286,9 @@ class SQLUpdateCompiler(compiler.SQLUpdateCompiler, SQLCompiler):
     pass
 
 class SQLAggregateCompiler(compiler.SQLAggregateCompiler, SQLCompiler):
-    pass
+    def as_sql(self, qn=None):
+        self._fix_aggregates()
+        return super(SQLAggregateCompiler, self).as_sql(qn=qn)
 
 class SQLDateCompiler(compiler.SQLDateCompiler, SQLCompiler):
     pass

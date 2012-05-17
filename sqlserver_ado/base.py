@@ -147,6 +147,12 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         except ValueError:   
             self.command_timeout = 30
         
+        try:
+            options = self.settings_dict.get('OPTIONS', {})
+            self.cast_avg_to_float = not bool(options.get('disable_avg_cast', False))
+        except ValueError:
+            self.cast_avg_to_float = False
+        
         self.ops.is_sql2005 = self.is_sql2005
         self.ops.is_sql2008 = self.is_sql2008
 

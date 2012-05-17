@@ -78,7 +78,9 @@ OPTIONS
 -------
 
 ``Django-mssql`` provides a few extra ``OPTIONS`` that are specific to this
-backend.
+backend. Please note that while the main database settings are UPPERCASE
+keys, the ``OPTIONS`` dictionary keys are expected to be lowercase (due to
+legacy reasons).
 
 use_mars
 ~~~~~~~~
@@ -89,7 +91,7 @@ Set to ``True`` to enable `Multiple Active Recordsets`. It is recommended
 to enable MARS to avoid seeing the "Cannot create new connection because 
 in manual or distributed transaction mode" error.
 
-.. note:
+.. note::
     This will only set the appropriate connection string value for 
     the "SQLOLEDB" provider. If you are using a different provider, you 
     will need to add the appropriate connection string value to 
@@ -113,3 +115,23 @@ provider
 Default: ``'SQLOLEDB'``
 
 The SQL provider to use when connecting to the database.
+
+
+disable_avg_cast
+~~~~~~~~~~~~~~~~
+
+Default: ``False``
+
+This backend will automatically ``CAST`` fields used by the `AVG function` 
+as ``FLOAT`` to match the behavior of the core database backends. Set this
+to ``True`` if you need SQL server to retain the datatype of fields used
+with ``AVG``.
+
+.. versionadded:: 1.1
+
+.. _`AVG function`: http://msdn.microsoft.com/en-us/library/ms177677.aspx
+
+.. note::
+    SQL server maintains the datatype of the values used in ``AVG``. The
+    average of an ``int`` column will be an ``int``. With this option set
+    to ``True``, ``AVG([1,2])`` == 1, not 1.5.
