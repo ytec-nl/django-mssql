@@ -12,3 +12,6 @@ v1.1 (in development)
 - DatabaseWrapper reports vendor as 'microsoft'.
 - AVG function now matches core backend behaviors and will auto-cast to ``float``, instead of maintaining datatype. 
   Set database ``OPTIONS`` setting ``disable_avg_cast`` to turn off the auto-cast behavior.
+- StdDev and Variance aggregate functions are now supported and will map to the proper MSSQL named functions. Includes work around for Django ticket `#18334`_.
+
+.. _`#18334`: https://code.djangoproject.com/ticket/18334

@@ -122,7 +122,7 @@ disable_avg_cast
 
 Default: ``False``
 
-This backend will automatically ``CAST`` fields used by the `AVG function` 
+This backend will automatically ``CAST`` fields used by the `AVG function`_ 
 as ``FLOAT`` to match the behavior of the core database backends. Set this
 to ``True`` if you need SQL server to retain the datatype of fields used
 with ``AVG``.

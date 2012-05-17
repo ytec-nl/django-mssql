@@ -79,6 +79,16 @@ class SQLCompiler(compiler.SQLCompiler):
                     # maintain multi-db support.
                     self.query.aggregate_select[alias].sql_template = \
                         '%(function)s(CAST(%(field)s AS FLOAT))'
+                # translate StdDev function names
+                elif aggregate.sql_function == 'STDDEV_SAMP':
+                    self.query.aggregate_select[alias].sql_function = 'STDEV'
+                elif aggregate.sql_function == 'STDDEV_POP':
+                    self.query.aggregate_select[alias].sql_function = 'STDEVP'
+                # translate Variance function names
+                elif aggregate.sql_function == 'VAR_SAMP':
+                    self.query.aggregate_select[alias].sql_function = 'VAR'
+                elif aggregate.sql_function == 'VAR_POP':
+                    self.query.aggregate_select[alias].sql_function = 'VARP'
 
     def as_sql(self, with_limits=True, with_col_aliases=False):
         self._fix_aggregates()

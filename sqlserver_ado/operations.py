@@ -198,3 +198,11 @@ class DatabaseOperations(BaseDatabaseOperations):
         MSSQL supports identifier names up to 128
         """
         return 128
+
+    def _supports_stddev(self):
+        """
+        Work around for django ticket #18334. 
+        This backend supports StdDev and the SQLCompilers will remap to 
+        the correct function names.
+        """
+        return True
