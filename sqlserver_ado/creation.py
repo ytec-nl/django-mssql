@@ -75,7 +75,9 @@ class DatabaseCreation(BaseDatabaseCreation):
         """
     
         if not self._test_database_create(settings):
-            print "Skipping Test DB destruction"    
+            if verbosity >= 1:
+                print "Skipping Test DB destruction"
+            return
 
         old_wrapper = self.connection
         old_wrapper.close()

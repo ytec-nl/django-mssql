@@ -2,8 +2,12 @@ import datetime
 import time
 from django.conf import settings
 from django.db.backends import BaseDatabaseOperations
-from django.utils import timezone
 
+try:
+    from django.utils import timezone
+except ImportError:
+    # timezone added in Django 1.4, use provided partial backport
+    import timezone
 
 class DatabaseOperations(BaseDatabaseOperations):
     compiler_module = "sqlserver_ado.compiler"
@@ -146,7 +150,7 @@ class DatabaseOperations(BaseDatabaseOperations):
             return None
             
         if timezone.is_aware(value):
-            if settings.USE_TZ:
+            if getattr(settings, 'USE_TZ', False):
                 value = value.astimezone(timezone.utc).replace(tzinfo=None)
             else:
                 raise ValueError("SQL Server backend does not support timezone-aware datetimes.")
@@ -206,3 +210,36 @@ class DatabaseOperations(BaseDatabaseOperations):
         the correct function names.
         """
         return True
+
+    def enable_identity_insert(self, table):
+        """
+        Backends can implement as needed to enable inserts in to
+        the identity column.
+        
+        Should return True if identity inserts have been enabled.
+        """
+        if table:
+            from django.db import connection
+            cursor = connection.cursor()
+            cursor.execute('SET IDENTITY_INSERT {0} ON'.format(
+                connection.ops.quote_name(table)
+            ))
+            return True
+        return False
+    
+    def disable_identity_insert(self, table):
+        """
+        Backends can implement as needed to disable inserts in to
+        the identity column.
+        
+        Should return True if identity inserts have been disabled.
+        """
+        if table:
+            from django.db import connection
+            cursor = connection.cursor()
+            cursor.execute('SET IDENTITY_INSERT {0} OFF'.format(
+                connection.ops.quote_name(table)
+            ))
+            return True
+        return False
+

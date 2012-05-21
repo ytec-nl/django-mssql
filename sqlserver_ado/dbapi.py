@@ -39,7 +39,12 @@ except ImportError:
 from django.conf import settings
 from django.db.utils import IntegrityError as DjangoIntegrityError, \
     DatabaseError as DjangoDatabaseError
-from django.utils import timezone
+
+try:
+    from django.utils import timezone
+except ImportError:
+    # timezone added in Django 1.4
+    timezone = None
 
 import pythoncom
 import win32com.client
@@ -674,7 +679,7 @@ def _cvtComDate(comDate):
     dt = (datetime.datetime.fromordinal(day_count + _ordinal_1899_12_31) +
         datetime.timedelta(milliseconds=fraction_of_day * _milliseconds_per_day))
     
-    if settings.USE_TZ:
+    if timezone and getattr(settings, 'USE_TZ', False):
         dt = dt.replace(tzinfo=timezone.utc)
     return dt
 
