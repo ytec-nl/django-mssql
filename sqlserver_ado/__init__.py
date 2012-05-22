@@ -1,2 +1,2 @@
 # following PEP 386
-__version__ = "1.1a4"
+__version__ = "1.1rc1"
