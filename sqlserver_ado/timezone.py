@@ -2,7 +2,7 @@
 TZ helper functions backported from Django 1.4. This module should only 
 get loaded if django.utils.timezone doesn't exist.
 """
-
+from datetime import timedelta
 
 try:
     import pytz
