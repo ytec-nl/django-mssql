@@ -2,8 +2,8 @@ Changelog
 =========
 
 
-v1.1 (in development)
----------------------
+v1.1
+----
 
 - Updated SQLInsertCompiler to work with Django 1.4
 - Added support for ``disable_constraint_checking``, which is required for ``loaddata`` to work properly.
