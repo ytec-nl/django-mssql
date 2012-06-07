@@ -13,5 +13,7 @@ v1.1 (in development)
 - AVG function now matches core backend behaviors and will auto-cast to ``float``, instead of maintaining datatype. 
   Set database ``OPTIONS`` setting ``disable_avg_cast`` to turn off the auto-cast behavior.
 - StdDev and Variance aggregate functions are now supported and will map to the proper MSSQL named functions. Includes work around for Django ticket `#18334`_.
+- Monkey patched ``django.db.backends.util.CursorWrapper`` to allow using cursors as ContextManagers in Python 2.7. Django Ticket `#17671`_.
 
+.. _`#17671`: https://code.djangoproject.com/ticket/17671
 .. _`#18334`: https://code.djangoproject.com/ticket/18334
