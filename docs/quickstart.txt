@@ -50,5 +50,3 @@ PyWin32
 PyWin32_ build 212 or newer is required.
 
 .. _PyWin32: http://sourceforge.net/projects/pywin32/
-
-

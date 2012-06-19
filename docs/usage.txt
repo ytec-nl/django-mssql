@@ -1,0 +1,78 @@
+Usage
+=====
+
+``Django-mssql`` is a Django database backend and supports the interface 
+for the paired Django version. It should behave the same as the core 
+backends.
+
+Executing Custom SQL
+--------------------
+
+Please refer to the Django documentation for `Executing custom SQL directly`_.
+
+.. _`Executing custom SQL directly`: https://docs.djangoproject.com/en/dev/topics/db/sql/#executing-custom-sql-directly
+
+Stored Procedures
+-----------------
+
+``Django-mssql`` provides support for executing stored procedures, with and 
+without parameters. The main function that should be used to execute a 
+stored procedure is ``callproc``. ``callproc`` will allow executing stored 
+procedures with both input and output parameters, integer return values, and
+result sets.
+
+    .. code-block:: python
+    
+        def callproc(self, procname, parameters=None):
+            """Call a stored database procedure with the given name.
+    
+            The sequence of parameters must contain one entry for each
+            argument that the sproc expects. The result of the
+            call is returned as modified copy of the input
+            sequence. Input parameters are left untouched, output and
+            input/output parameters replaced with possibly new values.
+    
+            The sproc may also provide a result set as output,
+            which is available through the standard .fetch*() methods.
+    
+            Extension: A "return_value" property may be set on the
+            cursor if the sproc defines an integer return value.
+            """
+
+Example:
+
+This example assumes that there exists a stored procedure named ``uspDoesSomething`` 
+that expects two parameters (int and varchar), and returns ``1`` when there 
+is a result set.
+        
+    .. code-block:: python
+    
+        from django.db import connection
+        
+        cursor = connection.cursor()
+        try:
+            cursor.callproc('[dbo].[uspDoesSomething]', [5, 'blah'])
+            
+            if cursor.return_value == 1:
+                result_set = cursor.fetchall()
+        finally:
+            cursor.close()
+
+
+It is also possible to use the cursor's ``execute`` method to call a stored 
+procedure, but ``return_value`` will not be set on the cursor and output
+parameters are not supported. This usage is intended for calling a stored
+procedure that returns a result set or nothing at all.
+
+Example:
+
+    .. code-block:: python
+    
+        from django.db import connection
+        
+        cursor = connection.cursor()
+        try:
+            cursor.execute('EXEC [dbo].[uspFetchSomeData]')
+            result_set = cursor.fetchall()
+        finally:
+            cursor.close()
