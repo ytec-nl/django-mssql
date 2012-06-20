@@ -39,6 +39,8 @@ class DatabaseCreation(BaseDatabaseCreation):
         from base import DatabaseWrapper
         
         master_settings = self.connection.settings_dict
+        if not master_settings['TEST_NAME']:
+            master_settings['TEST_NAME'] = 'test_' + master_settings['NAME']
         master_settings['NAME'] = 'master'
         return DatabaseWrapper(master_settings, use_transactions=False)
 
