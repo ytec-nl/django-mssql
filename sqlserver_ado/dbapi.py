@@ -29,11 +29,10 @@ DB-API 2.0 specification: http://www.python.org/dev/peps/pep-0249/
 import sys
 import time
 import datetime
-import re
 
 try:
     import decimal
-except ImportError:
+except ImportError:  #perhaps running Cpython 2.3 
     from django.utils import _decimal as decimal
 
 from django.conf import settings
@@ -51,28 +50,8 @@ import win32com.client
 
 from ado_consts import *
 
-# DB API default values
-apilevel = '2.0'
-
-# 1: Threads may share the module, but not connections.
-threadsafety = 1
-
-# The underlying ADO library expects parameters as '?', but this wrapper
-# expects '%s' parameters. This wrapper takes care of the conversion.
-paramstyle = 'format'
-
-# Set defaultIsolationLevel on module level before creating the connection.
-# It may be one of "adXact..." consts.
-defaultIsolationLevel = adXactReadCommitted
-
-# Set defaultCursorLocation on module level before creating the connection.
-# It may be one of the "adUse..." consts.
-defaultCursorLocation = adUseServer
-
 # Used for COM to Python date conversions.
-_ordinal_1899_12_31 = datetime.date(1899,12,31).toordinal()-1
 _milliseconds_per_day = 24*60*60*1000
-
 
 class MultiMap(object):
     def __init__(self, mapping, default=None):
@@ -99,19 +78,26 @@ def standardErrorHandler(connection, cursor, errorclass, errorvalue):
     raise errorclass(errorvalue)
 
 
-class Error(StandardError): pass
-class Warning(StandardError): pass
-
-class InterfaceError(Error): pass
-
-class DatabaseError(DjangoDatabaseError, Error): pass
-
-class InternalError(DatabaseError): pass
-class OperationalError(DatabaseError): pass
-class ProgrammingError(DatabaseError): pass
-class IntegrityError(DatabaseError, DjangoIntegrityError): pass
-class DataError(DatabaseError): pass
-class NotSupportedError(DatabaseError): pass
+class Error(StandardError):
+    pass
+class Warning(StandardError):
+    pass
+class InterfaceError(Error):
+    pass
+class DatabaseError(Error):
+    pass
+class InternalError(DatabaseError):
+    pass
+class OperationalError(DatabaseError):
+    pass
+class ProgrammingError(DatabaseError):
+    pass
+class IntegrityError(DatabaseError, DjangoIntegrityError):
+    pass
+class DataError(DatabaseError):
+    pass
+class NotSupportedError(DatabaseError):
+    pass
 
 class _DbType(object):
     def __init__(self,valuesTuple):
@@ -120,7 +106,7 @@ class _DbType(object):
     def __eq__(self, other): return other in self.values
     def __ne__(self, other): return other not in self.values
 
-
+# -----------------  The .connect method -----------------
 def connect(connection_string, timeout=30, use_transactions=None):
     """Connect to a database.
 
@@ -129,8 +115,11 @@ def connect(connection_string, timeout=30, use_transactions=None):
     timeout -- A command timeout value, in seconds (default 30 seconds)
     """
     try:
-        pythoncom.CoInitialize()
+        pythoncom.CoInitialize()             #v2.1 Paj
         c = win32com.client.Dispatch('ADODB.Connection')
+    except:
+        raise InterfaceError #Probably COM Error
+    try:
         c.CommandTimeout = timeout
         c.ConnectionString = connection_string
         c.Open()
@@ -139,7 +128,7 @@ def connect(connection_string, timeout=30, use_transactions=None):
         else:
             useTransactions = use_transactions
         return Connection(c, useTransactions)
-    except Exception, e:
+    except (Exception), e:
         raise OperationalError(e, "Error opening connection: " + connection_string)
 
 def _use_transactions(c):
@@ -148,20 +137,57 @@ def _use_transactions(c):
         if prop.Name == 'Transaction DDL':
             return prop.Value > 0
     return False
+# ------ DB API required module attributes ---------------------
+apilevel='2.0' #String constant stating the supported DB API level.
+
+threadsafety=1 
+# Integer constant stating the level of thread safety the interface supports,
+# 1 = Threads may share the module, but not connections. 
+# TODO: Have not tried this, maybe it is better than 1?
+## 
+## Possible values are:
+##0 = Threads may not share the module. 
+##1 = Threads may share the module, but not connections. 
+##2 = Threads may share the module and connections. 
+##3 = Threads may share the module, connections and cursors. 
+
+paramstyle='format' # the default parameter style
+# the API defines this as a constant:
+#String constant stating the type of parameter marker formatting expected by the interface. 
+# -- but as an extension, adodbapi will allow the programmer to change paramstyles
+# by making the paramstyle also an attribute of the connection,
+# and allowing the programmer to one of the permitted values:
+# 'qmark' = Question mark style, e.g. '...WHERE name=?'
+# 'named' = Named style, e.g. '...WHERE name=:name'
+# 'format' = ANSI C printf format codes, e.g. '...WHERE name=%s'
+_accepted_paramstyles = ('qmark','named','format')
+# so you could use something like:
+#   myConnection.paramstyle = 'named'
+# The programmer may also change the default.
+#   For example, if I were using django, I would say:
+#     import adodbapi as Database
+#     Database.adodbapi.paramstyle = 'format'
+
+# ------- other module level defaults --------
+defaultIsolationLevel = adXactReadCommitted
+#  Set defaultIsolationLevel on module level before creating the connection.
+#   For example:
+#   import adodbapi, ado_consts
+#   adodbapi.adodbapi.defaultIsolationLevel=ado_consts.adXactBrowse"
+#
+#  Set defaultCursorLocation on module level before creating the connection.
+# It may be one of the "adUse..." consts.
+defaultCursorLocation = adUseServer
+
+# ----- handy constansts --------
+# Used for COM to Python date conversions.
+_ordinal_1899_12_31 = datetime.date(1899,12,31).toordinal()-1
 
 def format_parameters(parameters, show_value=False):
     """Format a collection of ADO Command Parameters.
 
     Used by error reporting in _execute_command.
     """
-    directions = {
-        0: 'Unknown',
-        1: 'Input',
-        2: 'Output',
-        3: 'In/Out',
-        4: 'Return',
-    }
-
     if show_value:
         desc = [
             "Name: %s, Dir.: %s, Type: %s, Size: %s, Value: \"%s\", Precision: %s, NumericScale: %s" %\
@@ -173,7 +199,7 @@ def format_parameters(parameters, show_value=False):
             (p.Name, directions[p.Direction], adTypeNames.get(p.Type, str(p.Type)+' (unknown type)'), p.Size, p.Precision, p.NumericScale)
             for p in parameters ]
 
-    return '[' + ', '.join(desc) + ']'
+    return '[' + '\n'.join(desc) + ']'
 
 def _configure_parameter(p, value):
     """Configure the given ADO Parameter 'p' with the Python 'value'."""
@@ -218,19 +244,20 @@ def _configure_parameter(p, value):
 VERSION_SQL2005 = 9
 VERSION_SQL2008 = 10
 
+# # # # # ----- the Class that defines a connection ----- # # # # # 
 class Connection(object):
     def __init__(self, adoConn, useTransactions=False):
         self.adoConn = adoConn
-        self.errorhandler = None
-        self.messages = []
-        self.adoConn.CursorLocation = defaultCursorLocation
+        self.paramstyle = paramstyle
         self.supportsTransactions = useTransactions
-
-        self.adoConnProperties = dict([(x.Name, x.Value) for x in self.adoConn.Properties])
-
+        self.adoConn.CursorLocation = defaultCursorLocation #v2.1 Rose
         if self.supportsTransactions:
             self.adoConn.IsolationLevel = defaultIsolationLevel
             self.adoConn.BeginTrans() # Disables autocommit per DBPAI
+        self.errorhandler = None
+        self.messages = []
+        self.adoConnProperties = dict([(x.Name, x.Value) for x in self.adoConn.Properties])
+
 
     @property
     def is_sql2005(self):
@@ -255,19 +282,26 @@ class Connection(object):
         self.adoConn.Close()
 
     def close(self):
-        """Close the database connection."""
+        """Close the connection now (rather than whenever __del__ is called).
+
+        The connection will be unusable from this point forward;
+        an Error (or subclass) exception will be raised if any operation is attempted with the connection.
+        The same applies to all cursor objects trying to use the connection. 
+        """
         self.messages = []
+
         try:
             self._close_connection()
-        except Exception, e:
+        except (Exception), e:
             self._raiseConnectionError(InternalError, e)
-        pythoncom.CoUninitialize()
+        pythoncom.CoUninitialize()                             #v2.1 Paj
 
     def commit(self):
-        """Commit a pending transaction to the database.
+        """Commit any pending transaction to the database.
 
-        Note that if the database supports an auto-commit feature, this must
-        be initially off.
+        Note that if the database supports an auto-commit feature,
+        this must be initially off. An interface method may be provided to turn it back on. 
+        Database modules that do not support transactions should implement this method with void functionality. 
         """
         self.messages = []
         if not self.supportsTransactions:
@@ -280,15 +314,27 @@ class Connection(object):
                 #calling CommitTrans automatically starts a new transaction. Not all providers support this.
                 #If not, we will have to start a new transaction by this command:
                 self.adoConn.BeginTrans()
-        except Exception, e:
+        except (Exception), e:
             self._raiseConnectionError(Error, e)
 
     def rollback(self):
-        """Abort a pending transaction."""
+        """In case a database does provide transactions this method causes the the database to roll back to
+        the start of any pending transaction. Closing a connection without committing the changes first will
+        cause an implicit rollback to be performed.
+
+        If the database does not support the functionality required by the method, the interface should
+        throw an exception in case the method is used. 
+        The preferred approach is to not implement the method and thus have Python generate
+        an AttributeError in case the method is requested. This allows the programmer to check for database
+        capabilities using the standard hasattr() function. 
+
+        For some dynamically configured interfaces it may not be appropriate to require dynamically making
+        the method available. These interfaces should then raise a NotSupportedError to indicate the
+        non-ability to perform the roll back when the method is invoked. 
+        """
         self.messages = []
         if not self.supportsTransactions:
             self._raiseConnectionError(NotSupportedError, None)
-
         self.adoConn.RollbackTrans()
         if not(self.adoConn.Attributes & adXactAbortRetaining):
             #If attributes has adXactAbortRetaining it performs retaining aborts that is,
@@ -296,13 +342,19 @@ class Connection(object):
             #If not, we will have to start a new transaction by this command:
             self.adoConn.BeginTrans()
 
+        #TODO: Could implement the prefered method by havins two classes,
+        # one with trans and one without, and make the connect function choose which one.
+        # the one without transactions should not implement rollback
+
     def cursor(self):
-        """Return a new Cursor object using the current connection."""
+        "Return a new Cursor Object using the connection."
         self.messages = []
         return Cursor(self)
 
     def printADOerrors(self):
-        print 'ADO Errors (%i):' % self.adoConn.Errors.Count
+        j=self.adoConn.Errors.Count
+        if j:
+            print 'ADO Errors:(%i)' % j
         for e in self.adoConn.Errors:
             print 'Description: %s' % e.Description
             print 'Error: %s %s ' % (e.Number, adoErrors.get(e.Number, "unknown"))
@@ -326,45 +378,63 @@ class Connection(object):
                 state = str(e.SQLState)
                 if state.startswith('23') or state=='40002':
                     return IntegrityError
-            
         return DatabaseError
 
     def __del__(self):
         try:
             self._close_connection()
-        except: pass
+        except:
+            pass
         self.adoConn = None
 
 
+# # # # # ----- the Class that defines a cursor ----- # # # # #
 class Cursor(object):
+## ** api required attributes:
+## description...
 ##    This read-only attribute is a sequence of 7-item sequences.
 ##    Each of these sequences contains information describing one result column:
 ##        (name, type_code, display_size, internal_size, precision, scale, null_ok).
 ##    This attribute will be None for operations that do not return rows or if the
 ##    cursor has not had an operation invoked via the executeXXX() method yet.
 ##    The type_code can be interpreted by comparing it to the Type Objects specified in the section below.
-    description = None
-
+## rowcount...
 ##    This read-only attribute specifies the number of rows that the last executeXXX() produced
-##    (for DQL statements like select) or affected (for DML statements like update or insert).
+##    (for DQL statements like select) or affected (for DML statements like update or insert). 
 ##    The attribute is -1 in case no executeXXX() has been performed on the cursor or
 ##    the rowcount of the last operation is not determinable by the interface.[7]
 ##    NOTE: -- adodbapi returns "-1" by default for all select statements
-    rowcount = -1
-
-    # Arraysize specifies the number of rows to fetch at a time with fetchmany().
-    arraysize = 1
+## arraysize...
+##    This read/write attribute specifies the number of rows to fetch at a time with fetchmany().
+##    It defaults to 1 meaning to fetch a single row at a time. 
+##    Implementations must observe this value with respect to the fetchmany() method,
+##    but are free to interact with the database a single row at a time.
+##    It may also be used in the implementation of executemany(). 
+## ** extension attributes:
+## paramstyle...
+##   allows the programmer to override the connection's default paramstyle
+## errorhandler...
+##   allows the programmer to override the connection's default error handler
 
     def __init__(self, connection):
         self.messages = []
         self.connection = connection
-        self.rs = None
+        self.rs = None  # the ADO recordset for this cursor
         self.description = None
         self.errorhandler = connection.errorhandler
+        self.arraysize = 1
+        self.rowcount = -1
+        self.description = None
 
-    def __iter__(self):
-        return iter(self.fetchone, None)
+    def __iter__(self):                   # [2.1 Zamarev]
+        return iter(self.fetchone, None)  # [2.1 Zamarev]
         
+    def next(self):
+        r = self.fetchone()
+        if r:
+            return r
+        raise StopIteration
+
     def __enter__(self):
         "Allow database cursors to be used with context managers."
         return self
@@ -395,19 +465,20 @@ class Cursor(object):
             display_size = None
             if not(self.rs.EOF or self.rs.BOF):
                 display_size = f.ActualSize
-
-            null_ok = bool(f.Attributes & adFldMayBeNull)
-
+            null_ok= bool(f.Attributes & adFldMayBeNull)          #v2.1 Cole 
             desc.append( (f.Name, f.Type, display_size, f.DefinedSize, f.Precision, f.NumericScale, null_ok) )
         self.description = desc
 
     def close(self):
-        """Close the cursor."""
+        """Close the cursor now (rather than whenever __del__ is called).
+            The cursor will be unusable from this point forward; an Error (or subclass)
+            exception will be raised if any operation is attempted with the cursor.
+        """
         self.messages = []
-        self.connection = None
-        if self.rs and self.rs.State != adStateClosed:
+        self.connection = None    #this will make all future method calls on me throw an exception
+        if self.rs and self.rs.State != adStateClosed: # rs exists and is open      #v2.1 Rose
             self.rs.Close()
-            self.rs = None
+            self.rs = None  #let go of the recordset so ADO will let it be disposed #v2.1 Rose
 
     def _new_command(self, command_type=adCmdText):
         self.cmd = None
@@ -420,7 +491,7 @@ class Cursor(object):
         try:
             self.cmd = win32com.client.Dispatch("ADODB.Command")
             self.cmd.ActiveConnection = self.connection.adoConn
-            self.cmd.CommandTimeout = self.connection.adoConn.CommandTimeout
+            self.cmd.CommandTimeout = self.connection.adoConn.CommandTimeout  #v2.1 Simons
             self.cmd.CommandType = command_type
         except:
             self._raiseCursorError(DatabaseError, None)
@@ -428,17 +499,20 @@ class Cursor(object):
     def _execute_command(self):
         # Sprocs may have an integer return value
         self.return_value = None
-
+        recordset = None; count = -1 #default value
         try:
-            recordset = self.cmd.Execute()
-            self.rowcount = recordset[1]
-            self._description_from_recordset(recordset[0])
-        except Exception, e:
+            # ----- the actual SQL is executed here ---
+            recordset, count = self.cmd.Execute()
+            # ----- ------------------------------- ---
+        except (Exception), e:
             _message = ""
             if hasattr(e, 'args'): _message += str(e.args)+"\n"
             _message += "Command:\n%s\nParameters:\n%s" %  (self.cmd.CommandText, format_parameters(self.cmd.Parameters, True))
             klass = self.connection._suggest_error_class()
             self._raiseCursorError(klass, _message)
+
+        self.rowcount = count
+        self._description_from_recordset(recordset)
 
 
     def callproc(self, procname, parameters=None):
@@ -570,27 +644,35 @@ class Cursor(object):
         return tuple(zip(*py_columns))
 
     def fetchone(self):
-        """Fetch the next row of a query result set, returning a single sequence, or None when no more data is available.
+        """ Fetch the next row of a query result set, returning a single sequence,
+            or None when no more data is available.
 
-        An Error (or subclass) exception is raised if the previous call to executeXXX()
-        did not produce any result set or no call was issued yet.
+            An Error (or subclass) exception is raised if the previous call to executeXXX()
+            did not produce any result set or no call was issued yet.
         """
-        self.messages = list()
+        self.messages = []
         result = self._fetch(1)
         if result: # return record (not list of records)
             return result[0]
         return None
 
+
     def fetchmany(self, size=None):
         """Fetch the next set of rows of a query result, returning a list of tuples. An empty sequence is returned when no more rows are available."""
-        self.messages = list()
+        self.messages = []
         if size is None:
             size = self.arraysize
         return self._fetch(size)
 
     def fetchall(self):
-        """Fetch all remaining rows of a query result, returning them as a sequence of sequences."""
-        self.messages = list()
+        """Fetch all (remaining) rows of a query result, returning them as a sequence of sequences (e.g. a list of tuples).
+
+            Note that the cursor's arraysize attribute
+            can affect the performance of this operation. 
+            An Error (or subclass) exception is raised if the previous call to executeXXX()
+            did not produce any result set or no call was issued yet. 
+        """
+        self.messages=[]
         return self._fetch()
 
     def nextset(self):
@@ -599,20 +681,27 @@ class Cursor(object):
         If there are no more sets, the method returns None. Otherwise, it returns a true
         value and subsequent calls to the fetch methods will return rows from the next result set.
         """
-        self.messages = list()
+        self.messages = []
         if self.connection is None or self.rs is None:
             self._raiseCursorError(Error, None)
             return None
 
-        recordset = self.rs.NextRecordset()[0]
+        try:                                               #[begin 2.1 ekelund]
+            rsTuple=self.rs.NextRecordset()                # 
+        except pywintypes.com_error, exc:                  # return appropriate error
+            self._raiseCursorError(NotSupportedError, exc.args)#[end 2.1 ekelund]
+        recordset = rsTuple[0]
         if recordset is None:
             return None
             
         self._description_from_recordset(recordset)
         return True
 
-    def setinputsizes(self, sizes): pass
-    def setoutputsize(self, size, column=None): pass
+    def setinputsizes(self, sizes):
+        pass
+
+    def setoutputsize(self, size, column=None):
+        pass
 
 # Type specific constructors as required by the DB-API 2 specification.
 Date = datetime.date
@@ -669,7 +758,7 @@ def _convertNumberWithCulture(variant, f):
         try:
             europeVsUS = str(variant).replace(",",".")
             return f(europeVsUS)
-        except (ValueError,TypeError): pass
+        except (ValueError,TypeError,decimal.InvalidOperation): pass
 
 def _cvtComDate(comDate):
     date_as_float = float(comDate)
