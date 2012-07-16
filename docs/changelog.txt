@@ -1,6 +1,11 @@
 Changelog
 =========
 
+v1.2
+----
+
+- Ensure master connection connects to the correct database name when TEST_NAME is not defined.
+- Connection.close() will now reset adoConn to make sure it's gone before the CoUninitialize.
 
 v1.1
 ----
