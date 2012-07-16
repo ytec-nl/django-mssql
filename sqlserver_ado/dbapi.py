@@ -261,6 +261,7 @@ class Connection(object):
             self._close_connection()
         except Exception, e:
             self._raiseConnectionError(InternalError, e)
+        self.adoConn = None
         pythoncom.CoUninitialize()
 
     def commit(self):
