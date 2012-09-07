@@ -83,22 +83,27 @@ def make_connection_string(settings):
         auth_string = "Integrated Security=SSPI"
 
     parts = [
-        "PROVIDER=SQLOLEDB", 
         "DATA SOURCE=%s" % (db_host,),
         "Initial Catalog=%s" % (db_name,),
         auth_string
     ]
-    
+
     options = settings.OPTIONS
-    if options:
-        if 'use_mars' in options and options['use_mars']:
-            parts.append("MARS Connection=True")
-            
-        if 'extra_params' in options:
-            parts.append(options['extra_params'])
+
+    if not options.get('provider', None):
+        options['provider'] = 'sqlncli10'
+    
+    parts.append('PROVIDER={0}'.format(options['provider']))
         
-        if 'provider' in options:
-            parts[0] = 'PROVIDER=%s' % (options['provider'],)
+    if options['provider'].lower().find('=sqlcli') != -1:
+        # native client needs a compatibility mode that behaves like OLEDB
+        parts.append('DataTypeCompatibility=80')
+
+    if options.get('use_mars', True):
+        parts.append('MARS Connection=True')
+    
+    if options.get('extra_params', None):
+        parts.append(options['extra_params'])    
     
     return ";".join(parts)
 

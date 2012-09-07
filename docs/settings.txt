@@ -19,10 +19,6 @@ This is an example of a typical configuration::
             'HOST': 'dbserver\\ss2008',
             'USER': '',
             'PASSWORD': '',
-            'OPTIONS' : {
-                'provider': 'SQLOLEDB',
-                'use_mars': True,
-            },
         }
     }
 
@@ -85,17 +81,14 @@ legacy reasons).
 use_mars
 ~~~~~~~~
 
-Default: ``False``
+Default: ``True``
 
-Set to ``True`` to enable `Multiple Active Recordsets`. It is recommended 
-to enable MARS to avoid seeing the "Cannot create new connection because 
-in manual or distributed transaction mode" error.
+Set to ``False`` to disable `Multiple Active Recordsets`. It is not recommended 
+to disable MARS. Without MARS enabled, you will probably end up seeing the error
+"Cannot create new connection because in manual or distributed transaction mode".
 
 .. note::
-    This will only set the appropriate connection string value for 
-    the "SQLOLEDB" provider. If you are using a different provider, you 
-    will need to add the appropriate connection string value to 
-    `extra_params`_.
+    This doesn't really work properly with the "SQLOLEDB" provider.
 
 
 .. _`extra_params`: OPTIONS-EXTRA_PARAMS
@@ -112,9 +105,15 @@ other settings.
 provider
 ~~~~~~~~
 
-Default: ``'SQLOLEDB'``
+Default: ``'SQLCLI10'``
 
-The SQL provider to use when connecting to the database.
+The SQL provider to use when connecting to the database. If this doesn't work, 
+try 'SQLCLI11' or 'SQLOLEDB'.
+
+.. note::
+    ``use_mars = True`` doesn't always work properly with 'SQLOLEDB' and can result in the error 
+    "Cannot create new connection because in manual or distributed transaction mode."
+    if you try to filter a queryset with another queryset.
 
 
 disable_avg_cast

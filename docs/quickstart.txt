@@ -20,14 +20,11 @@ Installation
                 'HOST': 'dbserver\\ss2008',
                 'USER': '',
                 'PASSWORD': '',
-                'OPTIONS' : {
-                    'provider': 'SQLOLEDB',
-                    'use_mars': True,
-                },
             }
         }
 
     .. note:: Although the project is named ``django-mssql`` the python module is named ``sqlserver_ado``.
+
 
 Dependencies
 ------------
