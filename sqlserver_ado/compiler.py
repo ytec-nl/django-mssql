@@ -108,7 +108,7 @@ class SQLCompiler(compiler.SQLCompiler):
             if self.query.distinct:
                 _select += ' DISTINCT'
             
-            sql = re.sub(r'(?i)^%s' % _select, '%s TOP %s' % (_select, self.query.high_mark), raw_sql, 1)
+            sql = re.sub(r'(?i)^{0}'.format(_select), '{0} TOP {1}'.format(_select, self.query.high_mark), raw_sql, 1)
             return sql, fields
             
         # Else we have limits; rewrite the query using ROW_NUMBER()
@@ -124,7 +124,7 @@ class SQLCompiler(compiler.SQLCompiler):
         if order is None:
             meta = self.query.get_meta()                
             column = meta.pk.db_column or meta.pk.get_attname()
-            order = '%s.%s ASC' % (inner_table_name, qn(column))
+            order = '{0}.{1} ASC'.format(inner_table_name, qn(column))
         else:
             # remap order for injected subselect
             new_order = []
@@ -133,12 +133,12 @@ class SQLCompiler(compiler.SQLCompiler):
                     tbl, col = x.rsplit('.', 1)
                 else:
                     col = x
-                new_order.append('%s.%s' % (inner_table_name, col))
+                new_order.append('{0}.{1}'.format(inner_table_name, col))
             order = ', '.join(new_order)
         
-        where_row_num = "%s < _row_num" % (self.query.low_mark)
+        where_row_num = '{0} < _row_num'.format(self.query.low_mark)
         if self.query.high_mark:
-            where_row_num += " and _row_num <= %s" % (self.query.high_mark)
+            where_row_num += ' and _row_num <= {0}'.format(self.query.high_mark)
             
         # Lop off ORDER... and the initial "SELECT"
         inner_select = _remove_order_limit_offset(raw_sql)
@@ -154,15 +154,22 @@ class SQLCompiler(compiler.SQLCompiler):
                 tbl, col = x.rsplit('.', 1)
             else:
                 col = x
-            f.append('%s.%s' % (inner_table_name, col.strip()))
+            f.append('{0}.{1}'.format(inner_table_name, col.strip()))
         
         
         # inject a subselect to get around OVER requiring ORDER BY to come from FROM
-        inner_select = '%s FROM ( SELECT %s ) AS %s'\
-             % (', '.join(f), inner_select, inner_table_name)
+        inner_select = '{fields} FROM ( SELECT {inner} ) AS {inner_as}'.format(
+            fields=', '.join(f),
+            inner=inner_select,
+            inner_as=inner_table_name,
+        )
         
-        sql = "SELECT _row_num, %s FROM ( SELECT ROW_NUMBER() OVER ( ORDER BY %s) as _row_num, %s) as QQQ where %s"\
-             % (outer_fields, order, inner_select, where_row_num)
+        sql = "SELECT _row_num, {outer} FROM ( SELECT ROW_NUMBER() OVER ( ORDER BY {order}) as _row_num, {inner}) as QQQ where {where}".format(
+            outer=outer_fields,
+            order=order,
+            inner=inner_select,
+            where=where_row_num,
+        )
         
         return sql, fields
 
@@ -223,12 +230,12 @@ class SQLCompiler(compiler.SQLCompiler):
                 col_key = col_name.lower()
 
                 if col_key in names_seen:
-                    alias = qn('%s___%s' % (col_name, names_seen.count(col_key)))
+                    alias = qn('{0}___{1}'.format(col_name, names_seen.count(col_key)))
                     outer.append(alias)
             
                     col = _replace_sub(col)
             
-                    inner.append("%s as %s" % (col, alias))
+                    inner.append('{0} as {1}'.format(col, alias))
                 else:
                     replaced = _replace_sub(col)
                             
@@ -284,8 +291,10 @@ class SQLInsertCompiler(compiler.SQLInsertCompiler, SQLCompiler):
                 params = []
             elif auto_in_fields:
                 # wrap with identity insert
-                sql = "SET IDENTITY_INSERT %s ON;%s;SET IDENTITY_INSERT %s OFF" %\
-                    (quoted_table, sql, quoted_table)
+                sql = 'SET IDENTITY_INSERT {table} ON;{sql};SET IDENTITY_INSERT {table} OFF'.format(
+                    table=quoted_table,
+                    sql=sql,
+                )
 
         return sql, params
 

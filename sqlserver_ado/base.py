@@ -74,17 +74,16 @@ def make_connection_string(settings):
             port = int(settings.PORT)
         except ValueError:
             raise ImproperlyConfigured("DATABASE PORT must be a number.")
-        db_host = '%s,%i;Network Library=DBMSSOCN' % (db_host, port)
+        db_host = '{0},{1};Network Library=DBMSSOCN'.format(db_host, port)
 
     # If no user is specified, use integrated security.
     if settings.USER != '':
-        auth_string = "UID=%s;PWD=%s" % (settings.USER, settings.PASSWORD)
+        auth_string = 'UID={0};PWD={1}'.format(settings.USER, settings.PASSWORD)
     else:
-        auth_string = "Integrated Security=SSPI"
+        auth_string = 'Integrated Security=SSPI'
 
     parts = [
-        "DATA SOURCE=%s" % (db_host,),
-        "Initial Catalog=%s" % (db_name,),
+        'DATA SOURCE={0};Initial Catalog={1}'.format(db_host, db_name),
         auth_string
     ]
 
@@ -122,7 +121,7 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         "startswith": "LIKE %s ESCAPE '\\'",
         "endswith": "LIKE %s ESCAPE '\\'",
         "istartswith": "LIKE %s ESCAPE '\\'",
-        "iendswith": "LIKE %s ESCAPE '\\'",
+        "iendswith": "LIKE %S ESCAPE '\\'",
     }
 
     def __init__(self, *args, **kwargs):
