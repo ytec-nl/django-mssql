@@ -7,6 +7,8 @@ v1.2
 - Ensure master connection connects to the correct database name when TEST_NAME is not defined.
 - Connection.close() will now reset adoConn to make sure it's gone before the CoUninitialize.
 - Changed provider default from 'SQLOLEDB' to 'SQLNCLI10' with MARS enabled.
+- Added :ref:`rawstoredproceduremanager`, which provides ``raw_callproc`` that works the same as ``raw``, except
+  expects the name of a stored procedure that returns a result set that matches the model.
 
 v1.1
 ----
