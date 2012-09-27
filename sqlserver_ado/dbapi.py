@@ -113,6 +113,14 @@ class IntegrityError(DatabaseError, DjangoIntegrityError): pass
 class DataError(DatabaseError): pass
 class NotSupportedError(DatabaseError): pass
 
+class FetchFailedError(Error): 
+    """
+    Error is used by RawStoredProcedureQuerySet to determine when a fetch
+    failed due to a connection being closed or there is no record set 
+    returned.
+    """
+    pass
+
 class _DbType(object):
     def __init__(self,valuesTuple):
         self.values = valuesTuple
@@ -391,7 +399,7 @@ class Cursor(object):
         self.rowcount = -1
         self.rs = recordset
         desc = list()
-
+        
         for f in self.rs.Fields:
             display_size = None
             if not(self.rs.EOF or self.rs.BOF):
@@ -400,6 +408,7 @@ class Cursor(object):
             null_ok = bool(f.Attributes & adFldMayBeNull)
 
             desc.append( (f.Name, f.Type, display_size, f.DefinedSize, f.Precision, f.NumericScale, null_ok) )
+            
         self.description = desc
 
     def close(self):
@@ -549,7 +558,7 @@ class Cursor(object):
         rows -- Number of rows to fetch, or None (default) to fetch all rows.
         """
         if self.connection is None or self.rs is None:
-            self._raiseCursorError(Error, None)
+            self._raiseCursorError(FetchFailedError, 'Attempting to fetch from a closed connection or empty record set')
             return
 
         if self.rs.State == adStateClosed or self.rs.BOF or self.rs.EOF:

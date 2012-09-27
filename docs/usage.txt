@@ -76,3 +76,25 @@ Example:
             result_set = cursor.fetchall()
         finally:
             cursor.close()
+
+.. _rawstoredproceduremanager:
+
+RawStoredProcedureManager
+-------------------------
+
+The ``RawStoredProcedureManager`` provides the ``raw_callproc`` method that will take the name
+of a stored procedure and use the result set that it returns to create instances of the model.
+
+Example:
+
+    .. code-block:: python
+    
+        from sqlserver_ado.models import RawStoredProcedureManager
+        
+        class MyModel(models.Model):
+            ...
+            
+            objects = RawStoredProcedureManager()
+
+        sproc_params = [1, 2, 3]
+        MyModel.objects.raw_callproc('uspGetMyModels', sproc_params)
