@@ -25,6 +25,16 @@ Installation
 
     .. note:: Although the project is named ``django-mssql`` the python module is named ``sqlserver_ado``.
 
+Getting the code
+----------------
+
+The project code is hosted on `Bitbucket`_
+
+    .. code-block:: cmd
+    
+        hg clone https://bitbucket.org/Manfre/django-mssql/
+
+.. _`Bitbucket`: https://bitbucket.org/Manfre/django-mssql/
 
 Dependencies
 ------------
