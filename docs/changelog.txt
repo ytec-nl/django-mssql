@@ -9,6 +9,8 @@ v1.2
 - Changed provider default from 'SQLOLEDB' to 'SQLNCLI10' with MARS enabled.
 - Added :ref:`rawstoredproceduremanager`, which provides ``raw_callproc`` that works the same as ``raw``, except
   expects the name of a stored procedure that returns a result set that matches the model.
+- Documented known issue with database introspection with ``DEBUG = True`` and column names containing '%'.
+  See :ref:`introspecting-percent-columns`.
 
 v1.1
 ----

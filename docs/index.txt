@@ -19,3 +19,8 @@ Contents:
     datatypes
     testing
     changelog
+
+.. toctree::
+    :maxdepth: 1
+    
+    known-issues

@@ -7,7 +7,7 @@ def hack_path():
 hack_path()
 from dbsettings import *
 
-DEBUG = True
+DEBUG = False
 TEMPLATE_DEBUG = DEBUG
 
 ADMINS = (
@@ -53,8 +53,8 @@ SECRET_KEY = '%(u8uds4xsy0+95cj3o&k49*u@&--yp0t&e&0$!@s2fvea#u4j'
 
 # List of callables that know how to import templates from various sources.
 TEMPLATE_LOADERS = (
-    'django.template.loaders.filesystem.load_template_source',
-    'django.template.loaders.app_directories.load_template_source',
+    'django.template.loaders.filesystem.Loader',
+    'django.template.loaders.app_directories.Loader',
 )
 
 MIDDLEWARE_CLASSES = (

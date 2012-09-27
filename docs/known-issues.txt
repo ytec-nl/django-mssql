@@ -1,0 +1,16 @@
+.. section: known-issues
+
+============
+Known Issues
+============
+
+.. _introspecting-percent-columns:
+
+Introspecting tables with '%' columns
+-------------------------------------
+
+Attempting to run ``manage.py inspectdb`` with ``DEBUG = True`` will raise 
+``TypeError: not enough arguments for format string``. This is due to ``CursorDebugWrapper``
+and its use of % format strings. If you encounter this problem, you can either rename
+the database column so it does not include a '%' (percent) character, or ``DEBUG = False`` 
+when you run ``manage.py inspectdb``.

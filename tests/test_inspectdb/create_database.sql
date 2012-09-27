@@ -10,7 +10,8 @@ GO
 
 create table [table has spaces] (
 	[Create User] [nvarchar](30) NULL DEFAULT (''),
-	[Create Timestamp] [datetime] NOT NULL DEFAULT (getdate())
+	[Create Timestamp] [datetime] NOT NULL DEFAULT (getdate()),
+	[Column with %] [int] NOT NULL DEFAULT (0)
 )
 go
 
