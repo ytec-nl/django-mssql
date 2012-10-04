@@ -11,6 +11,7 @@ v1.2
   expects the name of a stored procedure that returns a result set that matches the model.
 - Documented known issue with database introspection with ``DEBUG = True`` and column names containing '%'.
   See :ref:`introspecting-percent-columns`.
+- Fixed error with `iendswith` string format operator.
 
 v1.1
 ----

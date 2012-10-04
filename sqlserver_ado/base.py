@@ -121,7 +121,7 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         "startswith": "LIKE %s ESCAPE '\\'",
         "endswith": "LIKE %s ESCAPE '\\'",
         "istartswith": "LIKE %s ESCAPE '\\'",
-        "iendswith": "LIKE %S ESCAPE '\\'",
+        "iendswith": "LIKE %s ESCAPE '\\'",
     }
 
     def __init__(self, *args, **kwargs):
