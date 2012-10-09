@@ -53,11 +53,12 @@ class SQLCompiler(compiler.SQLCompiler):
         index_extra_select = len(self.query.extra_select.keys())
         for value, field in map(None, row[index_extra_select:], fields):
             if field:
-                internal_type = field.get_internal_type()
-                if internal_type == 'DateField' and isinstance(value, datetime.datetime):
-                    value = value.date()
-                elif internal_type == 'TimeField' and isinstance(value, datetime.datetime):
-                    value = value.time()
+                if isinstance(value, datetime.datetime):
+                    internal_type = field.get_internal_type()
+                    if internal_type == 'DateField':
+                        value = value.date()
+                    elif internal_type == 'TimeField':
+                        value = value.time()
             values.append(value)
 
         return row[:index_extra_select] + tuple(values)
