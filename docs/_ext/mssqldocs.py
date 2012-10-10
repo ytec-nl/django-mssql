@@ -7,8 +7,8 @@ def setup(app):
     app.add_config_value('django_ticket_base_url', 'https://code.djangoproject.com/ticket/', 'env')
     app.add_role('djangoticket', make_django_ticket_link)
 
-    app.add_config_value('mssql_ticket_base_url', 'https://code.djangoproject.com/ticket/', 'env')
-    app.add_role('mssqlticket', make_mssql_ticket_link)
+    app.add_config_value('mssql_ticket_base_url', 'https://bitbucket.org/Manfre/django-mssql/issue/', 'env')
+    app.add_role('issue', make_mssql_ticket_link)
 
     app.add_crossref_type(
         directivename = "setting",
@@ -16,7 +16,7 @@ def setup(app):
         indextemplate = "pair: %s; setting",
     )
 
-def make_ticket_link(type_, base_url, name, rawtext, text, lineno, inliner, options={}, content=[]):
+def make_ticket_link(prefix, base_url, name, rawtext, text, lineno, inliner, options={}, content=[]):
     try:
         issue_num = int(text)
         if issue_num < 1:
@@ -30,15 +30,15 @@ def make_ticket_link(type_, base_url, name, rawtext, text, lineno, inliner, opti
         prb = inline.problematic(rawtext, rawtext, msg)
         return [prb], [msg]
     ref = base_url.rstrip('/') + '/' + urllib.quote(text, safe='')
-    node = nodes.reference(rawtext, 'Django #' + utils.unescape(text), refuri=ref, **options)
+    node = nodes.reference(rawtext, '{0} #{1}'.format(prefix, utils.unescape(text)), refuri=ref, **options)
     return [node],[]
 
 def make_django_ticket_link(name, rawtext, text, lineno, inliner, options={}, content=[]):
     env = inliner.document.settings.env
     base_url =  env.config.django_ticket_base_url
-    return make_ticket_link('Django', base_url, name, rawtext, text, lineno, inliner, options, content)
+    return make_ticket_link('Django ticket', base_url, name, rawtext, text, lineno, inliner, options, content)
 
 def make_mssql_ticket_link(name, rawtext, text, lineno, inliner, options={}, content=[]):
     env = inliner.document.settings.env
     base_url =  env.config.mssql_ticket_base_url
-    return make_ticket_link('django-mssql', base_url, name, rawtext, text, lineno, inliner, options, content)
+    return make_ticket_link('django-mssql issue', base_url, name, rawtext, text, lineno, inliner, options, content)
