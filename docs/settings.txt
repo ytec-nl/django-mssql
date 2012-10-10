@@ -1,5 +1,8 @@
+========
 Settings
 ========
+
+.. setting:: DATABASES
 
 DATABASES
 ---------
@@ -23,10 +26,14 @@ This is an example of a typical configuration::
     }
 
 
+.. setting:: ENGINE
+
 ENGINE
 ~~~~~~
 
 This value must be set to ``sqlserver_ado``.
+
+.. setting:: HOST
 
 HOST
 ~~~~
@@ -36,6 +43,8 @@ Default: ``'127.0.0.1'``
 This defines the Microsoft SQL Server to establish a connection. This value 
 can be a hostname or IP address.
 
+.. setting:: PORT
+
 PORT
 ~~~~
 
@@ -44,10 +53,14 @@ Default: ``''`` (Empty string)
 This defines the network port to use when connecting to the server. If not 
 defined, the standard Microsoft SQL Server port will be used.
 
+.. setting:: NAME
+
 NAME
 ~~~~
 
 This is the name of the SQL server database.
+
+.. setting:: USER
 
 USER
 ~~~~
@@ -56,6 +69,8 @@ Default: ``''`` (Empty string)
 
 This defines the name of the user to use when authenticating to the server.
 When empty, a trusted connection (SSPI) will be used.
+
+.. setting:: PASSWORD
 
 PASSWORD
 ~~~~~~~~
@@ -70,6 +85,8 @@ to use when authenticating.
     will be able to see the plain-text password. Trusted connections are 
     recommended.
 
+.. setting:: OPTIONS
+
 OPTIONS
 -------
 
@@ -77,6 +94,8 @@ OPTIONS
 backend. Please note that while the main database settings are UPPERCASE
 keys, the ``OPTIONS`` dictionary keys are expected to be lowercase (due to
 legacy reasons).
+
+.. setting:: use_mars
 
 use_mars
 ~~~~~~~~
@@ -93,6 +112,8 @@ to disable MARS. Without MARS enabled, you will probably end up seeing the error
 
 .. _`extra_params`: OPTIONS-EXTRA_PARAMS
 
+.. setting:: extra_params
+
 extra_params
 ~~~~~~~~~~~~
 
@@ -101,6 +122,8 @@ Default: ``''`` (Empty string)
 This value will be appended to the generated connection string. Use this to
 provide any specific connection settings that are not controllable with the
 other settings.
+
+.. setting:: provider
 
 provider
 ~~~~~~~~
@@ -115,6 +138,7 @@ try 'SQLCLI11' or 'SQLOLEDB'.
     "Cannot create new connection because in manual or distributed transaction mode."
     if you try to filter a queryset with another queryset.
 
+.. setting:: disable_avg_cast
 
 disable_avg_cast
 ~~~~~~~~~~~~~~~~

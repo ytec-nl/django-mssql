@@ -9,7 +9,7 @@ Installation
     pip install django-mssql
 
 
-* Add the DATABASES configuration.
+* Add the :setting:`DATABASES` configuration.
 
     .. code-block:: django
     

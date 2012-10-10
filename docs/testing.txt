@@ -37,3 +37,35 @@ To run:
     
 - set up the SQLINSTANCE
 - ``python manage.py test``
+
+Running Django Test Suite
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To `run the Django test suite`_, you will need to create a settings file that lists 
+'sqlserver_ado' as the :setting:`ENGINE`.
+
+Example settings:
+
+    .. code-block:: python
+    
+        DATABASES = {
+            'default': {
+                'ENGINE': 'sqlserver_ado',
+                'NAME': 'django_framework',
+                'HOST': r'localhost\ss2008',
+                'USER': '',
+                'PASSWORD': '',
+            },
+            'other': {
+                'ENGINE': 'sqlserver_ado',
+                'NAME': 'django_framework_other',
+                'HOST': r'localhost\ss2008',
+                'USER': '',
+                'PASSWORD': '',
+            }
+        }
+        
+        SECRET_KEY = "django_tests_secret_key"
+
+
+.. _`run the Django test suite`: https://docs.djangoproject.com/en/dev/internals/contributing/writing-code/unit-tests/

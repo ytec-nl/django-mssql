@@ -98,3 +98,5 @@ Example:
 
         sproc_params = [1, 2, 3]
         MyModel.objects.raw_callproc('uspGetMyModels', sproc_params)
+
+.. versionadded:: 1.2
