@@ -1,5 +1,6 @@
 import datetime
 import time
+import django
 from django.conf import settings
 from django.db.backends import BaseDatabaseOperations
 
@@ -42,8 +43,31 @@ class DatabaseOperations(BaseDatabaseOperations):
         return "DATEADD(%s, DATEDIFF(%s, 0, %s), 0)" % (lookup_type, lookup_type, field_name)
 
     def last_insert_id(self, cursor, table_name, pk_name):
+        """
+        Fetch the last inserted ID by executing another query.
+        """
+        # IDENT_CURRENT   returns the last identity value generated for a 
+        #                 specific table in any session and any scope.
+        # http://msdn.microsoft.com/en-us/library/ms175098.aspx
         cursor.execute("SELECT CAST(IDENT_CURRENT(%s) as bigint)", [self.quote_name(table_name)])
         return cursor.fetchone()[0]
+
+    def return_insert_id(self):
+        """
+        MSSQL implements the RETURNING SQL standard extension differently from
+        the core database backends and this function is essentially a no-op. 
+        The SQL is altered in the SQLInsertCompiler to add the necessary OUTPUT
+        clause.
+        """
+        if django.VERSION[0] == 1 and django.VERSION[1] < 5:
+            # This gets around inflexibility of SQLInsertCompiler's need to 
+            # append an SQL fragment at the end of the insert query, which also must
+            # expect the full quoted table and column name.
+            return ('/* %s */', '')
+        
+        # Django #19096 - As of Django 1.5, can return None, None to bypass the 
+        # core's SQL mangling.
+        return (None, None)
 
     def no_limit_value(self):
         return None

@@ -12,7 +12,6 @@ from operations import DatabaseOperations
 DatabaseError = Database.DatabaseError
 IntegrityError = Database.IntegrityError
 
-
 class DatabaseFeatures(BaseDatabaseFeatures):
     uses_custom_query_class = True
     has_bulk_insert = False
@@ -20,7 +19,7 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     supports_timezones = False
     supports_sequence_reset = False
     
-    query_needed_to_fetch_return_id = True
+    can_return_id_from_insert = True
 
 # IP Address recognizer taken from:
 # http://mail.python.org/pipermail/python-list/2006-March/375505.html
@@ -157,6 +156,7 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         except ValueError:
             self.cast_avg_to_float = False
         
+        self.ops.is_sql2000 = self.is_sql2000
         self.ops.is_sql2005 = self.is_sql2005
         self.ops.is_sql2008 = self.is_sql2008
 
@@ -167,8 +167,22 @@ class DatabaseWrapper(BaseDatabaseWrapper):
             self.command_timeout,
             use_transactions=self.use_transactions,
         )
+        
+        if self.connection.is_sql2000:
+            # SQL 2000 doesn't support the OUTPUT clause
+            self.features.can_return_id_from_insert = False
+        
         connection_created.send(sender=self.__class__, connection=self)
         return self.connection
+
+    def is_sql2000(self):
+        """
+        Returns True if the current connection is SQL2000. Establishes a
+        connection if needed.
+        """
+        if not self.connection:
+            self.__connect()
+        return self.connection.is_sql2000
 
     def is_sql2005(self):
         """

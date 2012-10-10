@@ -223,6 +223,7 @@ def _configure_parameter(p, value):
     if p.Size == 0:
         p.Size = -1
 
+VERSION_SQL2000 = 8
 VERSION_SQL2005 = 9
 VERSION_SQL2008 = 10
 
@@ -239,6 +240,11 @@ class Connection(object):
         if self.supportsTransactions:
             self.adoConn.IsolationLevel = defaultIsolationLevel
             self.adoConn.BeginTrans() # Disables autocommit per DBPAI
+
+    @property
+    def is_sql2000(self):
+        v = self.adoConnProperties.get('DBMS Version', '')
+        return v.startswith(unicode(VERSION_SQL2000))
 
     @property
     def is_sql2005(self):

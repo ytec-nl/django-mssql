@@ -297,6 +297,14 @@ class SQLInsertCompiler(compiler.SQLInsertCompiler, SQLCompiler):
                     sql=sql,
                 )
 
+        # mangle SQL to return ID from insert
+        # http://msdn.microsoft.com/en-us/library/ms177564.aspx
+        if self.return_id and self.connection.features.can_return_id_from_insert:
+            sql = 'SET NOCOUNT ON; {sql}'.format(sql=sql)
+            sql = sql.replace(' VALUES', ' OUTPUT INSERTED.{0} VALUES'.format(
+                self.connection.ops.quote_name(meta.pk.db_column or meta.pk.get_attname()),
+            ))
+
         return sql, params
 
 class SQLDeleteCompiler(compiler.SQLDeleteCompiler, SQLCompiler):

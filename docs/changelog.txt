@@ -4,6 +4,8 @@ Changelog
 v1.3 (in development)
 ---------------------
 
+- Backend now supports returning the ID from an insert without needing an additional query. This is disabled
+  for SQL Server 2000 (assuming that version still works with this backend). :issue:`17`
 
 v1.2
 ----
