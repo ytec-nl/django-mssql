@@ -250,6 +250,11 @@ class SQLCompiler(compiler.SQLCompiler):
         return ', '.join(outer), ', '.join(inner) + from_clause.format(**parens)
 
 class SQLInsertCompiler(compiler.SQLInsertCompiler, SQLCompiler):
+    # search for after table/column list
+    _re_values_sub = re.compile(r'(?P<prefix>\)|\])(?P<default>\s*|\s*default\s*)values(?P<suffix>\s*|\s+\()?', re.IGNORECASE)
+    # ... and insert the OUTPUT clause between it and the values list (or DEFAULT VALUES).
+    _values_repl = r'\g<prefix> OUTPUT INSERTED.{col}\g<default>VALUES\g<suffix>'
+
     def as_sql(self, *args, **kwargs):
         # Fix for Django ticket #14019
         if not hasattr(self, 'return_id'):
@@ -301,9 +306,10 @@ class SQLInsertCompiler(compiler.SQLInsertCompiler, SQLCompiler):
         # http://msdn.microsoft.com/en-us/library/ms177564.aspx
         if self.return_id and self.connection.features.can_return_id_from_insert:
             sql = 'SET NOCOUNT ON; {sql}'.format(sql=sql)
-            sql = sql.replace(' VALUES', ' OUTPUT INSERTED.{0} VALUES'.format(
-                self.connection.ops.quote_name(meta.pk.db_column or meta.pk.get_attname()),
-            ))
+            
+            col = self.connection.ops.quote_name(meta.pk.db_column or meta.pk.get_attname())
+            output = self._values_repl.format(col=col)
+            sql = self._re_values_sub.sub(output, sql)
 
         return sql, params
 
