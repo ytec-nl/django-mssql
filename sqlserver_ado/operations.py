@@ -13,6 +13,13 @@ except ImportError:
 class DatabaseOperations(BaseDatabaseOperations):
     compiler_module = "sqlserver_ado.compiler"
     
+    def cache_key_culling_sql(self):
+        return """
+            SELECT [cache_key]
+              FROM (SELECT [cache_key], ROW_NUMBER() OVER (ORDER BY [cache_key]) AS [rank] FROM %s) AS [RankedCache]
+             WHERE [rank] = %%s + 1
+        """
+    
     def date_extract_sql(self, lookup_type, field_name):
         if lookup_type == 'week_day':
             lookup_type = 'weekday'

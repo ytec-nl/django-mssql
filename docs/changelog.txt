@@ -12,6 +12,7 @@ v1.3 (in development)
 - UPDATE statements will now return the number of rows affected, instead of -1. :issue:`19`
 - Apply fix for :djangoticket:`12192`. If QuerySet slicing would result in ``LIMIT 0``, then it shouldn't reach
   the database because there will be no response.
+- Implemented DatabaseOperation ``cache_key_culling_sql``. :djangoticket:`18330`
 
 v1.2
 ----
