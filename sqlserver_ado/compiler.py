@@ -101,6 +101,10 @@ class SQLCompiler(compiler.SQLCompiler):
                     self.query.aggregate_select[alias].sql_function = 'VARP'
 
     def as_sql(self, with_limits=True, with_col_aliases=False):
+        # Django #12192 - Don't execute any DB query when QS slicing results in limit 0
+        if with_limits and self.query.low_mark == self.query.high_mark:
+            return '', ()
+        
         self._fix_aggregates()
         
         self._using_row_number = False
