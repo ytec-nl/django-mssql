@@ -6,6 +6,9 @@ v1.3 (in development)
 
 - Backend now supports returning the ID from an insert without needing an additional query. This is disabled
   for SQL Server 2000 (assuming that version still works with this backend). :issue:`17`
+- Subqueries will have their ordering removed because SQL Server only supports it when using TOP or FOR XML. 
+  This relies upon the ``with_col_aliases`` argument to ``SQLCompiler.as_sql`` only being ``True`` when the query 
+  is a subquery, which is currently the case for all usages in Django 1.5 master. :issue:`18`
 
 v1.2
 ----

@@ -2,6 +2,7 @@ from django.db.models.sql import compiler
 import datetime
 import re
 
+from contextlib import contextmanager
 
 # query_class returns the base class to use for Django queries.
 # The custom 'SqlServerQuery' class derives from django.db.models.sql.query.Query
@@ -41,6 +42,14 @@ def _get_order_limit_offset(sql):
     
 def _remove_order_limit_offset(sql):
     return _re_order_limit_offset.sub('',sql).split(None, 1)[1]
+
+@contextmanager
+def prevent_ordering_query(compiler_):
+    try:
+        setattr(query, '_mssql_ordering_not_allowed', True)
+        yield
+    finally:
+        delattr(query, '_mssql_ordering_not_allowed')
 
 class SQLCompiler(compiler.SQLCompiler):
     def resolve_columns(self, row, fields=()):
@@ -99,7 +108,14 @@ class SQLCompiler(compiler.SQLCompiler):
         # Get out of the way if we're not a select query or there's no limiting involved.
         check_limits = with_limits and (self.query.low_mark or self.query.high_mark is not None)
         if not check_limits:
-            return super(SQLCompiler, self).as_sql(with_limits, with_col_aliases)
+            # The ORDER BY clause is invalid in views, inline functions, 
+            # derived tables, subqueries, and common table expressions, 
+            # unless TOP or FOR XML is also specified.
+            self.query._mssql_ordering_not_allowed = with_col_aliases
+            result = super(SQLCompiler, self).as_sql(with_limits, with_col_aliases)
+            # remove in case query is every reused
+            delattr(self.query, '_mssql_ordering_not_allowed')            
+            return result
 
         raw_sql, fields = super(SQLCompiler, self).as_sql(False, with_col_aliases)
         
@@ -248,6 +264,14 @@ class SQLCompiler(compiler.SQLCompiler):
                 raise Exception('Unable to find a column name when parsing SQL: {0}'.format(col))
 
         return ', '.join(outer), ', '.join(inner) + from_clause.format(**parens)
+
+    def get_ordering(self):
+        # The ORDER BY clause is invalid in views, inline functions, 
+        # derived tables, subqueries, and common table expressions, 
+        # unless TOP or FOR XML is also specified.
+        if getattr(self.query, '_mssql_ordering_not_allowed', False):
+            return (None, None)
+        return super(SQLCompiler, self).get_ordering()
 
 class SQLInsertCompiler(compiler.SQLInsertCompiler, SQLCompiler):
     # search for after table/column list
