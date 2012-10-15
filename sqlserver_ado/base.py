@@ -20,6 +20,8 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     supports_sequence_reset = False
     
     can_return_id_from_insert = True
+    
+    supports_regex_backreferencing = False
 
 # IP Address recognizer taken from:
 # http://mail.python.org/pipermail/python-list/2006-March/375505.html
