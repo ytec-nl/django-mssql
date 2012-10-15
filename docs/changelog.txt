@@ -9,6 +9,7 @@ v1.3 (in development)
 - Subqueries will have their ordering removed because SQL Server only supports it when using TOP or FOR XML. 
   This relies upon the ``with_col_aliases`` argument to ``SQLCompiler.as_sql`` only being ``True`` when the query 
   is a subquery, which is currently the case for all usages in Django 1.5 master. :issue:`18`
+- UPDATE statements will now return the number of rows affected, instead of -1. :issue:`19`
 
 v1.2
 ----
