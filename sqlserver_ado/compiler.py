@@ -346,8 +346,9 @@ class SQLDeleteCompiler(compiler.SQLDeleteCompiler, SQLCompiler):
 class SQLUpdateCompiler(compiler.SQLUpdateCompiler, SQLCompiler):
     def as_sql(self):
         sql, params = super(SQLUpdateCompiler, self).as_sql()
-        # Need the NOCOUNT OFF so UPDATE returns a count, instead of -1
-        sql = 'SET NOCOUNT OFF; {0}; SET NOCOUNT ON'.format(sql)
+        if sql:
+            # Need the NOCOUNT OFF so UPDATE returns a count, instead of -1
+            sql = 'SET NOCOUNT OFF; {0}; SET NOCOUNT ON'.format(sql)
         return sql, params
 
 class SQLAggregateCompiler(compiler.SQLAggregateCompiler, SQLCompiler):
