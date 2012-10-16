@@ -25,6 +25,8 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     
     # Disable test modeltests.lookup.tests.LookupTests.test_lookup_date_as_str
     supports_date_lookup_using_string = False
+    
+    supports_tablespaces = True
 
 # IP Address recognizer taken from:
 # http://mail.python.org/pipermail/python-list/2006-March/375505.html
