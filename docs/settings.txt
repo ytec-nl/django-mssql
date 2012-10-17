@@ -85,6 +85,34 @@ to use when authenticating.
     will be able to see the plain-text password. Trusted connections are 
     recommended.
 
+.. setting:: TEST_CREATE
+
+TEST_CREATE
+~~~~~~~~~~~
+
+Default: ``True``
+
+This setting is specific to the `django-mssql` backend and controls whether or not
+the test database will be created and destroyed during the test creation. This is useful
+when integrating to a legacy database with a complex schema that is created by another
+application or cannot be easily created by Django's syncdb.
+
+
+.. code:: python
+
+    DATABASES = {
+        'default': {
+            'NAME': 'test_legacy_database',
+            'HOST': r'servername\ss2008',
+            'TEST_NAME': 'test_legacy_database',
+            'TEST_CREATE': False,
+        }
+    }
+
+.. note::
+
+    This is not intended to allow you to run tests against a QA, staging, or production database.
+
 .. setting:: OPTIONS
 
 OPTIONS
