@@ -1,7 +1,7 @@
 """Microsoft SQL Server database backend for Django."""
 from django.db.backends import BaseDatabaseWrapper, BaseDatabaseFeatures, BaseDatabaseValidation, BaseDatabaseClient
 from django.db.backends.signals import connection_created
-from django.core.exceptions import ImproperlyConfigured
+from django.core.exceptions import ImproperlyConfigured, ValidationError
 
 import dbapi as Database
 
@@ -28,15 +28,22 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     
     supports_tablespaces = True
 
-# IP Address recognizer taken from:
-# http://mail.python.org/pipermail/python-list/2006-March/375505.html
-def _looks_like_ipaddress(address):
-    dots = address.split(".")
-    if len(dots) != 4:
+
+def is_ip_address(value):
+    """
+    Returns True if value is a valid IP address, otherwise False.
+    """
+    try:
+        # IPv6 added with Django 1.4
+        from django.core.validators import validate_ipv46_address as ip_validator
+    except ImportError:
+        # Fallback to only IPv4 for older Django
+        from django.core.validators import validate_ipv4_address as ip_validator
+    
+    try:
+        ip_validator(value)
+    except ValidationError:
         return False
-    for item in dots:
-        if not 0 <= int(item) <= 255:
-            return False
     return True
 
 def connection_string_from_settings():
@@ -74,7 +81,7 @@ def make_connection_string(settings):
 
     # If a port is given, force a TCP/IP connection. The host should be an IP address in this case.
     if settings.PORT:
-        if not _looks_like_ipaddress(db_host):
+        if not is_ip_address(db_host):
             raise ImproperlyConfigured("When using DATABASE PORT, DATABASE HOST must be an IP address.")
         try:
             port = int(settings.PORT)

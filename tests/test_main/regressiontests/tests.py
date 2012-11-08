@@ -227,7 +227,7 @@ class ConnectionStringTestCase(TestCase):
         self.assertInString(conn_string, 'PWD=mypass;')
         self.assertNotInString(conn_string, 'Integrated Security=SSPI')
 
-    def test_port(self):
+    def test_port_with_host(self):
         """Test the PORT setting to make sure it properly updates the connection string"""
         self.assertRaises(ImproperlyConfigured, self.get_conn_string,
             {'HOST': 'myhost', 'PORT': 1433})
@@ -241,3 +241,13 @@ class ConnectionStringTestCase(TestCase):
         extras = 'Some=Extra;Stuff Goes=here'
         conn_string = self.get_conn_string({'OPTIONS': {'extra_params': extras}})
         self.assertInString(conn_string, extras)
+
+    def test_host_fqdn_with_port(self):
+        """
+        Issue 21 - FQDN crashed on IP address detection.
+        """
+        with self.assertRaisesRegexp(ImproperlyConfigured, 'DATABASE HOST must be an IP address'):
+            self.get_conn_string(data={
+                'HOST': 'my.fqdn.com',
+                'PORT': '1433',
+            })

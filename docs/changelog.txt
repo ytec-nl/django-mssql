@@ -14,6 +14,7 @@ v1.3 (in development)
   the database because there will be no response.
 - Implemented DatabaseOperation ``cache_key_culling_sql``. :djangoticket:`18330`
 - Fixed ``cast_avg_to_float`` so that it only controls the cast for ``AVG`` and not mapping other aggregates.
+- Improved IP address detection of :setting:`HOST` setting. :issue:`21`
 
 v1.2
 ----
