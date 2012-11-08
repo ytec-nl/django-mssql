@@ -280,7 +280,7 @@ class SQLInsertCompiler(compiler.SQLInsertCompiler, SQLCompiler):
     # search for after table/column list
     _re_values_sub = re.compile(r'(?P<prefix>\)|\])(?P<default>\s*|\s*default\s*)values(?P<suffix>\s*|\s+\()?', re.IGNORECASE)
     # ... and insert the OUTPUT clause between it and the values list (or DEFAULT VALUES).
-    _values_repl = r'\g<prefix> OUTPUT INSERTED.{col}\g<default>VALUES\g<suffix>'
+    _values_repl = r'\g<prefix> OUTPUT INSERTED.{col} INTO @sqlserver_ado_return_id\g<default>VALUES\g<suffix>'
 
     def as_sql(self, *args, **kwargs):
         # Fix for Django ticket #14019
@@ -332,9 +332,27 @@ class SQLInsertCompiler(compiler.SQLInsertCompiler, SQLCompiler):
         # mangle SQL to return ID from insert
         # http://msdn.microsoft.com/en-us/library/ms177564.aspx
         if self.return_id and self.connection.features.can_return_id_from_insert:
-            sql = 'SET NOCOUNT ON; {sql}'.format(sql=sql)
-            
             col = self.connection.ops.quote_name(meta.pk.db_column or meta.pk.get_attname())
+
+            # Determine datatype for use with the table variable that will return the inserted ID            
+            pk_db_type = meta.pk.db_type(self.connection)
+            if ' IDENTITY ' in pk_db_type:
+                # separate off IDENTITY clause
+                pk_db_type, _ = pk_db_type.split(' IDENTITY ', 2)
+            if ' CHECK ' in pk_db_type:
+                # separate off CHECK clause
+                pk_db_type, _ = pk_db_type.split(' CHECK ', 2)
+            
+            # NOCOUNT ON to prevent additional trigger/stored proc related resultsets
+            sql = 'SET NOCOUNT ON;{declare_table_var};{sql};{select_return_id}'.format(
+                sql=sql,
+                declare_table_var="DECLARE @sqlserver_ado_return_id table ({col_name} {pk_type})".format(
+                    col_name=col,
+                    pk_type=pk_db_type,
+                ),
+                select_return_id="SELECT * FROM @sqlserver_ado_return_id",
+            )
+            
             output = self._values_repl.format(col=col)
             sql = self._re_values_sub.sub(output, sql)
 

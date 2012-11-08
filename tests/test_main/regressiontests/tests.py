@@ -1,7 +1,7 @@
 import datetime
 import decimal
 from django.core.exceptions import ImproperlyConfigured
-from django.db import models
+from django.db import models, connection
 from django.test import TestCase
 
 from regressiontests.models import Bug69Table1, Bug69Table2, Bug70Table, Bug93Table, IntegerIdTable
@@ -251,3 +251,61 @@ class ConnectionStringTestCase(TestCase):
                 'HOST': 'my.fqdn.com',
                 'PORT': '1433',
             })
+
+
+class PkPlusOne(models.Model):
+    id = models.IntegerField(primary_key=True)
+    a = models.IntegerField(null=True)
+
+class AutoPkPlusOne(models.Model):
+    id = models.AutoField(primary_key=True)
+    a = models.IntegerField(null=True)
+
+class TextPkPlusOne(models.Model):
+    id = models.CharField(primary_key=True, max_length=10)
+    a = models.IntegerField(null=True)
+
+class ReturnIdOnInsertWithTriggersTestCase(TestCase):
+    def create_trigger(self, model):
+        """Create a trigger for the provided model"""
+        qn = connection.ops.quote_name
+        table_name = qn(model._meta.db_table)
+        trigger_name = qn('test_trigger_%s' % model._meta.db_table)
+        
+        with connection.cursor() as cur:
+            # drop trigger if it exists
+            drop_sql = """
+IF OBJECT_ID(N'[dbo].{trigger}') IS NOT NULL
+    DROP TRIGGER [dbo].{trigger}
+""".format(trigger=trigger_name)
+            
+            create_sql = """
+CREATE TRIGGER [dbo].{trigger} ON {tbl} FOR INSERT
+AS UPDATE {tbl} set [a] = 100""".format(
+                trigger=trigger_name,
+                tbl=table_name,
+            )
+            
+            cur.execute(drop_sql)
+            cur.execute(create_sql)
+
+    def test_pk(self):
+        self.create_trigger(PkPlusOne)
+        id = 1
+        obj = PkPlusOne.objects.create(id=id)
+        self.assertEqual(obj.pk, id)
+        self.assertEqual(PkPlusOne.objects.get(pk=id).a, 100)
+
+    def test_auto_pk(self):
+        self.create_trigger(AutoPkPlusOne)
+        id = 1
+        obj = AutoPkPlusOne.objects.create()
+        self.assertEqual(obj.pk, id)
+        self.assertEqual(AutoPkPlusOne.objects.get(pk=id).a, 100)
+
+    def test_text_pk(self):
+        self.create_trigger(TextPkPlusOne)
+        id = 'asdf'
+        obj = TextPkPlusOne.objects.create(id=id)
+        self.assertEqual(obj.pk, id)
+        self.assertEqual(TextPkPlusOne.objects.get(pk=id).a, 100)
