@@ -27,6 +27,8 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     supports_date_lookup_using_string = False
     
     supports_tablespaces = True
+    
+    ignores_nulls_in_unique_constraints = False
 
 
 def is_ip_address(value):
