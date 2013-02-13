@@ -20,6 +20,7 @@ v1.3 (in development)
 - Improved IP address detection of :setting:`HOST` setting. :issue:`21`
 - Set database feature ``ignores_nulls_in_unique_constraints = False`` because MSSQL cannot ignore NULLs in 
   unique constraints.
+- :issue:`26` Documented clustered index issue with Azure SQL. See :ref:`azure-clustered-indices`.
 
 v1.2
 ----

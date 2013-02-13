@@ -14,3 +14,18 @@ Attempting to run ``manage.py inspectdb`` with ``DEBUG = True`` will raise
 and its use of % format strings. If you encounter this problem, you can either rename
 the database column so it does not include a '%' (percent) character, or change ``DEBUG = False`` 
 in your settings when you run ``manage.py inspectdb``.
+
+.. _azure-clustered-indices:
+
+Azure requires clustered indices
+--------------------------------
+
+From http://msdn.microsoft.com/en-us/library/windowsazure/ee336245.aspx#cir
+
+	Windows Azure SQL Database does not support tables without clustered indexes. 
+	A table must have a clustered index. If a table is created without a clustered
+	constraint, a clustered index must be created before an insert operation is 
+	allowed on the table.
+
+The workaround is to dump the create SQL, add a clustered index, manually apply 
+the SQL to the database.
