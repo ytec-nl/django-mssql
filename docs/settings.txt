@@ -80,7 +80,7 @@ Default: ``''`` (Empty string)
 When a `USER`_ is defined, this field should be the plain text password 
 to use when authenticating.
 
-.. note: 
+.. note::
     Any user or service that can read the configuration file can 
     will be able to see the plain-text password. Trusted connections are 
     recommended.

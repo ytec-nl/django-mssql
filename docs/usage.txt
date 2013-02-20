@@ -99,4 +99,11 @@ Example:
         sproc_params = [1, 2, 3]
         MyModel.objects.raw_callproc('uspGetMyModels', sproc_params)
 
+.. note::
+
+    The db_column name for the field must match the case of the database field as returned by
+    the stored procedure, or the value will not be populated and will get fetched by the ORM
+    when the field is later accessed.
+
+
 .. versionadded:: 1.2

@@ -58,7 +58,7 @@ is provided and should be used instead.
 This is a ``django.db.models.ForeignKey`` that should be used to reference
 either a ``BigAutoField`` or a ``BigIntegerField``.
 
-.. note:
+.. note::
     If your (legacy) database using bigints for primary keys, then you'll 
     need to replace any introspected ``ForeignKey`` fields with 
     ``BigForeignKey`` for things to work as expected.
