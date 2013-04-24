@@ -232,6 +232,7 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         else:
             cursor = self._cursor()
         cursor.execute('EXEC sp_msforeachtable "ALTER TABLE ? NOCHECK CONSTRAINT all"')
+        return True
 
     def enable_constraint_checking(self):
         """

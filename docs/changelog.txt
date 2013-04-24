@@ -1,6 +1,11 @@
 Changelog
 =========
 
+v1.3.1
+------
+
+- Ensure Django knows to re-enable constraints. :issue:`29`
+
 v1.3
 ----
 
