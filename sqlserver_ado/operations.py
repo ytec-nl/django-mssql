@@ -4,11 +4,7 @@ import django
 from django.conf import settings
 from django.db.backends import BaseDatabaseOperations
 
-try:
-    from django.utils import timezone
-except ImportError:
-    # timezone added in Django 1.4, use provided partial backport
-    import timezone
+from django.utils import timezone
 
 class DatabaseOperations(BaseDatabaseOperations):
     compiler_module = "sqlserver_ado.compiler"

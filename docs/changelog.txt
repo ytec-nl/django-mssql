@@ -1,6 +1,11 @@
 Changelog
 =========
 
+v1.4 (In Development)
+---------------------
+
+- Support for Django v1.3 has been removed.
+
 v1.3.1
 ------
 
