@@ -5,6 +5,9 @@ v1.4 (In Development)
 ---------------------
 
 - Support for Django v1.3 has been removed.
+- Corrected DB-API 2 testing documentation.
+- Fixed issue with slicing logic that could prevent the compiler from finding
+  and mapping column aliases properly.
 
 v1.3.1
 ------
