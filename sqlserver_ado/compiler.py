@@ -167,7 +167,7 @@ class SQLCompiler(compiler.SQLCompiler):
         # map a copy of outer_fields for injected subselect
         f = []
         for x in outer_fields.split(','):
-            i = x.find(' AS ')
+            i = x.upper().find(' AS ')
             if i != -1:
                 x = x[i+4:]
             if x.find('.') != -1:
