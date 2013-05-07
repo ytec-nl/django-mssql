@@ -3,15 +3,6 @@ Testing
 
 All tests are contained in the ``tests`` folder.
 
-DB-API
-------
-
-The folder ``tests/api/`` contains a test suite for checking DB-API 2
-conformance.
-
-    .. code-block:: cmd
-        python run.py
-
 Django Support
 --------------
 
@@ -37,6 +28,15 @@ To run:
     
 - set up the SQLINSTANCE
 - ``python manage.py test``
+
+.. note::
+
+    The test app ``apitest`` contains a test suite for checking DB-API 2
+    conformance. 
+
+    To run only the DB-API 2 tests::
+
+        python manage.py test apitest
 
 Running Django Test Suite
 ~~~~~~~~~~~~~~~~~~~~~~~~~
