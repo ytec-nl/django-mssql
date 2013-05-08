@@ -8,6 +8,8 @@ v1.4 (In Development)
 - Corrected DB-API 2 testing documentation.
 - Fixed issue with slicing logic that could prevent the compiler from finding
   and mapping column aliases properly.
+- Improved the "return ID from insert" logic so it can properly extract the
+  column data type from user defined fields with custom data type strings.
 
 v1.3.1
 ------

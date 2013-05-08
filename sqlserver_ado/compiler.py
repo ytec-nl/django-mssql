@@ -16,16 +16,27 @@ _re_order_limit_offset = re.compile(
     r'(?:ORDER BY\s+(.+?))?\s*(?:LIMIT\s+(\d+))?\s*(?:OFFSET\s+(\d+))?$')
 
 # Pattern to find the quoted column name at the end of a field specification
-_re_pat_col = re.compile(r"\[([^[]+)\]$")
+_re_pat_col = re.compile(r"\[([^\[]+)\]$")
 
 # Pattern to find each of the parts of a column name (extra_select, table, field)
 _re_pat_col_parts = re.compile(
     r'(?:' +
     r'(\([^\)]+\))\s+as\s+' +
-    r'|(\[[^[]+\])\.' +
+    r'|(\[[^\[]+\])\.' +
     r')?' +
-    r'\[([^[]+)\]$',
+    r'\[([^\[]+)\]$',
     re.IGNORECASE
+)
+
+# Pattern to scan a column data type string and split the data type from any
+# constraints or other included parts of a column definition. Based upon
+# <column_definition> from http://msdn.microsoft.com/en-us/library/ms174979.aspx
+_re_data_type_terminator = re.compile(
+    r'\s*\b(?:' +
+    r'filestream|collate|sparse|not|null|constraint|default|identity|rowguidcol' +
+    r'|primary|unique|clustered|nonclustered|with|on|foreign|references|check' +
+    ')',
+    re.IGNORECASE,
 )
 
 # Pattern used in column aliasing to find sub-select placeholders
@@ -335,13 +346,7 @@ class SQLInsertCompiler(compiler.SQLInsertCompiler, SQLCompiler):
             col = self.connection.ops.quote_name(meta.pk.db_column or meta.pk.get_attname())
 
             # Determine datatype for use with the table variable that will return the inserted ID            
-            pk_db_type = meta.pk.db_type(self.connection)
-            if ' IDENTITY ' in pk_db_type:
-                # separate off IDENTITY clause
-                pk_db_type, _ = pk_db_type.split(' IDENTITY ', 2)
-            if ' CHECK ' in pk_db_type:
-                # separate off CHECK clause
-                pk_db_type, _ = pk_db_type.split(' CHECK ', 2)
+            pk_db_type = _re_data_type_terminator.split(meta.pk.db_type(self.connection))[0]
             
             # NOCOUNT ON to prevent additional trigger/stored proc related resultsets
             sql = 'SET NOCOUNT ON;{declare_table_var};{sql};{select_return_id}'.format(
