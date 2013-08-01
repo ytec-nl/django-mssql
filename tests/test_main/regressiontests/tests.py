@@ -3,8 +3,9 @@ import decimal
 from django.core.exceptions import ImproperlyConfigured
 from django.db import models, connection
 from django.test import TestCase
+from django.utils.safestring import mark_safe
 
-from regressiontests.models import Bug69Table1, Bug69Table2, Bug70Table, Bug93Table, IntegerIdTable
+from regressiontests.models import Bug69Table1, Bug69Table2, Bug70Table, Bug93Table, IntegerIdTable, StringTable
 
 class Bug38Table(models.Model):
     d = models.DecimalField(max_digits=5, decimal_places=2)
@@ -334,3 +335,14 @@ class CompilerRegexTestCase(TestCase):
 
         for val, expected in pairs:
             self.assertEqual(expected, _re_data_type_terminator.split(val)[0])
+
+class SafeStringTestCase(TestCase):
+    def test_ascii(self):
+        obj = StringTable(name=mark_safe('string'))
+        obj.save()
+        self.assertEqual(str(obj.name), str(StringTable.objects.get(pk=obj.id).name))
+
+    def test_unicode(self):
+        obj = StringTable(name=mark_safe(u'string'))
+        obj.save()
+        self.assertEqual(unicode(obj.name), unicode(StringTable.objects.get(pk=obj.id).name))

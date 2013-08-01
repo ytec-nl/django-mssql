@@ -407,3 +407,6 @@ class IntegerIdTable(models.Model):
     Simple table consisting of only an Integer ID primary key
     """
     id = models.IntegerField(primary_key=True)
+
+class StringTable(models.Model):
+    name = models.CharField(max_length=50)
