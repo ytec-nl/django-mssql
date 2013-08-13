@@ -51,29 +51,29 @@ class DatabaseIntrospection(BaseDatabaseIntrospection):
 
         sql = """
 select
-    column_name = fk_cols.column_name,
-    referenced_table_name = pk.table_name,
-    referenced_column_name = pk_cols.column_name
-from information_schema.referential_constraints ref_const
-join information_schema.table_constraints fk
-	on ref_const.constraint_catalog = fk.constraint_catalog
-	and ref_const.constraint_schema = fk.constraint_schema
-	and ref_const.constraint_name = fk.constraint_name
-	and fk.constraint_type = 'foreign key'
+    COLUMN_NAME = fk_cols.COLUMN_NAME,
+    REFERENCED_TABLE_NAME = pk.TABLE_NAME,
+    REFERENCED_COLUMN_NAME = pk_cols.COLUMN_NAME
+from INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS ref_const
+join INFORMATION_SCHEMA.TABLE_CONSTRAINTS fk
+	on ref_const.CONSTRAINT_CATALOG = fk.CONSTRAINT_CATALOG
+	and ref_const.CONSTRAINT_SCHEMA = fk.CONSTRAINT_SCHEMA
+	and ref_const.CONSTRAINT_NAME = fk.CONSTRAINT_NAME
+	and fk.CONSTRAINT_TYPE = 'FOREIGN KEY'
 
-join information_schema.table_constraints pk
-	on ref_const.unique_constraint_catalog = pk.constraint_catalog
-	and ref_const.unique_constraint_schema = pk.constraint_schema
-	and ref_const.unique_constraint_name = pk.constraint_name
-	and pk.constraint_type = 'primary key'
+join INFORMATION_SCHEMA.TABLE_CONSTRAINTS pk
+	on ref_const.UNIQUE_CONSTRAINT_CATALOG = pk.CONSTRAINT_CATALOG
+	and ref_const.UNIQUE_CONSTRAINT_SCHEMA = pk.CONSTRAINT_SCHEMA
+	and ref_const.UNIQUE_CONSTRAINT_NAME = pk.CONSTRAINT_NAME
+	And pk.CONSTRAINT_TYPE = 'PRIMARY KEY'
 
-join information_schema.key_column_usage fk_cols
-	on ref_const.constraint_name = fk_cols.constraint_name
+join INFORMATION_SCHEMA.KEY_COLUMN_USAGE fk_cols
+	on ref_const.CONSTRAINT_NAME = fk_cols.CONSTRAINT_NAME
 
-join information_schema.key_column_usage pk_cols
-	on pk.constraint_name = pk_cols.constraint_name
+join INFORMATION_SCHEMA.KEY_COLUMN_USAGE pk_cols
+	on pk.CONSTRAINT_NAME = pk_cols.CONSTRAINT_NAME
 where
-	fk.table_name = %s"""
+	fk.TABLE_NAME = %s"""
 
         cursor.execute(sql,[table_name])
         relations = cursor.fetchall()
@@ -102,10 +102,10 @@ from
 	sys.tables T
 	join sys.index_columns IC on IC.object_id = T.object_id
 	join sys.columns C on C.object_id = T.object_id and C.column_id = IC.column_id
-	join sys.indexes Ix on Ix.object_id = T.object_id and Ix.index_id = IC.index_id
+	join sys.indexes IX on IX.object_id = T.object_id and IX.index_id = IC.index_id
 where
 	T.name = %s
-	and (Ix.is_unique=1 or Ix.is_primary_key=1)
+	and (IX.is_unique=1 or IX.is_primary_key=1)
     -- Omit multi-column keys
 	and not exists (
 		select *
