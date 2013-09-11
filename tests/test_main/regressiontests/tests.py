@@ -1,11 +1,12 @@
 import datetime
 import decimal
+import time
 from django.core.exceptions import ImproperlyConfigured
 from django.db import models, connection
 from django.test import TestCase
 from django.utils.safestring import mark_safe
 
-from regressiontests.models import Bug69Table1, Bug69Table2, Bug70Table, Bug93Table, IntegerIdTable, StringTable
+from regressiontests.models import Bug69Table1, Bug69Table2, Bug70Table, Bug93Table, IntegerIdTable, StringTable, DateTable
 
 class Bug38Table(models.Model):
     d = models.DecimalField(max_digits=5, decimal_places=2)
@@ -346,3 +347,27 @@ class SafeStringTestCase(TestCase):
         obj = StringTable(name=mark_safe(u'string'))
         obj.save()
         self.assertEqual(unicode(obj.name), unicode(StringTable.objects.get(pk=obj.id).name))
+
+class DateTestCase(TestCase):
+    def test_fields(self):
+        now = datetime.datetime.now()
+
+        d = DateTable.objects.create(
+            legacy_datetime=now,
+            legacy_time=now.time(),
+            legacy_date=now.date(),
+            new_datetime=now,
+            new_time=now.time(),
+            new_date=now.date(),
+        )
+
+        self.assertEqual(d.legacy_date, d.new_date)
+        self.assertEqual(d.legacy_time, d.new_time)
+        self.assertEqual(d.legacy_datetime, d.new_datetime)
+
+        self.assertTrue(isinstance(d.legacy_datetime, datetime.datetime))
+        self.assertTrue(isinstance(d.legacy_date, datetime.date))
+        self.assertTrue(isinstance(d.legacy_time, datetime.time))
+        self.assertTrue(isinstance(d.new_datetime, datetime.datetime))
+        self.assertTrue(isinstance(d.new_date, datetime.date))
+        self.assertTrue(isinstance(d.new_time, datetime.time))

@@ -10,6 +10,10 @@ v1.4 (In Development)
   and mapping column aliases properly.
 - Improved the "return ID from insert" logic so it can properly extract the
   column data type from user defined fields with custom data type strings.
+- Fixed case for identifiers in introspection. Thanks Mikhail Denisenko.
+- Added option :setting:`use_legacy_date_fields` (defaults to True) to allow changing the DatabaseCreation.data_types to
+  not use the Microsoft preferred date data types that were added with SQL Server 2008. :issue:`31`
+- Improved accuracy of field type guessing with inspectdb. See :ref:`introspecting-custom-fields`
 
 v1.3.1
 ------

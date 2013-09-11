@@ -6,32 +6,50 @@ There are known issues related to Python/DB data types.
 Dates and Times
 ---------------
 
-Earliest Year
-~~~~~~~~~~~~~
+When using `Django-mssql` with SQL Server 2005, all of the date related fields
+only support the `datetime` data type. Support for these legacy data types can
+be enabled using the :setting:`use_legacy_date_fields` option, or using the 
+fields ``LegacyDateField``,  ``LegacyDateTimeField``, and ``LegacyTimeField`` in
+``sqlserver_ado.fields``.
 
-SQL Server provides two datetime types: `datetime and smalldatetime`_.
+To allow migrating specific apps or only some of your models to the new date 
+times, the model fields ``DateField``, ``DateTimeField``, and ``TimeField`` in
+``sqlserver_ado.fields`` use the new data types regardless of the 
+:setting:`use_legacy_date_fields` option.
 
-.. _`datetime and smalldatetime`: http://msdn.microsoft.com/en-us/library/ms187819.aspx
+.. code:: python
 
-This backend always uses datetime, which supports dates back to 
-January 1, 1753.
+	from django.db import models
+	from sqlserver_ado.fields import DateField, DateTimeField, TimeField
 
-Django previously only supported dates back to 1900, but recent revisions 
-7946 + 7950 changed this behavior. If you need to store historical data in 
-datetime fields, then SQL Server 2005 will have a problem. 
-(I'd welcome bugs/repro cases/patches on this issue.)
+	class MyModel(models.Model):
+		# when use_legecy_date_fields is False, models.*Field will behave like these
+		a_real_date = DateField() # date data type
+		a_datetime2 = DateTimeField() # datetime2 data type
+		a_real_time = TimeField() # time data type
+
+		# when use_legecy_date_fields is True, models.*Field will behave like these
+		a_date = LegacyDateField() # datetime data type
+		a_datetime = LegacyDateTime() # datetime data type
+		a_time = LegacyTimeField() # datetime data type
+
+datetime limitations
+~~~~~~~~~~~~~~~~~~~~
+
+With SQL Server 2005, only the `datetime`_ data type is usable with Django. This
+data type does not store enough precision to provide the full range of Python
+datetime dates and will round to increments of .000, .003, or .007 seconds. The
+earliest supported datetime date value is January 1, 1753.
+
+.. _`datetime`: http://msdn.microsoft.com/en-us/library/ms187819.aspx
 
 SQL Server 2008 introduces a datetime2_ type, with support for fractional 
-seconds and the full range of Python datetime dates. To use this time, edit 
-your local creation.py/introspection.py files to use this datatype instead.
+seconds and the full range of Python datetime dates. To use this time, either
+set the :settings:`use_legacy_date_fields` option to ``False`` or use the 
+``sqlserver_ado.fields.DateTimeField`` with your models.
 
 .. _datetime2: http://msdn.microsoft.com/en-us/library/ms180878(SQL.100).aspx
 
-Bare Times
-~~~~~~~~~~
-
-SQL Server 2005 doesn't have a bare "time" datatype, only a datetime. SQL 
-Server 2008 introduces a time type, but this isn't used by this backend.
 
 bigint
 ------
@@ -64,6 +82,14 @@ either a ``BigAutoField`` or a ``BigIntegerField``.
     ``BigForeignKey`` for things to work as expected.
 
 
+money
+-----
+
+The ``money`` and ``smallmoney`` data types will be introspected as 
+``DecimalField`` with the appropriate values for ``max_digits`` and 
+``decimal_places``. This does not mean that they are expected to work without
+issue.
+
 Unsupported Types
 -----------------
 
@@ -71,6 +97,5 @@ These types may behave oddly in a Django application, as they have limits
 smaller than what Django expects from similar types:
 
 - smalldatetime
-- smallmoney
 - tinyint
 - real

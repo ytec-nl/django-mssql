@@ -13,15 +13,19 @@ class DatabaseCreation(BaseDatabaseCreation):
         'BooleanField':                 'bit',
         'CharField':                    'nvarchar(%(max_length)s)',
         'CommaSeparatedIntegerField':   'nvarchar(%(max_length)s)',
-        'DateField':                    'datetime',
-        'DateTimeField':                'datetime',
+        'DateField':                    'date',
+        'DateTimeField':                'datetime2',
         'DecimalField':                 'decimal(%(max_digits)s, %(decimal_places)s)',
         'FileField':                    'nvarchar(%(max_length)s)',
         'FilePathField':                'nvarchar(%(max_length)s)',
         'FloatField':                   'double precision',
+        'GenericIPAddressField':        'nvarchar(39)',
         'IntegerField':                 'int',
         'IPAddressField':               'nvarchar(15)',
-        'GenericIPAddressField':        'nvarchar(39)',
+        'LegacyDateTimeField':          'datetime',
+        'NewDateField':                 'date',
+        'NewDateTimeField':             'datetime2',
+        'NewTimeField':                 'time',
         'NullBooleanField':             'bit',
         'OneToOneField':                'int',
         'PositiveIntegerField':         'int CHECK ([%(column)s] >= 0)',
@@ -29,8 +33,18 @@ class DatabaseCreation(BaseDatabaseCreation):
         'SlugField':                    'nvarchar(%(max_length)s)',
         'SmallIntegerField':            'smallint',
         'TextField':                    'nvarchar(max)',
-        'TimeField':                    'datetime',
+        'TimeField':                    'time',
     }
+
+    def _enable_legacy_date_fields(self):
+        """
+        Revert date related data_types to SQL 2005 compatible values.
+        """
+        self.data_types.update({
+            'DateField': 'datetime',
+            'DateTimeField': 'datetime',
+            'TimeField': 'datetime',
+        })
 
     def _create_master_connection(self):
         """

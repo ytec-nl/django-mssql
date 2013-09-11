@@ -23,6 +23,7 @@ DATABASES = {
         'OPTIONS' : {
             'provider': 'SQLNCLI10',
             'extra_params': 'DataTypeCompatibility=80;MARS Connection=True;',
+            'use_legacy_date_fields': False,
         },
     }
 }

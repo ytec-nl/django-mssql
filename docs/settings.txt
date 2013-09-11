@@ -186,3 +186,19 @@ with ``AVG``.
     SQL server maintains the datatype of the values used in ``AVG``. The
     average of an ``int`` column will be an ``int``. With this option set
     to ``True``, ``AVG([1,2])`` == 1, not 1.5.
+
+.. setting:: use_legacy_date_fields
+
+use_legacy_date_fields
+~~~~~~~~~~~~~~~~~~~~~~
+
+Default: ``True``
+
+This setting alters which data types are used for the ``DateField``, 
+``DateTimeField``, and ``TimeField`` fields. When ``True``, the fields will all 
+use the ``datetime`` data type. When ``False``, they will use ``date``, 
+``datetime``, and ``time`` data types.
+
+
+
+.. versionadded:: 1.4

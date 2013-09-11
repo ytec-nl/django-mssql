@@ -159,11 +159,20 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         except ValueError:   
             self.command_timeout = 30
         
+        options = self.settings_dict.get('OPTIONS', {})
         try:
-            options = self.settings_dict.get('OPTIONS', {})
             self.cast_avg_to_float = not bool(options.get('disable_avg_cast', False))
         except ValueError:
             self.cast_avg_to_float = False
+
+        USE_LEGACY_DATE_FIELDS_DEFAULT = True
+        try:
+            use_legacy_date_fields = bool(options.get('use_legacy_date_fields', USE_LEGACY_DATE_FIELDS_DEFAULT))
+        except ValueError:
+            use_legacy_date_fields = USE_LEGACY_DATE_FIELDS_DEFAULT
+
+        if use_legacy_date_fields:
+            self.creation._enable_legacy_date_fields()
         
         self.ops.is_sql2000 = self.is_sql2000
         self.ops.is_sql2005 = self.is_sql2005

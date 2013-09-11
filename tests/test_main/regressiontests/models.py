@@ -3,7 +3,7 @@ import decimal
 from django.db import models, IntegrityError
 from django.test import TestCase
 from django.core.paginator import Paginator
-from sqlserver_ado.fields import BigAutoField, BigIntegerField, BigForeignKey
+from sqlserver_ado.fields import *
 
 class Bug19Table(models.Model):
     """ A simple model for testing string comparisons.
@@ -410,3 +410,12 @@ class IntegerIdTable(models.Model):
 
 class StringTable(models.Model):
     name = models.CharField(max_length=50)
+
+
+class DateTable(models.Model):
+    legacy_datetime = LegacyDateTimeField()
+    legacy_date = LegacyDateField()
+    legacy_time = LegacyTimeField()
+    new_date = DateField()
+    new_time = TimeField()
+    new_datetime = DateTimeField()

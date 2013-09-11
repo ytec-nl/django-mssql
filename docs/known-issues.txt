@@ -15,6 +15,17 @@ and its use of % format strings. If you encounter this problem, you can either r
 the database column so it does not include a '%' (percent) character, or change ``DEBUG = False`` 
 in your settings when you run ``manage.py inspectdb``.
 
+.. _introspecting-custom-fields:
+
+Introspecting custom fields
+---------------------------
+
+Some datatypes will be mapped to a custom model field provided by 
+`Django-mssql`. If any of these fields are used, it will be necessary to add 
+``import sqlserver_ado.fields`` to the top of the models.py file. If using a
+version of Django prior to 1.7, it will be necessary to also remove the 
+"models." prefix from any of these custom fields. :djangoticket:`21090`
+
 .. _azure-clustered-indices:
 
 Azure requires clustered indices
