@@ -14,6 +14,8 @@ v1.4 (In Development)
 - Added option :setting:`use_legacy_date_fields` (defaults to True) to allow changing the DatabaseCreation.data_types to
   not use the Microsoft preferred date data types that were added with SQL Server 2008. :issue:`31`
 - Improved accuracy of field type guessing with inspectdb. See :ref:`introspecting-custom-fields`
+- Fixed issue with identity insert using a cursor to the wrong database in a multi-database environment. Thanks Mikhail 
+  Denisenko
 
 v1.3.1
 ------
