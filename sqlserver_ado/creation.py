@@ -1,11 +1,13 @@
-# This dictionary maps Field objects to their associated Server Server column
-# types, as strings. Column-type strings can contain format strings; they'll
-# be interpolated against the values of Field.__dict__.
+from __future__ import absolute_import
+
 from django.conf import settings
 from django.db.backends.creation import BaseDatabaseCreation, TEST_DATABASE_PREFIX
 import sys
 
 class DatabaseCreation(BaseDatabaseCreation):
+    # This dictionary maps Field objects to their associated Server Server column
+    # types, as strings. Column-type strings can contain format strings; they'll
+    # be interpolated against the values of Field.__dict__.
     data_types = {
         'AutoField':                    'int IDENTITY (1, 1)',
         'BigAutoField':                 'bigint IDENTITY (1, 1)',
@@ -50,7 +52,7 @@ class DatabaseCreation(BaseDatabaseCreation):
         """
         Create a transactionless connection to 'master' database.
         """
-        from base import DatabaseWrapper
+        from .base import DatabaseWrapper
         
         master_settings = self.connection.settings_dict
         if not master_settings['TEST_NAME']:

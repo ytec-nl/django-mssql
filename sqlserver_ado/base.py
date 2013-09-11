@@ -1,13 +1,15 @@
 """Microsoft SQL Server database backend for Django."""
+from __future__ import absolute_import
+
 from django.db.backends import BaseDatabaseWrapper, BaseDatabaseFeatures, BaseDatabaseValidation, BaseDatabaseClient
 from django.db.backends.signals import connection_created
 from django.core.exceptions import ImproperlyConfigured, ValidationError
 
-import dbapi as Database
+from . import dbapi as Database
 
-from introspection import DatabaseIntrospection
-from creation import DatabaseCreation
-from operations import DatabaseOperations
+from .introspection import DatabaseIntrospection
+from .creation import DatabaseCreation
+from .operations import DatabaseOperations
 
 DatabaseError = Database.DatabaseError
 IntegrityError = Database.IntegrityError

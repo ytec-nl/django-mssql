@@ -1,5 +1,7 @@
+from __future__ import absolute_import
+
 from django.db.backends import BaseDatabaseIntrospection
-import ado_consts
+from . import ado_consts
 
 AUTO_FIELD_MARKER = -1000
 BIG_AUTO_FIELD_MARKER = -1001
