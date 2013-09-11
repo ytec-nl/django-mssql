@@ -3,9 +3,6 @@ from __future__ import absolute_import
 from django.conf import settings
 from django.db.backends.creation import BaseDatabaseCreation, TEST_DATABASE_PREFIX
 from django.utils import six
-import sys
-
-
 
 class DatabaseCreation(BaseDatabaseCreation):
     # This dictionary maps Field objects to their associated Server Server column
