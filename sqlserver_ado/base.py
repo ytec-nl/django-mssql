@@ -250,7 +250,8 @@ class DatabaseWrapper(BaseDatabaseWrapper):
             cursor = self.connection.cursor()
         else:
             cursor = self._cursor()
-        cursor.execute('EXEC sp_MSforeachtable "ALTER TABLE ? WITH CHECK CHECK CONSTRAINT all"')
+        # don't check the data, just turn them on
+        cursor.execute('EXEC sp_MSforeachtable "ALTER TABLE ? WITH NOCHECK CHECK CONSTRAINT all"')
 
     def check_constraints(self, table_names=None):
         """
@@ -262,9 +263,13 @@ class DatabaseWrapper(BaseDatabaseWrapper):
             cursor = self._cursor()
         if not table_names:
             cursor.execute('DBCC CHECKCONSTRAINTS')
+            if cursor.description:
+                raise IntegrityError(cursor.fetchall())
         else:
             qn = self.ops.quote_name
             for name in table_names:
                 cursor.execute('DBCC CHECKCONSTRAINTS({0})'.format(
                     qn(name)
                 ))
+                if cursor.description:
+                    raise IntegrityError(cursor.fetchall())

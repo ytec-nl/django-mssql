@@ -16,6 +16,7 @@ v1.4 (In Development)
 - Improved accuracy of field type guessing with inspectdb. See :ref:`introspecting-custom-fields`
 - Fixed issue with identity insert using a cursor to the wrong database in a multi-database environment. Thanks Mikhail 
   Denisenko
+- Fixed constraint checking. :issue:`35` Thanks Mikhail Denisenko
 
 v1.3.1
 ------
