@@ -4,6 +4,11 @@ import django
 from django.conf import settings
 from django.db.backends import BaseDatabaseOperations
 
+try:
+    from django.utils.encoding import smart_text
+except:
+    from django.utils.encoding import smart_unicode as smart_text
+
 from django.utils import timezone
 
 class DatabaseOperations(BaseDatabaseOperations):
@@ -77,9 +82,8 @@ class DatabaseOperations(BaseDatabaseOperations):
 
     def prep_for_like_query(self, x):
         """Prepares a value for use in a LIKE query."""
-        from django.utils.encoding import smart_unicode
         return (
-            smart_unicode(x).\
+            smart_text(x).\
                 replace("\\", "\\\\").\
                 replace("%", "\%").\
                 replace("_", "\_").\
