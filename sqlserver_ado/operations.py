@@ -190,18 +190,17 @@ class DatabaseOperations(BaseDatabaseOperations):
         return value
     
     def value_to_db_time(self, value):
-        if not self.is_sql2005():
-            return value
+        if value is None:
+            return None
 
         if timezone.is_aware(value):
             raise ValueError("SQL Server backend does not support timezone-aware times.")
 
         # MS SQL 2005 doesn't support microseconds
         #...but it also doesn't really suport bare times
-        if value is None:
-            return None
-        
-        return value.replace(microsecond=0)
+        if self.is_sql2005():
+            value = value.replace(microsecond=0)
+        return value
 
     def value_to_db_decimal(self, value, max_digits, decimal_places):
         if value is None or value == '':
