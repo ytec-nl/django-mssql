@@ -17,6 +17,7 @@ v1.4 (In Development)
 - Fixed issue with identity insert using a cursor to the wrong database in a multi-database environment. Thanks Mikhail 
   Denisenko
 - Fixed constraint checking. :issue:`35` Thanks Mikhail Denisenko
+- Enabled ``can_introspect_autofield`` database feature. :djangoticket:`21097`
 
 v1.3.1
 ------

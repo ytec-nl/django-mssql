@@ -8,7 +8,6 @@ BIG_AUTO_FIELD_MARKER = -1001
 MONEY_FIELD_MARKER = -1002
 
 class DatabaseIntrospection(BaseDatabaseIntrospection):
-
     def get_table_list(self, cursor):
         "Return a list of table and view names in the current database."
         cursor.execute("SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' UNION SELECT TABLE_NAME FROM INFORMATION_SCHEMA.VIEWS")

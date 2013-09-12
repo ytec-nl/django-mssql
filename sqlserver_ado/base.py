@@ -32,6 +32,7 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     
     ignores_nulls_in_unique_constraints = False
 
+    can_introspect_autofield = True
 
 def is_ip_address(value):
     """
