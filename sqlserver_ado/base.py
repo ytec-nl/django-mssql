@@ -34,6 +34,8 @@ class DatabaseFeatures(BaseDatabaseFeatures):
 
     can_introspect_autofield = True
 
+    supports_subqueries_in_group_by = False
+
 def is_ip_address(value):
     """
     Returns True if value is a valid IP address, otherwise False.
