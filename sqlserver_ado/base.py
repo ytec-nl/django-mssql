@@ -25,9 +25,6 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     
     supports_regex_backreferencing = False
     
-    # Disable test modeltests.lookup.tests.LookupTests.test_lookup_date_as_str
-    supports_date_lookup_using_string = False
-    
     supports_tablespaces = True
     
     ignores_nulls_in_unique_constraints = False

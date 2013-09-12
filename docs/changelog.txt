@@ -20,6 +20,7 @@ v1.4 (In Development)
 - Enabled ``can_introspect_autofield`` database feature. :djangoticket:`21097`
 - Any date related field should now return from the database as the appropriate Python type, instead of always being a
   datetime.
+- Backend now supports doing date lookups using a string. E.g. ``Article.objects.filter(pub_date__startswith='2005')``
 
 v1.3.1
 ------
