@@ -1,6 +1,10 @@
+from __future__ import absolute_import
+
 from django.db.models.sql import compiler
 import datetime
 import re
+
+from .fields import DateField, DateTimeField, TimeField
 
 # query_class returns the base class to use for Django queries.
 # The custom 'SqlServerQuery' class derives from django.db.models.sql.query.Query
@@ -52,7 +56,14 @@ def _get_order_limit_offset(sql):
 def _remove_order_limit_offset(sql):
     return _re_order_limit_offset.sub('',sql).split(None, 1)[1]
 
+
 class SQLCompiler(compiler.SQLCompiler):
+    # Attached date fields to help converting values that could be in various
+    # formats, depending on SQL server version and database data type.
+    _date_field = DateField()
+    _datetime_field = DateTimeField()
+    _time_field = TimeField()
+
     def resolve_columns(self, row, fields=()):
         # If the results are sliced, the resultset will have an initial 
         # "row number" column. Remove this column before the ORM sees it.
@@ -63,12 +74,13 @@ class SQLCompiler(compiler.SQLCompiler):
         index_extra_select = len(self.query.extra_select.keys())
         for value, field in map(None, row[index_extra_select:], fields):
             if field:
-                if isinstance(value, datetime.datetime):
-                    internal_type = field.get_internal_type()
-                    if internal_type == 'DateField':
-                        value = value.date()
-                    elif internal_type == 'TimeField':
-                        value = value.time()
+                internal_type = field.get_internal_type()
+                if internal_type == 'DateTimeField':
+                    value = self._datetime_field.to_python(value)
+                elif internal_type == 'DateField':
+                    value = self._date_field.to_python(value)
+                elif internal_type == 'TimeField':
+                    value = self._time_field.to_python(value)
             values.append(value)
 
         return row[:index_extra_select] + tuple(values)
