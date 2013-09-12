@@ -21,6 +21,8 @@ v1.4 (In Development)
 - Any date related field should now return from the database as the appropriate Python type, instead of always being a
   datetime.
 - Backend now supports doing date lookups using a string. E.g. ``Article.objects.filter(pub_date__startswith='2005')``
+- ``check_constraints`` will now check all disabled and enabled constraints. This change was made to match the behavior
+  tested by ``backends.FkConstraintsTests.test.test_check_constraints``.
 
 v1.3.1
 ------

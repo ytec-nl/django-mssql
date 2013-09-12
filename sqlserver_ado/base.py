@@ -264,13 +264,13 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         else:
             cursor = self._cursor()
         if not table_names:
-            cursor.execute('DBCC CHECKCONSTRAINTS')
+            result = cursor.execute('DBCC CHECKCONSTRAINTS WITH ALL_CONSTRAINTS')
             if cursor.description:
                 raise IntegrityError(cursor.fetchall())
         else:
             qn = self.ops.quote_name
             for name in table_names:
-                cursor.execute('DBCC CHECKCONSTRAINTS({0})'.format(
+                cursor.execute('DBCC CHECKCONSTRAINTS({0}) WITH ALL_CONSTRAINTS'.format(
                     qn(name)
                 ))
                 if cursor.description:
