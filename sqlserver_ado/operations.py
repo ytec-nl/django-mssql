@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 import datetime
 import django
 from django.conf import settings
@@ -10,9 +12,44 @@ except:
 
 from django.utils import timezone
 
+from . import fields as mssql_fields
+
 class DatabaseOperations(BaseDatabaseOperations):
     compiler_module = "sqlserver_ado.compiler"
     
+    _convert_values_map = {
+        # custom fields
+        'DateTimeOffsetField':  mssql_fields.DateTimeOffsetField(),
+        'LegacyDateField':      mssql_fields.LegacyDateField(),
+        'LegacyDateTimeField':  mssql_fields.LegacyDateTimeField(),
+        'LegacyTimeField':      mssql_fields.LegacyTimeField(),
+        'NewDateField':         mssql_fields.DateField(),
+        'NewDateTimeField':     mssql_fields.DateTimeField(),
+        'NewTimeField':         mssql_fields.TimeField(),
+    }
+
+    def __init__(self, *args, **kwargs):
+        super(DatabaseOperations, self).__init__(*args, **kwargs)
+
+        if self.connection.use_legacy_date_fields:
+            self.value_to_db_datetime = self._legacy_value_to_db_datetime
+            self.value_to_db_time = self._legacy_value_to_db_time
+
+            self._convert_values_map.update({
+                'DateField':        self._convert_values_map['LegacyDateField'],
+                'DateTimeField':    self._convert_values_map['LegacyDateTimeField'],
+                'TimeField':        self._convert_values_map['LegacyTimeField'],
+            })
+        else:
+            self.value_to_db_datetime = self._new_value_to_db_datetime
+            self.value_to_db_time = self._new_value_to_db_time
+
+            self._convert_values_map.update({
+                'DateField':        self._convert_values_map['NewDateField'],
+                'DateTimeField':    self._convert_values_map['NewDateTimeField'],
+                'TimeField':        self._convert_values_map['NewTimeField'],
+            })
+
     def cache_key_culling_sql(self):
         return """
             SELECT [cache_key]
@@ -173,34 +210,74 @@ class DatabaseOperations(BaseDatabaseOperations):
 
     def tablespace_sql(self, tablespace, inline=False):
         return "ON %s" % self.quote_name(tablespace)
-        
-    def value_to_db_datetime(self, value):
-        if value is None:
-            return None
-            
-        if timezone.is_aware(value):
+
+    # def value_to_db_date(self, value):
+    #     if value is None:
+    #         return None
+    #     if isinstance(value, datetime.datetime):
+    #         value = value.date()
+    #     return value.isoformat()
+
+    def _legacy_value_to_db_datetime(self, value):
+        if value is None or isinstance(value, basestring):
+            return value
+
+        if timezone.is_aware(value) and not self.connection.features.supports_timezones:
             if getattr(settings, 'USE_TZ', False):
                 value = value.astimezone(timezone.utc).replace(tzinfo=None)
             else:
                 raise ValueError("SQL Server backend does not support timezone-aware datetimes.")
 
         # SQL Server 2005 doesn't support microseconds
-        if self.is_sql2005():
+        if self.connection.is_sql2005():
            value = value.replace(microsecond=0)
-        return value
+        val = value.isoformat(' ')
+        if value.microsecond:
+            # truncate microsecond to millisecond
+            idx = val.rindex('.')
+            val = val[:idx + 4] + val[idx + 7:]
+        return val
+        
+    def _new_value_to_db_datetime(self, value):
+        if value is None or isinstance(value, basestring):
+            return value
+            
+        if timezone.is_aware(value) and not self.connection.features.supports_timezones:
+            if getattr(settings, 'USE_TZ', False):
+                value = value.astimezone(timezone.utc).replace(tzinfo=None)
+            else:
+                raise ValueError("SQL Server backend does not support timezone-aware datetimes.")
+        return value.isoformat(' ')
     
-    def value_to_db_time(self, value):
-        if value is None:
-            return None
+    def _legacy_value_to_db_time(self, value):
+        if value is None or isinstance(value, basestring):
+            return value
 
-        if timezone.is_aware(value):
+        if timezone.is_aware(value) and not self.connection.features.supports_timezones:
+            if not getattr(settings, 'USE_TZ', False) and hasattr(value, 'astimezone'):
+                value = value.astimezone(timezone.utc).replace(tzinfo=None)
             raise ValueError("SQL Server backend does not support timezone-aware times.")
 
         # MS SQL 2005 doesn't support microseconds
         #...but it also doesn't really suport bare times
-        if self.is_sql2005():
+        if self.connection.is_sql2005():
             value = value.replace(microsecond=0)
-        return value
+        val = value.isoformat()
+        if value.microsecond:
+            # truncate microsecond to millisecond
+            idx = val.rindex('.')
+            val = val[:idx + 4] + val[idx + 7:]
+        return val
+
+    def _new_value_to_db_time(self, value):
+        if value is None or isinstance(value, basestring):
+            return value
+
+        if timezone.is_aware(value) and not self.connection.features.supports_timezones:
+            if not getattr(settings, 'USE_TZ', False) and hasattr(value, 'astimezone'):
+                value = value.astimezone(timezone.utc).replace(tzinfo=None)
+            raise ValueError("SQL Server backend does not support timezone-aware times.")
+        return value.isoformat()
 
     def value_to_db_decimal(self, value, max_digits, decimal_places):
         if value is None or value == '':
@@ -214,24 +291,21 @@ class DatabaseOperations(BaseDatabaseOperations):
 
         `value` is an int, containing the looked-up year.
         """
-        first = datetime.datetime(value, 1, 1)
-        second = datetime.datetime(value, 12, 31, 23, 59, 59, 999)
+        first = self.value_to_db_datetime(datetime.datetime(value, 1, 1))
+        ms = 997000 if self.connection.use_legacy_date_fields else 999999
+        second = self.value_to_db_datetime(datetime.datetime(value, 12, 31, 23, 59, 59, ms))
         return [first, second]
 
     def convert_values(self, value, field):
         """
         MSSQL needs help with date fields that might come out as strings.
         """
-        internal_type = field.get_internal_type()
-        if internal_type in ('DateField', 'DateTimeField', 'TimeField'):
-            compiler = self.compiler('SQLCompiler')
-            if internal_type == 'DateTimeField':
-                return compiler._datetime_field.to_python(value)
-            elif internal_type == 'DateField':
-                return compiler._date_field.to_python(value)
-            elif internal_type == 'TimeField':
-                return compiler._time_field.to_python(value)
-        return super(DatabaseOperations, self).convert_values(value, field)
+        if field:
+            internal_type = field.get_internal_type()
+            if internal_type in self._convert_values_map:
+                return self._convert_values_map[internal_type].to_python(value)
+            return super(DatabaseOperations, self).convert_values(value, field)
+        return value
 
     def bulk_insert_sql(self, fields, num_values):
         """

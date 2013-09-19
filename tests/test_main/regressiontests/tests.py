@@ -1,12 +1,13 @@
 import datetime
 import decimal
+from operator import attrgetter
 import time
 from django.core.exceptions import ImproperlyConfigured
 from django.db import models, connection
 from django.test import TestCase
 from django.utils.safestring import mark_safe
 
-from regressiontests.models import Bug69Table1, Bug69Table2, Bug70Table, Bug93Table, IntegerIdTable, StringTable, DateTable
+from regressiontests.models import *
 
 class Bug38Table(models.Model):
     d = models.DecimalField(max_digits=5, decimal_places=2)
@@ -349,25 +350,33 @@ class SafeStringTestCase(TestCase):
         self.assertEqual(unicode(obj.name), unicode(StringTable.objects.get(pk=obj.id).name))
 
 class DateTestCase(TestCase):
-    def test_fields(self):
-        now = datetime.datetime.now()
-
-        d = DateTable.objects.create(
-            legacy_datetime=now,
-            legacy_time=now.time(),
-            legacy_date=now.date(),
-            new_datetime=now,
-            new_time=now.time(),
-            new_date=now.date(),
+    def _test(self, cls, val):
+        cls.objects.create(val=val)
+        self.assertQuerysetEqual(
+            cls.objects.all(),
+            [val],
+            attrgetter('val')
         )
 
-        self.assertEqual(d.legacy_date, d.new_date)
-        self.assertEqual(d.legacy_time, d.new_time)
-        self.assertEqual(d.legacy_datetime, d.new_datetime)
+    def test_legacy_date(self):
+        self._test(LegacyDateTable, datetime.date(1901, 1, 1))
 
-        self.assertTrue(isinstance(d.legacy_datetime, datetime.datetime))
-        self.assertTrue(isinstance(d.legacy_date, datetime.date))
-        self.assertTrue(isinstance(d.legacy_time, datetime.time))
-        self.assertTrue(isinstance(d.new_datetime, datetime.datetime))
-        self.assertTrue(isinstance(d.new_date, datetime.date))
-        self.assertTrue(isinstance(d.new_time, datetime.time))
+    def test_legacy_datetime(self):
+        self._test(LegacyDateTimeTable, datetime.datetime(1901, 1, 1, 1, 1, 1, 123000))
+
+    def test_legacy_time(self):
+        self._test(LegacyTimeTable, datetime.time(13, 13, 59, 123000))
+
+    def test_new_date(self):
+        self._test(DateTable, datetime.date(2013, 9, 18))
+
+    def test_new_datetime(self):
+        self._test(DateTimeTable, datetime.datetime(2013, 9, 18, 13, 1, 59, 123456))
+
+    def test_new_time(self):
+        self._test(TimeTable, datetime.time(13, 13, 59, 123456))
+
+    def test_datetimeoffset(self):
+        from django.utils import timezone
+        val = timezone.make_aware(datetime.datetime.now(), timezone.get_default_timezone())
+        self._test(DateTimeOffsetTable, val)

@@ -18,6 +18,7 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     uses_custom_query_class = True
     has_bulk_insert = False
     
+    # DateTimeField doesn't support timezones, only DateTimeOffsetField
     supports_timezones = False
     supports_sequence_reset = False
     
@@ -148,13 +149,6 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         self.use_transactions = kwargs.pop('use_transactions', None)
         
         super(DatabaseWrapper, self).__init__(*args, **kwargs)
-        
-        self.features = DatabaseFeatures(self)
-        self.ops = DatabaseOperations(self)
-        self.client = BaseDatabaseClient(self)
-        self.creation = DatabaseCreation(self) 
-        self.introspection = DatabaseIntrospection(self)
-        self.validation = BaseDatabaseValidation(self)
 
         try:
             self.command_timeout = int(self.settings_dict.get('COMMAND_TIMEOUT', 30))
@@ -169,16 +163,18 @@ class DatabaseWrapper(BaseDatabaseWrapper):
 
         USE_LEGACY_DATE_FIELDS_DEFAULT = True
         try:
-            use_legacy_date_fields = bool(options.get('use_legacy_date_fields', USE_LEGACY_DATE_FIELDS_DEFAULT))
+            self.use_legacy_date_fields = bool(options.get('use_legacy_date_fields', USE_LEGACY_DATE_FIELDS_DEFAULT))
         except ValueError:
-            use_legacy_date_fields = USE_LEGACY_DATE_FIELDS_DEFAULT
+            self.use_legacy_date_fields = USE_LEGACY_DATE_FIELDS_DEFAULT
 
-        if use_legacy_date_fields:
-            self.creation._enable_legacy_date_fields()
-        
-        self.ops.is_sql2000 = self.is_sql2000
-        self.ops.is_sql2005 = self.is_sql2005
-        self.ops.is_sql2008 = self.is_sql2008
+        self.features = DatabaseFeatures(self)
+        self.ops = DatabaseOperations(self)
+        self.client = BaseDatabaseClient(self)
+        self.creation = DatabaseCreation(self) 
+        self.introspection = DatabaseIntrospection(self)
+        self.validation = BaseDatabaseValidation(self)
+
+      
 
     def __connect(self):
         """Connect to the database"""

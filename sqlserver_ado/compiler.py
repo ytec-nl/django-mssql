@@ -1,10 +1,9 @@
 from __future__ import absolute_import
 
+import django
 from django.db.models.sql import compiler
 import datetime
 import re
-
-from .fields import DateField, DateTimeField, TimeField
 
 # query_class returns the base class to use for Django queries.
 # The custom 'SqlServerQuery' class derives from django.db.models.sql.query.Query
@@ -56,33 +55,36 @@ def _get_order_limit_offset(sql):
 def _remove_order_limit_offset(sql):
     return _re_order_limit_offset.sub('',sql).split(None, 1)[1]
 
-
 class SQLCompiler(compiler.SQLCompiler):
-    # Attached date fields to help converting values that could be in various
-    # formats, depending on SQL server version and database data type.
-    _date_field = DateField()
-    _datetime_field = DateTimeField()
-    _time_field = TimeField()
+    def __pad_fields_with_aggregates(self, fields):
+        """
+        Fix for Django ticket #21126 backported to Django 1.5-1.5.4
+        """
+        if django.VERSION[:2] == (1, 5) and django.VERSION[2] <= 5:
+            if not bool(self.query.aggregate_select):
+                return fields
+            aggregate_start = len(self.query.extra_select) + len(self.query.select)
+            aggregate_end = aggregate_start + len(self.query.aggregate_select)
+
+            # pad None in to fields for aggregates
+            return fields[:aggregate_start] + [
+                None for x in range(0, aggregate_end - aggregate_start)
+            ] + fields[aggregate_start:]
+        return fields
 
     def resolve_columns(self, row, fields=()):
+        fields = self.__pad_fields_with_aggregates(fields)
+
         # If the results are sliced, the resultset will have an initial 
         # "row number" column. Remove this column before the ORM sees it.
         if getattr(self, '_using_row_number', False):
             row = row[1:]
-       
         values = []
-        index_extra_select = len(self.query.extra_select.keys())
+        index_extra_select = len(self.query.extra_select)
         for value, field in map(None, row[index_extra_select:], fields):
             if field:
-                internal_type = field.get_internal_type()
-                if internal_type == 'DateTimeField':
-                    value = self._datetime_field.to_python(value)
-                elif internal_type == 'DateField':
-                    value = self._date_field.to_python(value)
-                elif internal_type == 'TimeField':
-                    value = self._time_field.to_python(value)
+                value = self.connection.ops.convert_values(value, field)
             values.append(value)
-
         return row[:index_extra_select] + tuple(values)
 
     def _fix_aggregates(self):

@@ -1,8 +1,11 @@
+from __future__ import absolute_import
+
 import datetime
 import decimal
 from django.db import models, IntegrityError
 from django.test import TestCase
 from django.core.paginator import Paginator
+
 from sqlserver_ado.fields import *
 
 class Bug19Table(models.Model):
@@ -412,10 +415,23 @@ class StringTable(models.Model):
     name = models.CharField(max_length=50)
 
 
+class LegacyDateTimeTable(models.Model):
+    val = LegacyDateTimeField()
+
+class LegacyDateTable(models.Model):
+    val = LegacyDateField()
+
+class LegacyTimeTable(models.Model):
+    val = LegacyTimeField()
+
 class DateTable(models.Model):
-    legacy_datetime = LegacyDateTimeField()
-    legacy_date = LegacyDateField()
-    legacy_time = LegacyTimeField()
-    new_date = DateField()
-    new_time = TimeField()
-    new_datetime = DateTimeField()
+    val = DateField()
+
+class DateTimeTable(models.Model):
+    val = DateTimeField()
+
+class TimeTable(models.Model):
+    val = TimeField()
+
+class DateTimeoffsetTable(models.Model):
+    val = DateTimeOffsetField()
