@@ -82,8 +82,9 @@ class DateTimeField(models.DateTimeField):
         return result
 
     def get_db_prep_value(self, value, connection, prepared=False):
-        val = super(DateTimeField, self).get_db_prep_value(value, connection, prepared)
-        return connection.ops._new_value_to_db_datetime(val)
+        if not prepared:
+            value = self.get_prep_value(value)
+        return connection.ops._new_value_to_db_datetime(value)
 
 class DateTimeOffsetField(models.DateTimeField):
     """
@@ -93,13 +94,14 @@ class DateTimeOffsetField(models.DateTimeField):
         return 'DateTimeOffsetField'
 
     def to_python(self, value):
-        return super(DateTimeField, self).to_python(convert_microsoft_date_to_isoformat(value))
+        return super(DateTimeOffsetField, self).to_python(convert_microsoft_date_to_isoformat(value))
 
     def get_db_prep_value(self, value, connection, prepared=False):
-        val = super(DateTimeOffsetField, self).get_db_prep_value(value, connection, prepared)
-        if val is None:
+        if not prepared:
+            value = self.get_prep_value(value)
+        if value is None:
             return None
-        return val.isoformat(' ')
+        return value.isoformat(' ')
 
 class TimeField(models.TimeField):
     """
@@ -112,15 +114,16 @@ class TimeField(models.TimeField):
         return super(TimeField, self).to_python(convert_microsoft_date_to_isoformat(value))
 
     def get_db_prep_value(self, value, connection, prepared=False):
-        val = super(TimeField, self).get_db_prep_value(value, connection, prepared)
-        return connection.ops._new_value_to_db_time(val)
+        if not prepared:
+            value = self.get_prep_value(value)
+        return connection.ops._new_value_to_db_time(value)
 
 class LegacyDateField(models.DateField):
     """
     A DateField that is backed by a 'datetime' database field.
     """
     def get_internal_type(self):
-        return 'LegacyDateTimeField'
+        return 'LegacyDateField'
 
     def to_python(self, value):
         val = super(LegacyDateField, self).to_python(convert_microsoft_date_to_isoformat(value))
@@ -139,15 +142,16 @@ class LegacyDateTimeField(models.DateTimeField):
         return super(LegacyDateTimeField, self).to_python(convert_microsoft_date_to_isoformat(value))
 
     def get_db_prep_value(self, value, connection, prepared=False):
-        val = super(LegacyDateTimeField, self).get_db_prep_value(value, connection, prepared)
-        return connection.ops._legacy_value_to_db_datetime(val)
+        if not prepared:
+            value = self.get_prep_value(value)
+        return connection.ops._legacy_value_to_db_datetime(value)
 
 class LegacyTimeField(models.TimeField):
     """
     A TimeField that is backed by a 'datetime' database field.
     """
     def get_internal_type(self):
-        return 'LegacyDateTimeField'
+        return 'LegacyTimeField'
 
     def to_python(self, value):
         val = super(LegacyTimeField, self).to_python(convert_microsoft_date_to_isoformat(value))
@@ -156,5 +160,6 @@ class LegacyTimeField(models.TimeField):
         return val
   
     def get_db_prep_value(self, value, connection, prepared=False):
-        val = super(LegacyTimeField, self).get_db_prep_value(value, connection, prepared)
-        return connection.ops._legacy_value_to_db_time(val)
+        if not prepared:
+            value = self.get_prep_value(value)
+        return connection.ops._legacy_value_to_db_time(value)

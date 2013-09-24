@@ -433,5 +433,5 @@ class DateTimeTable(models.Model):
 class TimeTable(models.Model):
     val = TimeField()
 
-class DateTimeoffsetTable(models.Model):
+class DateTimeOffsetTable(models.Model):
     val = DateTimeOffsetField()

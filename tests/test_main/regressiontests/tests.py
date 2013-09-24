@@ -378,5 +378,5 @@ class DateTestCase(TestCase):
 
     def test_datetimeoffset(self):
         from django.utils import timezone
-        val = timezone.make_aware(datetime.datetime.now(), timezone.get_default_timezone())
+        val = timezone.make_aware(datetime.datetime.now(), timezone.LocalTimezone())
         self._test(DateTimeOffsetTable, val)

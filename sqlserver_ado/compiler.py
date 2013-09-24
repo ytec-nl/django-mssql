@@ -1,5 +1,10 @@
 from __future__ import absolute_import
 
+try:
+    from itertools import zip_longest
+except ImportError:
+    from itertools import izip_longest as zip_longest
+
 import django
 from django.db.models.sql import compiler
 import datetime
@@ -81,9 +86,13 @@ class SQLCompiler(compiler.SQLCompiler):
             row = row[1:]
         values = []
         index_extra_select = len(self.query.extra_select)
-        for value, field in map(None, row[index_extra_select:], fields):
+        for value, field in zip_longest(row[index_extra_select:], fields):
+            # print '\tfield=%s\tvalue=%s' % (repr(field), repr(value))
             if field:
-                value = self.connection.ops.convert_values(value, field)
+                try:
+                    value = self.connection.ops.convert_values(value, field)
+                except ValueError:
+                    pass
             values.append(value)
         return row[:index_extra_select] + tuple(values)
 
