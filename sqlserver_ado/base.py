@@ -34,6 +34,8 @@ class DatabaseFeatures(BaseDatabaseFeatures):
 
     supports_subqueries_in_group_by = False
 
+    allow_sliced_subqueries = False
+
 def is_ip_address(value):
     """
     Returns True if value is a valid IP address, otherwise False.
