@@ -380,3 +380,37 @@ class DateTestCase(TestCase):
         from django.utils import timezone
         val = timezone.make_aware(datetime.datetime.now(), timezone.LocalTimezone())
         self._test(DateTimeOffsetTable, val)
+
+class Ticket21203Tests(TestCase):
+    def test_ticket_21203(self):
+        now = datetime.datetime.now()
+        p = Ticket21203Parent.objects.create(
+            parent_bool=True,
+            parent_created=now,
+            parent_time=now.time(),
+            parent_date=now.date(),
+        )
+        c = Ticket21203Child.objects.create(parent=p)
+        qs = Ticket21203Child.objects.select_related('parent').defer('parent__parent_created')
+        self.assertQuerysetEqual(qs, [c], lambda x: x)
+        self.assertIs(qs[0].parent.parent_bool, True)
+
+    def test_ticket_21203_mssql(self):
+        """
+        Ensure SQLCompiler.resolve_columns() 'fields' are properly aligned when
+        using defer() and select_related(). Tests are specific to the value
+        conversions that need to happen with the date values that are returned
+        from the database as strings.
+        """
+        now = datetime.datetime.now()
+        p = Ticket21203Parent.objects.create(
+            parent_created=now,
+            parent_time=now.time(),
+            parent_date=now.date(),
+        )
+        c = Ticket21203Child.objects.create(parent=p)
+        qs = Ticket21203Child.objects.select_related('parent').defer('parent__parent_bool')
+        self.assertQuerysetEqual(qs, [c], lambda x: x)
+        self.assertEqual(qs[0].parent.parent_created, now)
+        self.assertEqual(qs[0].parent.parent_time, now.time())
+        self.assertEqual(qs[0].parent.parent_date, now.date())

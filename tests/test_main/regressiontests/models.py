@@ -435,3 +435,15 @@ class TimeTable(models.Model):
 
 class DateTimeOffsetTable(models.Model):
     val = DateTimeOffsetField()
+
+
+class Ticket21203Parent(models.Model):
+    parentid = models.AutoField(primary_key=True)
+    parent_bool = models.BooleanField(default=True)
+    parent_created = models.DateTimeField()
+    parent_time = models.TimeField()
+    parent_date = models.DateField()
+
+class Ticket21203Child(models.Model):
+    childid = models.AutoField(primary_key=True)
+    parent = models.ForeignKey(Ticket21203Parent)
