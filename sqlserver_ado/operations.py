@@ -71,16 +71,21 @@ class DatabaseOperations(BaseDatabaseOperations):
         format for SQL Server.
         """
         sign = 1 if connector == '+' else -1
-        seconds = ((timedelta.days * 86400) + timedelta.seconds) * sign
-        out = sql
-        if seconds:
-            out = u'DATEADD(SECOND, {0}, {1})'.format(seconds, sql)
-        if timedelta.microseconds:
-            # DATEADD with datetime doesn't support ms, must cast up
-            out = u'DATEADD(MICROSECOND, {ms}, CAST({sql} as datetime2))'.format(
-                ms=timedelta.microseconds * sign,
-                sql=out,
-            )
+        if timedelta.seconds or timedelta.microseconds:
+            # assume the underlying datatype supports seconds/microseconds
+            seconds = ((timedelta.days * 86400) + timedelta.seconds) * sign
+            out = sql
+            if seconds:
+                out = u'DATEADD(SECOND, {0}, {1})'.format(seconds, sql)
+            if timedelta.microseconds:
+                # DATEADD with datetime doesn't support ms, must cast up
+                out = u'DATEADD(MICROSECOND, {ms}, CAST({sql} as datetime2))'.format(
+                    ms=timedelta.microseconds * sign,
+                    sql=out,
+                )
+        else:
+            # Only days in the delta, assume underlying datatype can DATEADD with days
+            out = u'DATEADD(DAY, {0}, {1})'.format(timedelta.days * sign, sql)
         return out
 
     def date_trunc_sql(self, lookup_type, field_name):
