@@ -21,8 +21,7 @@ DATABASES = {
         'PASSWORD': DATABASE_PASSWORD,
         'COMMAND_TIMEOUT': DATABASE_COMMAND_TIMEOUT,
         'OPTIONS' : {
-            'provider': 'SQLNCLI10',
-            'extra_params': 'DataTypeCompatibility=80;MARS Connection=True;',
+            'provider': 'SQLNCLI11',
             'use_legacy_date_fields': False,
         },
     }

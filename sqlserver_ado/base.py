@@ -110,8 +110,8 @@ def make_connection_string(settings):
         options['provider'] = 'sqlncli10'
     
     parts.append('PROVIDER={0}'.format(options['provider']))
-        
-    if options['provider'].lower().find('=sqlcli') != -1:
+
+    if 'sqlncli' in options['provider'].lower():
         # native client needs a compatibility mode that behaves like OLEDB
         parts.append('DataTypeCompatibility=80')
 

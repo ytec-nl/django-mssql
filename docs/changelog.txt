@@ -26,6 +26,8 @@ v1.4 (In Development)
 - Improved ``date_interval_sql`` support for the various date/time related datatypes. The ``timedelta`` value will
   control whether the database will ``DATEADD`` using ``DAY`` or ``SECOND``. Trying to add seconds to a ``date``, or
   days to a ``time`` will generate database exceptions.
+- Fixed issue with provider detection that prevented ``DataTypeCompatibility=80`` from being automatically added to the 
+  connection string for the native client providers.
 
 v1.3.1
 ------
