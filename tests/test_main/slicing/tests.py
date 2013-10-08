@@ -1,4 +1,5 @@
 from django.core.paginator import Paginator
+from django.db.models import Q
 from django.test import TestCase
 
 from slicing.models import *
@@ -107,3 +108,30 @@ class DistinctTestCase(TestCase):
         self.assertEquals(
             [o.s for o in stuff], 
             [u'abc', u'def'])
+
+
+class SlicingRegressionTests(TestCase):
+    def test_order_from_foreign_key(self):
+        """
+        Page a query that is ordered by a column from the foreign key.
+        """
+        group1 = ItemGroup.objects.create(name='group1')
+        group1.items.create(name='g1 item1')
+        group1.items.create(name='g1 item2')
+        group1.items.create(name='g1 item3')
+        group2 = ItemGroup.objects.create(name='group2')
+        group2.items.create(name='g2 item1')
+        group2.items.create(name='g2 item2')
+        group3 = ItemGroup.objects.create(name='group3')
+        group3.items.create(name='g3 item1')
+        group3.items.create(name='g3 item1')
+
+        qs = Item.objects.filter(
+            Q(name__icontains='item') 
+        )[5:7]
+
+
+        self.assertEqual(2, len(qs))
+        for item in qs:
+            self.assertTrue(item.name.startswith('g3'))
+
