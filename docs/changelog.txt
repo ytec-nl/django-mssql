@@ -28,6 +28,7 @@ v1.4 (In Development)
   days to a ``time`` will generate database exceptions.
 - Fixed issue with provider detection that prevented ``DataTypeCompatibility=80`` from being automatically added to the 
   connection string for the native client providers.
+- Fixed SQL generation error that occured when ordering the query based upon a column that is not being returned.
 
 v1.3.1
 ------

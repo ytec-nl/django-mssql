@@ -21,6 +21,8 @@ import re
 _re_order_limit_offset = re.compile(
     r'(?:ORDER BY\s+(.+?))?\s*(?:LIMIT\s+(\d+))?\s*(?:OFFSET\s+(\d+))?$')
 
+_re_find_order_direction = re.compile(r'\s+(asc|desc)\s*$', re.IGNORECASE)
+
 # Pattern to find the quoted column name at the end of a field specification
 _re_pat_col = re.compile(r"\[([^\[]+)\]$")
 
@@ -217,14 +219,36 @@ class SQLCompiler(compiler.SQLCompiler):
                 self.connection.ops.quote_name(column),
             )
         else:
+            alias_id = 0
             # remap order for injected subselect
             new_order = []
             for x in order.split(','):
-                if x.find('.') != -1:
-                    tbl, col = x.rsplit('.', 1)
+                # find the ordering direction
+                m = _re_find_order_direction.search(x)
+                if m:
+                    direction = m.groups()[0]
                 else:
-                    col = x
-                new_order.append('{0}.{1}'.format(inner_table_name, col))
+                    direction = 'ASC'
+                # remove the ordering direction
+                x = _re_find_order_direction.sub('', x)
+                # remove any namespacing or table name from the column name
+                col = x.rsplit('.', 1)[-1]
+                # Is the ordering column missing from the inner select?
+                # 'inner_select' contains the full query without the leading 'SELECT '. 
+                # It's possible that this can get a false hit if the ordering 
+                # column is used in the WHERE while not being in the SELECT. It's
+                # not worth the complexity to properly handle that edge case.
+                if x not in inner_select:
+                    # Ordering requires the column to be selected by the inner select
+                    alias_id += 1
+                    # alias column name
+                    col = '[{0}___o{1}]'.format(
+                        col.strip('[]'),
+                        alias_id,
+                    )
+                    # add alias to inner_select
+                    inner_select = '({0}) AS {1}, {2}'.format(x, col, inner_select)
+                new_order.append('{0}.{1} {2}'.format(inner_table_name, col, direction))
             order = ', '.join(new_order)
         return outer_fields, inner_select, order
 
