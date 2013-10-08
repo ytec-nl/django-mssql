@@ -160,36 +160,17 @@ class SQLCompiler(compiler.SQLCompiler):
         # Else we have limits; rewrite the query using ROW_NUMBER()
         self._using_row_number = True
 
-        order, limit_ignore, offset_ignore = _get_order_limit_offset(raw_sql)
-        
-        qn = self.connection.ops.quote_name
-        
-        inner_table_name = qn('AAAA')
-
-        # Using ROW_NUMBER requires an ordering
-        if order is None:
-            meta = self.query.get_meta()                
-            column = meta.pk.db_column or meta.pk.get_attname()
-            order = '{0}.{1} ASC'.format(inner_table_name, qn(column))
-        else:
-            # remap order for injected subselect
-            new_order = []
-            for x in order.split(','):
-                if x.find('.') != -1:
-                    tbl, col = x.rsplit('.', 1)
-                else:
-                    col = x
-                new_order.append('{0}.{1}'.format(inner_table_name, col))
-            order = ', '.join(new_order)
-        
-        where_row_num = '{0} < _row_num'.format(self.query.low_mark)
-        if self.query.high_mark:
-            where_row_num += ' and _row_num <= {0}'.format(self.query.high_mark)
-            
         # Lop off ORDER... and the initial "SELECT"
         inner_select = _remove_order_limit_offset(raw_sql)
         outer_fields, inner_select = self._alias_columns(inner_select)
 
+        order = _get_order_limit_offset(raw_sql)[0]
+
+        qn = self.connection.ops.quote_name
+        inner_table_name = qn('AAAA')
+
+        outer_fields, inner_select, order = self._fix_slicing_order(outer_fields, inner_select, order, inner_table_name)
+        
         # map a copy of outer_fields for injected subselect
         f = []
         for x in outer_fields.split(','):
@@ -201,8 +182,7 @@ class SQLCompiler(compiler.SQLCompiler):
             else:
                 col = x
             f.append('{0}.{1}'.format(inner_table_name, col.strip()))
-        
-        
+
         # inject a subselect to get around OVER requiring ORDER BY to come from FROM
         inner_select = '{fields} FROM ( SELECT {inner} ) AS {inner_as}'.format(
             fields=', '.join(f),
@@ -210,6 +190,10 @@ class SQLCompiler(compiler.SQLCompiler):
             inner_as=inner_table_name,
         )
         
+        where_row_num = '{0} < _row_num'.format(self.query.low_mark)
+        if self.query.high_mark:
+            where_row_num += ' and _row_num <= {0}'.format(self.query.high_mark)        
+            
         sql = "SELECT _row_num, {outer} FROM ( SELECT ROW_NUMBER() OVER ( ORDER BY {order}) as _row_num, {inner}) as QQQ where {where}".format(
             outer=outer_fields,
             order=order,
@@ -218,6 +202,31 @@ class SQLCompiler(compiler.SQLCompiler):
         )
         
         return sql, fields
+
+    def _fix_slicing_order(self, outer_fields, inner_select, order, inner_table_name):
+        """
+        Apply any necessary fixes to the outer_fields, inner_select, and order 
+        strings due to slicing.
+        """
+        # Using ROW_NUMBER requires an ordering
+        if order is None:
+            meta = self.query.get_meta()                
+            column = meta.pk.db_column or meta.pk.get_attname()
+            order = '{0}.{1} ASC'.format(
+                inner_table_name, 
+                self.connection.ops.quote_name(column),
+            )
+        else:
+            # remap order for injected subselect
+            new_order = []
+            for x in order.split(','):
+                if x.find('.') != -1:
+                    tbl, col = x.rsplit('.', 1)
+                else:
+                    col = x
+                new_order.append('{0}.{1}'.format(inner_table_name, col))
+            order = ', '.join(new_order)
+        return outer_fields, inner_select, order
 
     def _alias_columns(self, sql):
         """Return tuple of SELECT and FROM clauses, aliasing duplicate column names."""
