@@ -95,12 +95,12 @@ def make_connection_string(settings):
 
     # If no user is specified, use integrated security.
     if settings.USER != '':
-        auth_string = 'UID={0};PWD={1}'.format(settings.USER, settings.PASSWORD)
+        auth_string = u'UID={0};PWD={1}'.format(settings.USER, settings.PASSWORD)
     else:
         auth_string = 'Integrated Security=SSPI'
 
     parts = [
-        'DATA SOURCE={0};Initial Catalog={1}'.format(db_host, db_name),
+        u'DATA SOURCE={0};Initial Catalog={1}'.format(db_host, db_name),
         auth_string
     ]
 
