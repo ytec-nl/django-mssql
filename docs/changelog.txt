@@ -29,6 +29,8 @@ v1.4 (In Development)
 - Fixed issue with provider detection that prevented ``DataTypeCompatibility=80`` from being automatically added to the 
   connection string for the native client providers.
 - Fixed SQL generation error that occured when ordering the query based upon a column that is not being returned.
+- Added savepoint support. MS SQL Server doesn't support savepoint commits and will no-op it. Other databases, e.g.
+  postgresql, mostly use it as a way of freeing server resources in the middle of a transaction. Thanks Martijn Pieters.
 
 v1.3.1
 ------

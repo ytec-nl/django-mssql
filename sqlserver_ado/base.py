@@ -36,6 +36,8 @@ class DatabaseFeatures(BaseDatabaseFeatures):
 
     allow_sliced_subqueries = False
 
+    uses_savepoints = True
+
 def is_ip_address(value):
     """
     Returns True if value is a valid IP address, otherwise False.
@@ -273,3 +275,9 @@ class DatabaseWrapper(BaseDatabaseWrapper):
                 ))
                 if cursor.description:
                     raise IntegrityError(cursor.fetchall())
+
+    # MS SQL Server doesn't support explicit savepoint commits; savepoints are
+    # implicitly committed with the transaction.
+    # Ignore them.
+    def _savepoint_commit(self, sid):
+        pass

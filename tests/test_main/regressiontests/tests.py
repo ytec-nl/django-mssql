@@ -3,8 +3,9 @@ import decimal
 from operator import attrgetter
 import time
 from django.core.exceptions import ImproperlyConfigured
-from django.db import models, connection
-from django.test import TestCase
+from django.db import models, connection, transaction
+from django.db.transaction import commit_manually
+from django.test import TestCase, TransactionTestCase
 from django.utils.safestring import mark_safe
 
 from regressiontests.models import *
@@ -414,3 +415,37 @@ class Ticket21203Tests(TestCase):
         self.assertEqual(qs[0].parent.parent_created, now)
         self.assertEqual(qs[0].parent.parent_time, now.time())
         self.assertEqual(qs[0].parent.parent_date, now.date())
+
+
+# SavepointTest borrowed from Django 1.5.4 (with minor modifications)
+class SavepointTest(TransactionTestCase):
+
+    def test_savepoint_commit(self):
+        @commit_manually
+        def work():
+            mod = Mod.objects.create(fld=1)
+            pk = mod.pk
+            sid = transaction.savepoint()
+            mod1 = Mod.objects.filter(pk=pk).update(fld=10)
+            with self.assertNumQueries(0):
+                # This should be a noop for django-mssql
+                transaction.savepoint_commit(sid)
+            mod2 = Mod.objects.get(pk=pk)
+            transaction.commit()
+            self.assertEqual(mod2.fld, 10)
+
+        work()
+
+    def test_savepoint_rollback(self):
+        @commit_manually
+        def work():
+            mod = Mod.objects.create(fld=1)
+            pk = mod.pk
+            sid = transaction.savepoint()
+            mod1 = Mod.objects.filter(pk=pk).update(fld=20)
+            transaction.savepoint_rollback(sid)
+            mod2 = Mod.objects.get(pk=pk)
+            transaction.commit()
+            self.assertEqual(mod2.fld, 1)
+
+        work()

@@ -447,3 +447,6 @@ class Ticket21203Parent(models.Model):
 class Ticket21203Child(models.Model):
     childid = models.AutoField(primary_key=True)
     parent = models.ForeignKey(Ticket21203Parent)
+
+class Mod(models.Model):
+    fld = models.IntegerField()
