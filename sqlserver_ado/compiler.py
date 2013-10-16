@@ -281,21 +281,8 @@ class SQLCompiler(compiler.SQLCompiler):
     
         def _replace_sub(col):
             """Replace all placeholders with expanded values"""
-            while True:
-                m = _re_col_placeholder.search(col)
-                if m:
-                    try:
-                        key = '_placeholder_{0}'.format(
-                            int(m.group(1))
-                        )
-                        col = col.format(**{
-                            key : parens[key]
-                        })
-                    except:
-                        # not a substituted value
-                        break
-                else:
-                    break
+            while _re_col_placeholder.search(col):
+                col = col.format(**parens)
             return col
     
         temp_sql = ''.join(paren_buf)
@@ -311,15 +298,10 @@ class SQLCompiler(compiler.SQLCompiler):
                 if col_key in names_seen:
                     alias = qn('{0}___{1}'.format(col_name, names_seen.count(col_key)))
                     outer.append(alias)
-            
-                    col = _replace_sub(col)
-            
-                    inner.append('{0} as {1}'.format(col, alias))
+                    inner.append('{0} as {1}'.format(_replace_sub(col), alias))
                 else:
-                    replaced = _replace_sub(col)
-                            
                     outer.append(qn(col_name))
-                    inner.append(replaced)
+                    inner.append(_replace_sub(col))
     
                 names_seen.append(col_key)
             else:

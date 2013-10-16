@@ -31,6 +31,8 @@ v1.4 (In Development)
 - Fixed SQL generation error that occured when ordering the query based upon a column that is not being returned.
 - Added savepoint support. MS SQL Server doesn't support savepoint commits and will no-op it. Other databases, e.g.
   postgresql, mostly use it as a way of freeing server resources in the middle of a transaction. Thanks Martijn Pieters.
+- Minor cleanup of limit/offset SQL mangling to allow custom aggregates that require multiple column replacements.
+  :issue:`40` Thanks Martijn Pieters for initial patch and tests.
 
 v1.3.1
 ------

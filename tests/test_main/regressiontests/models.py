@@ -3,6 +3,7 @@ from __future__ import absolute_import
 import datetime
 import decimal
 from django.db import models, IntegrityError
+from django.db.models.sql.aggregates import Count
 from django.test import TestCase
 from django.core.paginator import Paginator
 
@@ -450,3 +451,22 @@ class Ticket21203Child(models.Model):
 
 class Mod(models.Model):
     fld = models.IntegerField()
+
+class Bug40Table(models.Model):
+    int1 = models.IntegerField()
+
+class UselessCountAggregate(Count):
+    sql_template = 'COUNT(%(field)s) - COUNT(%(field)s)'
+
+class Bug40CustomAggregate(object):
+    """Custom aggregate returning multi-function expression"""
+    def __init__(self, lookup):
+        self.lookup = lookup
+
+    @property
+    def default_alias(self):
+        return '{0}__bug40customaggregate'.format(self.lookup)
+
+    def add_to_query(self, query, alias, col, source, is_summary):
+        query.aggregate_select[alias] = UselessCountAggregate(
+            col, source=source, is_summary=is_summary)

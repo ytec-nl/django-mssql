@@ -449,3 +449,10 @@ class SavepointTest(TransactionTestCase):
             self.assertEqual(mod2.fld, 1)
 
         work()
+
+class Bug40Tests(TestCase):
+    def test_bug40_alias_handling(self):
+        Bug40Table.objects.create(int1=42)
+        Bug40Table.objects.create(int1=28)
+        qs = Bug40Table.objects.all().annotate(aggregate=Bug40CustomAggregate('int1'))
+        self.assertEqual(qs[1].aggregate, 0)
