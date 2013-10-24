@@ -18,6 +18,7 @@ Supported Versions:
     * 2005
     * 2008
     * 2008r2
+    * 2012
 
 The SQL Server version will be detected upon initial connection.
 
