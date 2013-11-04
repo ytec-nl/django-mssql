@@ -181,9 +181,17 @@ class DatabaseWrapper(BaseDatabaseWrapper):
       
 
     def __connect(self):
-        """Connect to the database"""
+        """
+        Connect to the database
+        """
+        connection_string = make_connection_string(self.settings_dict)
+
+        if 'mars connection=true' in connection_string.lower():
+            # Issue #41 - Cannot use MARS with savepoints
+            self.features.uses_savepoints = False
+
         self.connection = Database.connect(
-            make_connection_string(self.settings_dict),
+            connection_string,
             self.command_timeout,
             use_transactions=self.use_transactions,
         )

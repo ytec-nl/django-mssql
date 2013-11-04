@@ -33,6 +33,7 @@ v1.4 (In Development)
   postgresql, mostly use it as a way of freeing server resources in the middle of a transaction. Thanks Martijn Pieters.
 - Minor cleanup of limit/offset SQL mangling to allow custom aggregates that require multiple column replacements.
   :issue:`40` Thanks Martijn Pieters for initial patch and tests.
+- Savepoints cannot be used with MARS connections. :issue:`41`
 
 v1.3.1
 ------

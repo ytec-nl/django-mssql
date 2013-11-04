@@ -5,7 +5,7 @@ import time
 from django.core.exceptions import ImproperlyConfigured
 from django.db import models, connection, transaction
 from django.db.transaction import commit_manually
-from django.test import TestCase, TransactionTestCase
+from django.test import TestCase, TransactionTestCase, skipUnlessDBFeature
 from django.utils.safestring import mark_safe
 
 from regressiontests.models import *
@@ -418,6 +418,7 @@ class Ticket21203Tests(TestCase):
 
 
 # SavepointTest borrowed from Django 1.5.4 (with minor modifications)
+@skipUnlessDBFeature('uses_savepoints')
 class SavepointTest(TransactionTestCase):
 
     def test_savepoint_commit(self):
