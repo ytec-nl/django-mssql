@@ -63,25 +63,7 @@ def _remove_order_limit_offset(sql):
     return _re_order_limit_offset.sub('',sql).split(None, 1)[1]
 
 class SQLCompiler(compiler.SQLCompiler):
-    def __pad_fields_with_aggregates(self, fields):
-        """
-        Fix for Django ticket #21126 backported to Django 1.5-1.5.4
-        """
-        if django.VERSION[:2] == (1, 5) and django.VERSION[2] <= 5:
-            if not bool(self.query.aggregate_select):
-                return fields
-            aggregate_start = len(self.query.extra_select) + len(self.query.select)
-            aggregate_end = aggregate_start + len(self.query.aggregate_select)
-
-            # pad None in to fields for aggregates
-            return fields[:aggregate_start] + [
-                None for x in range(0, aggregate_end - aggregate_start)
-            ] + fields[aggregate_start:]
-        return fields
-
     def resolve_columns(self, row, fields=()):
-        fields = self.__pad_fields_with_aggregates(fields)
-
         # If the results are sliced, the resultset will have an initial 
         # "row number" column. Remove this column before the ORM sees it.
         if getattr(self, '_using_row_number', False):
