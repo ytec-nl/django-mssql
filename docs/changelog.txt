@@ -1,8 +1,8 @@
 Changelog
 =========
 
-v1.4 (In Development)
----------------------
+v1.4
+----
 
 - Support for Django v1.3 has been removed.
 - Corrected DB-API 2 testing documentation.
