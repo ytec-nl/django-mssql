@@ -1,6 +1,13 @@
 Changelog
 =========
 
+v1.5 (In Development)
+---------------------
+
+- This version only support Django v1.6 and later. Support for v1.4 and v1.5 is
+  not guaranteed.
+
+
 v1.4
 ----
 
