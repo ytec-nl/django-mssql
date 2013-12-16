@@ -318,4 +318,10 @@ class DatabaseWrapper(BaseDatabaseWrapper):
     # # implicitly committed with the transaction.
     # # Ignore them.
     def _savepoint_commit(self, sid):
-        pass
+        # if something is populating self.queries, include a fake entry to avoid
+        # issues with tests that use assertNumQueries.
+        if self.queries:
+            self.queries.append({
+                'sql': '-- RELEASE SAVEPOINT %s -- (because assertNumQueries)' % self.ops.quote_name(sid),
+                'time': '0.000',
+            })
