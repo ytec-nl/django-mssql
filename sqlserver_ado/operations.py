@@ -246,13 +246,6 @@ class DatabaseOperations(BaseDatabaseOperations):
     def tablespace_sql(self, tablespace, inline=False):
         return "ON %s" % self.quote_name(tablespace)
 
-    # def value_to_db_date(self, value):
-    #     if value is None:
-    #         return None
-    #     if isinstance(value, datetime.datetime):
-    #         value = value.date()
-    #     return value.isoformat()
-
     def _legacy_value_to_db_datetime(self, value):
         if value is None or isinstance(value, basestring):
             return value
@@ -321,17 +314,33 @@ class DatabaseOperations(BaseDatabaseOperations):
             return None
         return value # Should be a decimal type (or string)
 
-    def year_lookup_bounds(self, value):
+    def year_lookup_bounds_for_date_field(self, value):
+        """
+        Returns a two-elements list with the lower and upper bound to be used
+        with a BETWEEN operator to query a DateField value using a year
+        lookup.
+
+        `value` is an int, containing the looked-up year.
+        """
+        first = self.value_to_db_date(datetime.date(value, 1, 1))
+        second = self.value_to_db_date(datetime.date(value, 12, 31))
+        return [first, second]
+
+    def year_lookup_bounds_for_datetime_field(self, value):
         """
         Returns a two-elements list with the lower and upper bound to be used
         with a BETWEEN operator to query a field value using a year lookup
 
         `value` is an int, containing the looked-up year.
         """
-        first = self.value_to_db_datetime(datetime.datetime(value, 1, 1))
+        first = datetime.datetime(value, 1, 1)
         ms = 997000 if self.connection.use_legacy_date_fields else 999999
-        second = self.value_to_db_datetime(datetime.datetime(value, 12, 31, 23, 59, 59, ms))
-        return [first, second]
+        second = datetime.datetime(value, 12, 31, 23, 59, 59, ms)
+        if settings.USE_TZ:
+            tz = timezone.get_current_timezone()
+            first = timezone.make_aware(first, tz)
+            second = timezone.make_aware(second, tz)
+        return [self.value_to_db_datetime(first), self.value_to_db_datetime(second)]
 
     def convert_values(self, value, field):
         """
