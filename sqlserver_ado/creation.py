@@ -12,6 +12,7 @@ class DatabaseCreation(BaseDatabaseCreation):
         'AutoField':                    'int IDENTITY (1, 1)',
         'BigAutoField':                 'bigint IDENTITY (1, 1)',
         'BigIntegerField':              'bigint',
+        'BinaryField':                  'varbinary(max)',
         'BooleanField':                 'bit',
         'CharField':                    'nvarchar(%(max_length)s)',
         'CommaSeparatedIntegerField':   'nvarchar(%(max_length)s)',
