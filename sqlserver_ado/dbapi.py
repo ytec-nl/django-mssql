@@ -240,10 +240,21 @@ class Connection(object):
         self.messages = []
         self.adoConn.CursorLocation = defaultCursorLocation
         self.supportsTransactions = useTransactions
+        self.transaction_level = 0 # 0 == Not in a transaction, at the top level
 
         if self.supportsTransactions:
             self.adoConn.IsolationLevel = defaultIsolationLevel
-            self.adoConn.BeginTrans() # Disables autocommit per DBPAI
+            self.transaction_level = self.adoConn.BeginTrans() # Disables autocommit per DBPAI
+
+    def set_autocommit(self, value):
+        if self.supportsTransactions == (not value):
+            return
+        if self.supportsTransactions:
+            self.transaction_level = self.adoConn.RollbackTrans() # Disables autocommit per DBPAI
+        else:
+            self.adoConn.IsolationLevel = defaultIsolationLevel
+            self.transaction_level = self.adoConn.BeginTrans() # Disables autocommit per DBPAI
+        self.supportsTransactions = not value
 
     def _raiseConnectionError(self, errorclass, errorvalue):
         eh = self.errorhandler
@@ -254,7 +265,7 @@ class Connection(object):
     def _close_connection(self):
         """Close the underlying ADO Connection object, rolling back an active transaction if supported."""
         if self.supportsTransactions:
-            self.adoConn.RollbackTrans()
+            self.transaction_level = self.adoConn.RollbackTrans()
         self.adoConn.Close()
 
     def close(self):
@@ -278,7 +289,7 @@ class Connection(object):
             return
 
         try:
-            self.adoConn.CommitTrans()
+            self.transaction_level = self.adoConn.CommitTrans()
             if not(self.adoConn.Attributes & adXactCommitRetaining):
                 #If attributes has adXactCommitRetaining it performs retaining commits that is,
                 #calling CommitTrans automatically starts a new transaction. Not all providers support this.
@@ -290,15 +301,17 @@ class Connection(object):
     def rollback(self):
         """Abort a pending transaction."""
         self.messages = []
-        if not self.supportsTransactions:
-            self._raiseConnectionError(NotSupportedError, None)
-
-        self.adoConn.RollbackTrans()
+        with self.cursor() as cursor:
+            cursor.execute("select @@TRANCOUNT")
+            trancount, = cursor.fetchone()
+        if trancount == 0:
+            return
+        self.transaction_level = self.adoConn.RollbackTrans()
         if not(self.adoConn.Attributes & adXactAbortRetaining):
             #If attributes has adXactAbortRetaining it performs retaining aborts that is,
             #calling RollbackTrans automatically starts a new transaction. Not all providers support this.
             #If not, we will have to start a new transaction by this command:
-            self.adoConn.BeginTrans()
+            self.transaction_level = self.adoConn.BeginTrans()
 
     def cursor(self):
         """Return a new Cursor object using the current connection."""
@@ -526,7 +539,11 @@ class Cursor(object):
 
         # Replace params with ? or NULL
         if parameter_replacements:
-            operation = operation % tuple(parameter_replacements)
+            try:
+                operation = operation % tuple(parameter_replacements)
+            except TypeError as e:
+                print 'operation=%s\tparams=%s' % (operation, tuple(parameter_replacements))
+                raise
 
         self.cmd.CommandText = operation
         self._execute_command()

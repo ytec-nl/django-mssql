@@ -1,9 +1,11 @@
 """Microsoft SQL Server database backend for Django."""
 from __future__ import absolute_import
 
+from django.core.exceptions import ImproperlyConfigured, ValidationError
 from django.db.backends import BaseDatabaseWrapper, BaseDatabaseFeatures, BaseDatabaseValidation, BaseDatabaseClient
 from django.db.backends.signals import connection_created
-from django.core.exceptions import ImproperlyConfigured, ValidationError
+from django.utils.functional import cached_property
+from django.utils import six
 
 from . import dbapi as Database
 
@@ -11,7 +13,6 @@ from .introspection import DatabaseIntrospection
 from .creation import DatabaseCreation
 from .operations import DatabaseOperations
 
-DatabaseError = Database.DatabaseError
 IntegrityError = Database.IntegrityError
 
 class DatabaseFeatures(BaseDatabaseFeatures):
@@ -37,6 +38,12 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     allow_sliced_subqueries = False
 
     uses_savepoints = True
+
+    supports_paramstyle_pyformat = False
+
+    @cached_property
+    def has_zoneinfo_database(self):
+        return pytz is not None
 
 def is_ip_address(value):
     """
@@ -133,7 +140,9 @@ VERSION_SQL2012 = 11
 
 class DatabaseWrapper(BaseDatabaseWrapper):
     vendor = 'microsoft'
-    
+
+    Database = Database
+
     operators = {
         "exact": "= %s",
         "iexact": "LIKE %s ESCAPE '\\'",
@@ -174,37 +183,58 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         self.features = DatabaseFeatures(self)
         self.ops = DatabaseOperations(self)
         self.client = BaseDatabaseClient(self)
-        self.creation = DatabaseCreation(self) 
+        self.creation = DatabaseCreation(self)
         self.introspection = DatabaseIntrospection(self)
         self.validation = BaseDatabaseValidation(self)
 
-      
+    def get_new_connection(self, conn_params):
+        """Connect to the database"""
+        conn = self._get_new_connection(conn_params)
+        # The OUTPUT clause is supported in 2005+ sql servers
+        self.features.can_return_id_from_insert = self._is_sql2005_and_up(conn)
+        self.features.has_bulk_insert = self._is_sql2008_and_up(conn)
+        if self.settings_dict["OPTIONS"].get("allow_nulls_in_unique_constraints", True):
+            self.features.ignores_nulls_in_unique_constraints = self._is_sql2008_and_up(conn)
+            if self._is_sql2008_and_up(conn):
+                self.creation.sql_create_model = self.creation.sql_create_model_sql2008
+        return conn
 
-    def __connect(self):
-        """
-        Connect to the database
-        """
-        connection_string = make_connection_string(self.settings_dict)
+    def get_connection_params(self):
+        """Returns a dict of parameters suitable for get_new_connection."""
+        settings_dict = self.settings_dict
+        options = settings_dict.get('OPTIONS', {})
+        autocommit = options.get('autocommit', False)
+        return {
+            'connection_string': make_connection_string(settings_dict),
+            'timeout': self.command_timeout,
+            'use_transactions': not autocommit,
+            }
 
-        if 'mars connection=true' in connection_string.lower():
-            # Issue #41 - Cannot use MARS with savepoints
-            self.features.uses_savepoints = False
+    def get_new_connection(self, conn_params):
+        """Opens a connection to the database."""
+        self.__connection_string = conn_params.get('connection_string', '')
+        conn = Database.connect(**conn_params)
+        return conn
 
-        self.connection = Database.connect(
-            connection_string,
-            self.command_timeout,
-            use_transactions=self.use_transactions,
-        )
-
+    def init_connection_state(self):
+        """Initializes the database connection settings."""
+        # if 'mars connection=true' in self.__connection_string.lower():
+        #     # Issue #41 - Cannot use MARS with savepoints
+        #     self.features.uses_savepoints = False
         # cache the properties on the connection
         self.connection.adoConnProperties = dict([(x.Name, x.Value) for x in self.connection.adoConn.Properties])
 
         if self.is_sql2000(make_connection=False):
             # SQL 2000 doesn't support the OUTPUT clause
             self.features.can_return_id_from_insert = False
-        
-        connection_created.send(sender=self.__class__, connection=self)
-        return self.connection
+
+    def create_cursor(self):
+        """Creates a cursor. Assumes that a connection is established."""
+        cursor = self.connection.cursor()
+        return cursor
+
+    def _set_autocommit(self, value):
+        self.connection.set_autocommit(value)
 
     def __get_dbms_version(self, make_connection=True):
         """
@@ -235,11 +265,6 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         connection if needed when make_connection is True.
         """
         return self.__get_dbms_version(make_connection).startswith(unicode(VERSION_SQL2008))
-
-    def _cursor(self):
-        if self.connection is None:
-            self.__connect()
-        return Database.Cursor(self.connection)
 
     def disable_constraint_checking(self):
         """
@@ -274,7 +299,7 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         if not table_names:
             result = cursor.execute('DBCC CHECKCONSTRAINTS WITH ALL_CONSTRAINTS')
             if cursor.description:
-                raise IntegrityError(cursor.fetchall())
+                raise self.Database.IntegrityError(cursor.fetchall())
         else:
             qn = self.ops.quote_name
             for name in table_names:
@@ -282,10 +307,10 @@ class DatabaseWrapper(BaseDatabaseWrapper):
                     qn(name)
                 ))
                 if cursor.description:
-                    raise IntegrityError(cursor.fetchall())
+                    raise self.Database.IntegrityError(cursor.fetchall())
 
-    # MS SQL Server doesn't support explicit savepoint commits; savepoints are
-    # implicitly committed with the transaction.
-    # Ignore them.
+    # # MS SQL Server doesn't support explicit savepoint commits; savepoints are
+    # # implicitly committed with the transaction.
+    # # Ignore them.
     def _savepoint_commit(self, sid):
         pass

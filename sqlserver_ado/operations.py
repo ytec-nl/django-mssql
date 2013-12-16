@@ -56,14 +56,9 @@ class DatabaseOperations(BaseDatabaseOperations):
               FROM (SELECT [cache_key], ROW_NUMBER() OVER (ORDER BY [cache_key]) AS [rank] FROM %s) AS [RankedCache]
              WHERE [rank] = %%s + 1
         """
-    
+
     def date_extract_sql(self, lookup_type, field_name):
-        if lookup_type == 'week_day':
-            lookup_type = 'weekday'
-        return 'DATEPART({0}, {1})'.format(
-            lookup_type,
-            self.quote_name(field_name),
-        )
+        return self.datetime_extract_sql(lookup_type, field_name, None)
 
     def date_interval_sql(self, sql, connector, timedelta):
         """
@@ -90,6 +85,38 @@ class DatabaseOperations(BaseDatabaseOperations):
 
     def date_trunc_sql(self, lookup_type, field_name):
         return "DATEADD(%s, DATEDIFF(%s, 0, %s), 0)" % (lookup_type, lookup_type, field_name)
+
+
+    def datetime_extract_sql(self, lookup_type, field_name, tzname):
+        """
+        Given a lookup_type of 'year', 'month', 'day', 'hour', 'minute' or
+        'second', returns the SQL that extracts a value from the given
+        datetime field field_name, and a tuple of parameters.
+        """
+        field_name = self.quote_name(field_name)
+        params = []
+        if tzname is not None and settings.USE_TZ:
+            field_name = 'TODATETIMEOFFSET(%s, %%s)' % field_name
+            params = [tzname]
+        if lookup_type == 'week_day':
+            lookup_type = 'weekday'
+        sql = 'DATEPART(%s, %s)' % (lookup_type, field_name)
+        return sql, params
+
+    def datetime_trunc_sql(self, lookup_type, field_name, tzname):
+        """
+        Given a lookup_type of 'year', 'month', 'day', 'hour', 'minute' or
+        'second', returns the SQL that truncates the given datetime field
+        field_name to a datetime object with only the given specificity, and
+        a tuple of parameters.
+        """
+        field_name = self.quote_name(field_name)
+        params = []
+        if settings.USE_TZ:
+            field_name = 'TODATETIMEOFFSET(%s, %%s)' % field_name
+            params = [tzname]
+        sql = "DATEADD(%s, DATEDIFF(%s, 0, %s), 0)" % (lookup_type, lookup_type, field_name)
+        return sql, params
 
     def last_insert_id(self, cursor, table_name, pk_name):
         """
@@ -145,7 +172,7 @@ class DatabaseOperations(BaseDatabaseOperations):
         match_option = {'iregex':0, 'regex':1}[lookup_type]
         return "dbo.REGEXP_LIKE(%%s, %%s, %s)=1" % (match_option,)
 
-    def sql_flush(self, style, tables, sequences):
+    def sql_flush(self, style, tables, sequences, allow_cascade=False):
         """
         Returns a list of SQL statements required to remove all data from
         the given database tables (without actually removing the tables
