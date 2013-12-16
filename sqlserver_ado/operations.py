@@ -58,7 +58,10 @@ class DatabaseOperations(BaseDatabaseOperations):
         """
 
     def date_extract_sql(self, lookup_type, field_name):
-        return self.datetime_extract_sql(lookup_type, field_name, None)
+        field_name = self.quote_name(field_name)
+        if lookup_type == 'week_day':
+            lookup_type = 'weekday'
+        return 'DATEPART(%s, %s)' % (lookup_type, field_name)
 
     def date_interval_sql(self, sql, connector, timedelta):
         """
@@ -95,7 +98,7 @@ class DatabaseOperations(BaseDatabaseOperations):
         """
         field_name = self.quote_name(field_name)
         params = []
-        if tzname is not None and settings.USE_TZ:
+        if settings.USE_TZ:
             field_name = 'TODATETIMEOFFSET(%s, %%s)' % field_name
             params = [tzname]
         if lookup_type == 'week_day':
