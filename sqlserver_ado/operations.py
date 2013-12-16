@@ -183,14 +183,12 @@ class DatabaseOperations(BaseDatabaseOperations):
 
         The `style` argument is a Style object as returned by either
         color_style() or no_style() in django.core.management.color.
-        
+
         Originally taken from django-pyodbc project.
         """
         if not tables:
             return list()
-            
-        qn = self.quote_name
-            
+
         # Cannot use TRUNCATE on tables that are referenced by a FOREIGN KEY; use DELETE instead.
         # (which is slow)
         cursor = self.connection.cursor()
@@ -198,7 +196,7 @@ class DatabaseOperations(BaseDatabaseOperations):
         # DBCC CHEKIDENT(table, RESEED, n) behavior.
         seqs = []
         for seq in sequences:
-            cursor.execute("SELECT COUNT(*) FROM %s" % qn(seq["table"]))
+            cursor.execute("SELECT COUNT(*) FROM %s" % self.quote_name(seq["table"]))
             rowcnt = cursor.fetchone()[0]
             elem = dict()
 
@@ -210,27 +208,23 @@ class DatabaseOperations(BaseDatabaseOperations):
             elem.update(seq)
             seqs.append(elem)
 
-        cursor.execute("SELECT TABLE_NAME, CONSTRAINT_NAME FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE CONSTRAINT_TYPE IN ('CHECK', 'FOREIGN KEY')")
-        fks = cursor.fetchall()
-        
         sql_list = list()
 
         # Turn off constraints.
-        sql_list.extend(['ALTER TABLE %s NOCHECK CONSTRAINT %s;' % (
-            qn(fk[0]), qn(fk[1])) for fk in fks if fk[0] is not None and fk[1] is not None])
+        sql_list.append('EXEC sp_MSforeachtable "ALTER TABLE ? NOCHECK CONSTRAINT all"')
 
         # Delete data from tables.
         sql_list.extend(['%s %s %s;' % (
-            style.SQL_KEYWORD('DELETE'), 
-            style.SQL_KEYWORD('FROM'), 
-            style.SQL_FIELD(qn(t))
+            style.SQL_KEYWORD('DELETE'),
+            style.SQL_KEYWORD('FROM'),
+            style.SQL_FIELD(self.quote_name(t))
             ) for t in tables])
 
         # Reset the counters on each table.
         sql_list.extend(['%s %s (%s, %s, %s) %s %s;' % (
             style.SQL_KEYWORD('DBCC'),
             style.SQL_KEYWORD('CHECKIDENT'),
-            style.SQL_FIELD(qn(seq["table"])),
+            style.SQL_FIELD(self.quote_name(seq["table"])),
             style.SQL_KEYWORD('RESEED'),
             style.SQL_FIELD('%d' % seq['start_id']),
             style.SQL_KEYWORD('WITH'),
@@ -238,8 +232,7 @@ class DatabaseOperations(BaseDatabaseOperations):
             ) for seq in seqs])
 
         # Turn constraints back on.
-        sql_list.extend(['ALTER TABLE %s CHECK CONSTRAINT %s;' % (
-            qn(fk[0]), qn(fk[1])) for fk in fks if fk[0] is not None and fk[1] is not None])
+        sql_list.append('EXEC sp_MSforeachtable "ALTER TABLE ? WITH NOCHECK CHECK CONSTRAINT all"')
 
         return sql_list
 
