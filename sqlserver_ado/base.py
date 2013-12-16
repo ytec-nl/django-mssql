@@ -13,6 +13,11 @@ from .introspection import DatabaseIntrospection
 from .creation import DatabaseCreation
 from .operations import DatabaseOperations
 
+try:
+    import pytz
+except ImportError:
+    pytz = None
+
 IntegrityError = Database.IntegrityError
 
 class DatabaseFeatures(BaseDatabaseFeatures):
