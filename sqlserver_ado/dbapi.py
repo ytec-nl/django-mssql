@@ -539,11 +539,7 @@ class Cursor(object):
 
         # Replace params with ? or NULL
         if parameter_replacements:
-            try:
-                operation = operation % tuple(parameter_replacements)
-            except TypeError as e:
-                print 'operation=%s\tparams=%s' % (operation, tuple(parameter_replacements))
-                raise
+            operation = operation % tuple(parameter_replacements)
 
         self.cmd.CommandText = operation
         self._execute_command()
