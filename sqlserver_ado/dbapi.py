@@ -40,11 +40,7 @@ from django.conf import settings
 from django.db.utils import IntegrityError as DjangoIntegrityError, \
     DatabaseError as DjangoDatabaseError
 
-try:
-    from django.utils import timezone
-except ImportError:
-    # timezone added in Django 1.4
-    timezone = None
+from django.utils import timezone
 
 import pythoncom
 import win32com.client
@@ -215,6 +211,8 @@ def _configure_parameter(p, value):
 
     elif isinstance(value, datetime.datetime):
         p.Type = adBSTR
+        if timezone.is_aware(value):
+            value = timezone.make_naive(value, timezone.utc)
         s = value.isoformat(' ')
         p.Value = s
         p.Size = len(s)
@@ -696,8 +694,8 @@ def _cvtComDate(comDate):
 
     dt = (datetime.datetime.fromordinal(day_count + _ordinal_1899_12_31) +
         datetime.timedelta(milliseconds=fraction_of_day * _milliseconds_per_day))
-    
-    if timezone and getattr(settings, 'USE_TZ', False):
+
+    if getattr(settings, 'USE_TZ', False):
         dt = dt.replace(tzinfo=timezone.utc)
     return dt
 
