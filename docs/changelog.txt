@@ -8,7 +8,7 @@ v1.5 (In Development)
   not guaranteed.
 - Added ``BinaryField`` as ``varbinary(max)``
 - Refactored DatabaseOperations.sql_flush to use a faster method of disabling/enabling constraints.
-
+- ``sqlserver_ado.fields.DateTimeField`` will now do a better job of returning an aware or naive datetime.
 
 v1.4
 ----

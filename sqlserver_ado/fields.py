@@ -65,7 +65,7 @@ class DateField(models.DateField):
         if isinstance(val, datetime.datetime):
             val = datetime.date()
         return val
- 
+
 class DateTimeField(models.DateTimeField):
     """
     A DateTimeField backed by a 'datetime2' database field.
@@ -77,8 +77,10 @@ class DateTimeField(models.DateTimeField):
         from django.conf import settings
         result = super(DateTimeField, self).to_python(convert_microsoft_date_to_isoformat(value))
         if result:
-            if timezone.is_aware(result) and not getattr(settings, 'USE_TZ', False):
-                result = result.astimezone(timezone.utc).replace(tzinfo=None)
+            if timezone.is_aware(result) and not settings.USE_TZ:
+                result = timezone.make_naive(result)
+            elif settings.USE_TZ:
+                result = timezone.make_aware(result, timezone.utc)
         return result
 
     def get_db_prep_value(self, value, connection, prepared=False):
@@ -158,7 +160,7 @@ class LegacyTimeField(models.TimeField):
         if isinstance(val, datetime.datetime):
             val = val.time()
         return val
-  
+
     def get_db_prep_value(self, value, connection, prepared=False):
         if not prepared:
             value = self.get_prep_value(value)
