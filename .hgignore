@@ -5,4 +5,4 @@ django_mssql.egg-info/
 .*\.orig
 \.tox/
 .*\.sublime.*
-extras/sqlserver/regex_clr/(obj|.*\.user|_.*)
+extras/sqlserver/regex_clr/(bin|obj|.*\.user|_.*)

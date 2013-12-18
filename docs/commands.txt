@@ -1,15 +1,29 @@
 Management Commands
 ===================
 
-Adding ``sql_app`` to your ``INSTALLED_APPS`` adds the following custom 
-management commands.
+Adding ``sqlserver_ado.sql_app`` to your ``INSTALLED_APPS`` adds the following
+custom management commands.
+
+.. _command_dbgui:
 
 dbgui
 -----
 
-This will launch SQL Management Studio, connected to your project's 
-default database.
+This will launch SQL Management Studio, connected to your project's default
+database.
 
     .. code-block:: cmd
-    
+
         python manage.py dbgui
+
+.. _command_install_regex_clr:
+
+install_regex_clr
+-----------------
+
+This will install the regex_clr assembly, located in the sqlserver_ado folder in
+to the specified database.
+
+	.. code-block:: cmd
+
+		python manage.py install_regex_clr database_name

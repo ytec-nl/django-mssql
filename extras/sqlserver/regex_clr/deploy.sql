@@ -13,14 +13,14 @@ RECONFIGURE;
 GO
 
 -- Create the assembly in the database from the path can this be done via a file path?
-CREATE ASSEMBLY regex_clr from 'C:\Projects\django-mssql\sqlserver\regex_clr\bin\Debug\regex_clr.dll' WITH PERMISSION_SET = SAFE
+CREATE ASSEMBLY regex_clr from 'C:\Projects\django-mssql\sqlserver\regex_clr.dll' WITH PERMISSION_SET = SAFE
 GO
 
 -- Pull in the User Defined Function from the assembly
 create function REGEXP_LIKE
 (
-	@input nvarchar(4000),
-	@pattern nvarchar(4000),
+	@input nvarchar(max),
+	@pattern nvarchar(max),
 	@caseSensitive int
 ) 
 RETURNS INT  AS 

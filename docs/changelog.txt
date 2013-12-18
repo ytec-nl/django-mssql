@@ -10,6 +10,13 @@ v1.5 (In Development)
 - Refactored DatabaseOperations.sql_flush to use a faster method of disabling/enabling constraints.
 - ``sqlserver_ado.fields.DateTimeField`` will now do a better job of returning an aware or naive datetime.
 - DateTime truncation will now support any ``datetime2`` value without the potential of a datediff overflow exception.
+- Many improvements to regex_clr
+
+  - Updated regex_clr to Visual Studio 2010
+  - Patterns and fields with a length greater than 4000 will now work.
+  - If pattern or input are NULL, it will not match instead of raising an exception.
+  - regex_clr auto-installs during test database creation
+  - Added command :ref:`command_install_regex_clr` to simplify enabling regex support for any database.
 
 v1.4
 ----

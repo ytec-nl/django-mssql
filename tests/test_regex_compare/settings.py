@@ -75,4 +75,6 @@ TEMPLATE_DIRS = (
 
 INSTALLED_APPS = (
 	'myapp',
+    'sqlserver_ado.sql_app',
+
 )

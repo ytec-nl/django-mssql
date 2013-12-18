@@ -45,7 +45,7 @@ earliest supported datetime date value is January 1, 1753.
 
 SQL Server 2008 introduces a datetime2_ type, with support for fractional 
 seconds and the full range of Python datetime dates. To use this time, either
-set the :settings:`use_legacy_date_fields` option to ``False`` or use the 
+set the :setting:`use_legacy_date_fields` option to ``False`` or use the
 ``sqlserver_ado.fields.DateTimeField`` with your models.
 
 .. _datetime2: http://msdn.microsoft.com/en-us/library/ms180878(SQL.100).aspx

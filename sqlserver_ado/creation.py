@@ -69,7 +69,7 @@ class DatabaseCreation(BaseDatabaseCreation):
         Create the test databases using a connection to database 'master'.
         """
         test_database_name = self._test_database_name(settings)
-        
+
         if not self._test_database_create(settings):
             if verbosity >= 1:
                 six.print_("Skipping Test DB creation")
@@ -81,26 +81,27 @@ class DatabaseCreation(BaseDatabaseCreation):
 
         # connect to master database
         self.connection = self._create_master_connection()
-        
+
         try:
             super(DatabaseCreation, self)._create_test_db(verbosity, autoclobber)
+
+            self.install_regex_clr(test_database_name)
         except Exception as e:
             if 'Choose a different database name.' in str(e):
                 print 'Database "%s" could not be created because it already exists.' % test_database_name
             else:
                 raise
         finally:
-            # set thing back 
+            # set thing back
             self.connection = old_wrapper
 
         return test_database_name
-        
+
 
     def _destroy_test_db(self, test_database_name, verbosity=1):
         """
         Drop the test databases using a connection to database 'master'.
         """
-    
         if not self._test_database_create(settings):
             if verbosity >= 1:
                 six.print_("Skipping Test DB destruction")
@@ -109,7 +110,7 @@ class DatabaseCreation(BaseDatabaseCreation):
         old_wrapper = self.connection
         old_wrapper.close()
         self.connection = self._create_master_connection()
-        
+
         try:
             super(DatabaseCreation, self)._destroy_test_db(test_database_name, verbosity)
         except Exception as e:
@@ -119,8 +120,7 @@ class DatabaseCreation(BaseDatabaseCreation):
                 raise
         finally:
             self.connection = old_wrapper
-            
-        
+
     def _test_database_create(self, settings):
         """
         Check the settings to see if the test database should be created.
@@ -146,3 +146,51 @@ class DatabaseCreation(BaseDatabaseCreation):
             else:
                 name = TEST_DATABASE_PREFIX + settings.DATABASE_NAME
         return name
+
+
+
+    def install_regex_clr(self, database_name):
+        sql = '''
+USE {database_name};
+
+-- Enable CLR in this database
+sp_configure 'show advanced options', 1;
+RECONFIGURE;
+sp_configure 'clr enabled', 1;
+RECONFIGURE;
+
+-- Drop and recreate the function if it already exists
+IF OBJECT_ID('REGEXP_LIKE') IS NOT NULL
+    DROP FUNCTION [dbo].[REGEXP_LIKE]
+
+IF EXISTS(select * from sys.assemblies where name like 'regex_clr')
+    DROP ASSEMBLY regex_clr
+;
+
+CREATE ASSEMBLY regex_clr
+FROM 0x{assembly_hex}
+WITH PERMISSION_SET = SAFE;
+
+create function [dbo].[REGEXP_LIKE]
+(
+    @input nvarchar(max),
+    @pattern nvarchar(max),
+    @caseSensitive int
+)
+RETURNS INT  AS
+EXTERNAL NAME regex_clr.UserDefinedFunctions.REGEXP_LIKE
+        '''.format(
+            database_name=self.connection.ops.quote_name(database_name),
+            assembly_hex=self.get_regex_clr_assembly_hex(),
+        ).split(';')
+
+        with self.connection.cursor() as cursor:
+            for s in sql:
+                cursor.execute(s)
+
+    def get_regex_clr_assembly_hex(self):
+        import os
+        import binascii
+        with open(os.path.join(os.path.dirname(__file__), 'regex_clr.dll'), 'rb') as f:
+            assembly = binascii.hexlify(f.read()).decode('ascii')
+        return assembly

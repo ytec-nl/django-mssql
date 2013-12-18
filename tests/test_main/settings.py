@@ -80,4 +80,5 @@ INSTALLED_APPS = (
     'slicing',
     'nulls',
     'aggregates',
+    'sqlserver_ado.sql_app',
 )

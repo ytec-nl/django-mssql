@@ -24,8 +24,8 @@ To enable CLR:
 
 To pull in the UDF from the assembly:
 create function REGEXP_LIKE(
-	@input nvarchar(4000),
-	@pattern nvarchar(4000),
+	@input nvarchar(max),
+	@pattern nvarchar(max),
 	@caseSensitive int)
 RETURNS INT 
 AS EXTERNAL NAME regex_clr.UserDefinedFunctions.REGEXP_LIKE
