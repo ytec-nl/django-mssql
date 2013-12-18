@@ -1,7 +1,8 @@
-.*\.pyc 
-build/ 
-dist/ 
-django_mssql.egg-info/ 
+.*\.pyc
+build/
+dist/
+django_mssql.egg-info/
 .*\.orig
 \.tox/
 .*\.sublime.*
+extras/sqlserver/regex_clr/(obj|.*\.user|_.*)
