@@ -118,7 +118,19 @@ class DatabaseOperations(BaseDatabaseOperations):
         if settings.USE_TZ:
             field_name = 'TODATETIMEOFFSET(%s, %%s)' % field_name
             params = [tzname]
-        sql = "DATEADD(%s, DATEDIFF(%s, 0, %s), 0)" % (lookup_type, lookup_type, field_name)
+        reference_date = '0' # 1900-01-01
+        if lookup_type in ['minute', 'second']:
+            # Prevent DATEDIFF overflow by using the first day of the year as
+            # the reference point. Only using for minute and second to avoid any
+            # potential performance hit for queries against very large datasets.
+            reference_date = "CONVERT(datetime2, CONVERT(char(4), {field_name}, 112) + '0101', 112)".format(
+                field_name=field_name,
+            )
+        sql = "DATEADD({lookup}, DATEDIFF({lookup}, {reference_date}, {field_name}), {reference_date})".format(
+            lookup=lookup_type,
+            field_name=field_name,
+            reference_date=reference_date,
+        )
         return sql, params
 
     def last_insert_id(self, cursor, table_name, pk_name):
