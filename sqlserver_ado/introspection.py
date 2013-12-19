@@ -213,7 +213,6 @@ from
 	join sys.indexes IX on IX.object_id = T.object_id and IX.index_id = IC.index_id
 where
 	T.name = %s
-	and (IX.is_unique=1 or IX.is_primary_key=1)
     -- Omit multi-column keys
 	and not exists (
 		select *

@@ -19,6 +19,7 @@ v1.5 (In Development)
   - Added command :ref:`command_install_regex_clr` to simplify enabling regex support for any database.
 
 - Database introspection will now identify a ``varchar(max)`` field as a ``TextField``.
+- DatabaseIntrospection.get_indexes now properly finds regular, non-unique, non-primary indices.
 
 v1.4
 ----
