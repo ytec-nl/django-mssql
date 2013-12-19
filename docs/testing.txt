@@ -3,40 +3,22 @@ Testing
 
 All tests are contained in the ``tests`` folder.
 
-Django Support
---------------
+Running The Django-mssql Test Suite
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Database Introspection
-~~~~~~~~~~~~~~~~~~~~~~
+The Django-mssql Test Suite mimics the Django Test Suite. ``runtests.py`` works
+the same, except by default it will run all of the Django-mssql tests and only
+a subset of the Django Test Suite. From the Django-mssql `tests` folder, run the
+following command.
 
-Located in folder ``tests/test_inspectdb``. These tests verify the 
-database introspection.
+.. code-block:: cmd
 
-To run:
-
-- set up the SQLINSTANCE
-- ``python manage.py inspectdb``
-
-
-Main Tests
-~~~~~~~~~~
-
-The tests for basic functionality and regressions are located in the 
-``tests/test_main/`` folder.
-
-To run:
-    
-- set up the SQLINSTANCE
-- ``python manage.py test``
+    python runtests.py --settings=test_mssql
 
 .. note::
 
-    The test app ``apitest`` contains a test suite for checking DB-API 2
-    conformance. 
-
-    To run only the DB-API 2 tests::
-
-        python manage.py test apitest
+    You will need to change the database configuration in test_mssql or create
+    your own setting file.
 
 Running Django Test Suite
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -46,26 +28,26 @@ To `run the Django test suite`_, you will need to create a settings file that li
 
 Example settings:
 
-    .. code-block:: python
-    
-        DATABASES = {
-            'default': {
-                'ENGINE': 'sqlserver_ado',
-                'NAME': 'django_framework',
-                'HOST': r'localhost\ss2008',
-                'USER': '',
-                'PASSWORD': '',
-            },
-            'other': {
-                'ENGINE': 'sqlserver_ado',
-                'NAME': 'django_framework_other',
-                'HOST': r'localhost\ss2008',
-                'USER': '',
-                'PASSWORD': '',
-            }
+.. code-block:: python
+
+    DATABASES = {
+        'default': {
+            'ENGINE': 'sqlserver_ado',
+            'NAME': 'django_framework',
+            'HOST': r'localhost\ss2008',
+            'USER': '',
+            'PASSWORD': '',
+        },
+        'other': {
+            'ENGINE': 'sqlserver_ado',
+            'NAME': 'django_framework_other',
+            'HOST': r'localhost\ss2008',
+            'USER': '',
+            'PASSWORD': '',
         }
-        
-        SECRET_KEY = "django_tests_secret_key"
+    }
+
+    SECRET_KEY = "django_tests_secret_key"
 
 
 .. _`run the Django test suite`: https://docs.djangoproject.com/en/dev/internals/contributing/writing-code/unit-tests/
