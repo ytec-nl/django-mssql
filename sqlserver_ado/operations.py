@@ -10,6 +10,11 @@ try:
 except:
     from django.utils.encoding import smart_unicode as smart_text
 
+try:
+    import pytz
+except ImportError:
+    pytz = None
+
 from django.utils import six, timezone
 
 from . import fields as mssql_fields
@@ -90,21 +95,40 @@ class DatabaseOperations(BaseDatabaseOperations):
         return "DATEADD(%s, DATEDIFF(%s, 0, %s), 0)" % (lookup_type, lookup_type, field_name)
 
 
+    def _switch_tz_offset(self, field_name, tzname):
+        field_name = self.quote_name(field_name)
+        if settings.USE_TZ:
+            if pytz is None:
+                from django.core.exceptions import ImproperlyConfigured
+                raise ImproperlyConfigured("This query requires pytz, "
+                                           "but it isn't installed.")
+            tz = pytz.timezone(tzname)
+            td = tz.utcoffset(datetime.datetime(2000, 1, 1))
+
+            def total_seconds(td):
+                if hasattr(td, 'total_seconds'):
+                    return td.total_seconds()
+                else:
+                    return td.days * 24 * 60 * 60 + td.seconds
+
+            total_minutes = total_seconds(td) // 60
+            hours, minutes = divmod(total_minutes, 60)
+            tzoffset = "%+03d:%02d" % (hours, minutes)
+            field_name = "CAST(SWITCHOFFSET(TODATETIMEOFFSET(%s, '+00:00'), '%s') AS DATETIME2)" % (field_name, tzoffset)
+        return field_name
+
     def datetime_extract_sql(self, lookup_type, field_name, tzname):
         """
         Given a lookup_type of 'year', 'month', 'day', 'hour', 'minute' or
         'second', returns the SQL that extracts a value from the given
         datetime field field_name, and a tuple of parameters.
         """
-        field_name = self.quote_name(field_name)
-        params = []
-        if settings.USE_TZ:
-            field_name = 'TODATETIMEOFFSET(%s, %%s)' % field_name
-            params = [tzname]
         if lookup_type == 'week_day':
             lookup_type = 'weekday'
-        sql = 'DATEPART(%s, %s)' % (lookup_type, field_name)
-        return sql, params
+        return 'DATEPART({0}, {1})'.format(
+            lookup_type,
+            self.__switch_tz_offset(field_name, tzname),
+            ), []
 
     def datetime_trunc_sql(self, lookup_type, field_name, tzname):
         """
@@ -113,11 +137,7 @@ class DatabaseOperations(BaseDatabaseOperations):
         field_name to a datetime object with only the given specificity, and
         a tuple of parameters.
         """
-        field_name = self.quote_name(field_name)
-        params = []
-        if settings.USE_TZ:
-            field_name = 'TODATETIMEOFFSET(%s, %%s)' % field_name
-            params = [tzname]
+        field_name = self._switch_tz_offset(field_name, tzname)
         reference_date = '0' # 1900-01-01
         if lookup_type in ['minute', 'second']:
             # Prevent DATEDIFF overflow by using the first day of the year as
@@ -131,7 +151,7 @@ class DatabaseOperations(BaseDatabaseOperations):
             field_name=field_name,
             reference_date=reference_date,
         )
-        return sql, params
+        return sql, []
 
     def last_insert_id(self, cursor, table_name, pk_name):
         """
