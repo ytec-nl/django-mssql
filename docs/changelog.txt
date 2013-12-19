@@ -18,6 +18,8 @@ v1.5 (In Development)
   - regex_clr auto-installs during test database creation
   - Added command :ref:`command_install_regex_clr` to simplify enabling regex support for any database.
 
+- Database introspection will now identify a ``varchar(max)`` field as a ``TextField``.
+
 v1.4
 ----
 

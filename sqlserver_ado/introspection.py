@@ -29,8 +29,12 @@ class DatabaseIntrospection(BaseDatabaseIntrospection):
         Return a dict mapping field name to data type. DB-API cursor description 
         interprets the date columns as chars.
         """
-        cursor.execute('SELECT [COLUMN_NAME], [DATA_TYPE] FROM INFORMATION_SCHEMA.COLUMNS WHERE [TABLE_NAME] LIKE \'%s\'' % table_name)
-        results = dict(cursor.fetchall())
+        cursor.execute('''
+SELECT [COLUMN_NAME], [DATA_TYPE], [CHARACTER_MAXIMUM_LENGTH]
+FROM INFORMATION_SCHEMA.COLUMNS
+WHERE [TABLE_NAME] LIKE \'%s\'
+        ''' % table_name)
+        results = dict([(c[0], (c[1], c[2])) for c in cursor.fetchall()])
         return results
 
     def _datatype_to_ado_type(self, datatype):
@@ -84,7 +88,8 @@ class DatabaseIntrospection(BaseDatabaseIntrospection):
         for column in columns:
             column = list(column) # Convert tuple to list
             # fix data type
-            column[1] = self._datatype_to_ado_type(table_field_type_map.get(column[0]))
+            data_type, char_length = table_field_type_map.get(column[0])
+            column[1] = self._datatype_to_ado_type(data_type)
 
             if identity_check and self._is_auto_field(cursor, table_name, column[0]):
                 if column[1] == ado_consts.adBigInt:
@@ -95,6 +100,9 @@ class DatabaseIntrospection(BaseDatabaseIntrospection):
             if column[1] == MONEY_FIELD_MARKER:
                 # force decimal_places=4 to match data type. Cursor description thinks this column is a string
                 column[5] = 4
+            elif column[1] == ado_consts.adVarWChar and char_length == -1:
+                # treat varchar(max) as text
+                column[1] = self._datatype_to_ado_type('text')
             items.append(column)
         return items
 
