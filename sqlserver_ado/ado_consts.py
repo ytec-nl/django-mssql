@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 # ADO enumerated constants documented on MSDN:
 # http://msdn.microsoft.com/en-us/library/ms678353(VS.85).aspx
 

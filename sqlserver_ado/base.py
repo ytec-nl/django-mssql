@@ -1,5 +1,5 @@
 """Microsoft SQL Server database backend for Django."""
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 from django.core.exceptions import ImproperlyConfigured, ValidationError
 from django.db.backends import BaseDatabaseWrapper, BaseDatabaseFeatures, BaseDatabaseValidation, BaseDatabaseClient
@@ -109,12 +109,12 @@ def make_connection_string(settings):
 
     # If no user is specified, use integrated security.
     if settings.USER != '':
-        auth_string = u'UID={0};PWD={1}'.format(settings.USER, settings.PASSWORD)
+        auth_string = 'UID={0};PWD={1}'.format(settings.USER, settings.PASSWORD)
     else:
         auth_string = 'Integrated Security=SSPI'
 
     parts = [
-        u'DATA SOURCE={0};Initial Catalog={1}'.format(db_host, db_name),
+        'DATA SOURCE={0};Initial Catalog={1}'.format(db_host, db_name),
         auth_string
     ]
 

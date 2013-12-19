@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 DB-API 2.0 specification: http://www.python.org/dev/peps/pep-0249/
 """
+from __future__ import unicode_literals
 
 import sys
 import time
@@ -213,7 +214,7 @@ def _configure_parameter(p, value):
         p.Type = adBSTR
         if timezone.is_aware(value):
             value = timezone.make_naive(value, timezone.utc)
-        s = value.isoformat(' ')
+        s = value.isoformat(b' ')
         p.Value = s
         p.Size = len(s)
 
@@ -481,7 +482,7 @@ class Cursor(object):
             for i, p in enumerate(tuple(self.cmd.Parameters)[1:]):
                 _configure_parameter(p, parameters[i])
         except:
-            _message = u'Converting Parameter %s: %s, %s\n' %\
+            _message = 'Converting Parameter %s: %s, %s\n' %\
                 (p.Name, ado_type_name(p.Type), repr(parameters[i]))
 
             self._raiseCursorError(DataError, _message)
@@ -520,17 +521,17 @@ class Cursor(object):
             try:
                 p = self.cmd.CreateParameter('p%i' % i, _ado_type(value))
             except KeyError:
-                _message = u'Failed to map python type "%s" to an ADO type' % (value.__class__.__name__,)
+                _message = 'Failed to map python type "%s" to an ADO type' % (value.__class__.__name__,)
                 self._raiseCursorError(DataError, _message)
             except:
-                _message = u'Creating Parameter p%i, %s' % (i, _ado_type(value))
+                _message = 'Creating Parameter p%i, %s' % (i, _ado_type(value))
                 self._raiseCursorError(DataError, _message)
 
             try:
                 _configure_parameter(p, value)
                 self.cmd.Parameters.Append(p)
             except Exception as e:
-                _message = u'Converting Parameter %s: %s, %s\n' %\
+                _message = 'Converting Parameter %s: %s, %s\n' %\
                     (p.Name, ado_type_name(p.Type), repr(value))
 
                 self._raiseCursorError(DataError, _message)

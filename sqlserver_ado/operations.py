@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 import datetime
 import django
@@ -10,7 +10,7 @@ try:
 except:
     from django.utils.encoding import smart_unicode as smart_text
 
-from django.utils import timezone
+from django.utils import six, timezone
 
 from . import fields as mssql_fields
 
@@ -74,16 +74,16 @@ class DatabaseOperations(BaseDatabaseOperations):
             seconds = ((timedelta.days * 86400) + timedelta.seconds) * sign
             out = sql
             if seconds:
-                out = u'DATEADD(SECOND, {0}, {1})'.format(seconds, sql)
+                out = 'DATEADD(SECOND, {0}, {1})'.format(seconds, sql)
             if timedelta.microseconds:
                 # DATEADD with datetime doesn't support ms, must cast up
-                out = u'DATEADD(MICROSECOND, {ms}, CAST({sql} as datetime2))'.format(
+                out = 'DATEADD(MICROSECOND, {ms}, CAST({sql} as datetime2))'.format(
                     ms=timedelta.microseconds * sign,
                     sql=out,
                 )
         else:
             # Only days in the delta, assume underlying datatype can DATEADD with days
-            out = u'DATEADD(DAY, {0}, {1})'.format(timedelta.days * sign, sql)
+            out = 'DATEADD(DAY, {0}, {1})'.format(timedelta.days * sign, sql)
         return out
 
     def date_trunc_sql(self, lookup_type, field_name):
@@ -252,7 +252,7 @@ class DatabaseOperations(BaseDatabaseOperations):
         return "ON %s" % self.quote_name(tablespace)
 
     def _legacy_value_to_db_datetime(self, value):
-        if value is None or isinstance(value, basestring):
+        if value is None or isinstance(value, six.string_types):
             return value
 
         if timezone.is_aware(value):# and not self.connection.features.supports_timezones:
@@ -264,7 +264,7 @@ class DatabaseOperations(BaseDatabaseOperations):
         # SQL Server 2005 doesn't support microseconds
         if self.connection.is_sql2005():
            value = value.replace(microsecond=0)
-        val = value.isoformat(' ')
+        val = value.isoformat(b' ')
         if value.microsecond:
             # truncate microsecond to millisecond
             idx = val.rindex('.')
@@ -272,7 +272,7 @@ class DatabaseOperations(BaseDatabaseOperations):
         return val
         
     def _new_value_to_db_datetime(self, value):
-        if value is None or isinstance(value, basestring):
+        if value is None or isinstance(value, six.string_types):
             return value
             
         if timezone.is_aware(value):# and not self.connection.features.supports_timezones:
@@ -280,10 +280,10 @@ class DatabaseOperations(BaseDatabaseOperations):
                 value = value.astimezone(timezone.utc).replace(tzinfo=None)
             else:
                 raise ValueError("SQL Server backend does not support timezone-aware datetimes.")
-        return value.isoformat(' ')
+        return value.isoformat(b' ')
     
     def _legacy_value_to_db_time(self, value):
-        if value is None or isinstance(value, basestring):
+        if value is None or isinstance(value, six.string_types):
             return value
 
         if timezone.is_aware(value):
@@ -304,7 +304,7 @@ class DatabaseOperations(BaseDatabaseOperations):
         return val
 
     def _new_value_to_db_time(self, value):
-        if value is None or isinstance(value, basestring):
+        if value is None or isinstance(value, six.string_types):
             return value
 
         if timezone.is_aware(value):

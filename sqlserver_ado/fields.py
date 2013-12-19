@@ -1,8 +1,9 @@
 """This module provides SQL Server specific fields for Django models."""
+from __future__ import unicode_literals
 import datetime
 from django.db import models
 from django.forms import ValidationError
-from django.utils import timezone
+from django.utils import six, timezone
 from django.utils.translation import ugettext_lazy as _
 
 
@@ -49,7 +50,7 @@ class BigForeignKey(models.ForeignKey):
 BigIntegerField = models.BigIntegerField
 
 def convert_microsoft_date_to_isoformat(value):
-    if isinstance(value, basestring):
+    if isinstance(value, six.string_types):
         value = value.replace(' +', '+').replace(' -', '-')
     return value
 
@@ -103,7 +104,7 @@ class DateTimeOffsetField(models.DateTimeField):
             value = self.get_prep_value(value)
         if value is None:
             return None
-        return value.isoformat(' ')
+        return value.isoformat(b' ')
 
 class TimeField(models.TimeField):
     """

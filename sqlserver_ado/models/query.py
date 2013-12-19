@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 from django.db import connections, router
 from django.db.models import sql
 from django.db.models.query import RawQuerySet

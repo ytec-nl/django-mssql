@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 from django.db.backends import BaseDatabaseIntrospection
 from . import ado_consts
