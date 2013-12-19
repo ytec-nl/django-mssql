@@ -95,7 +95,10 @@ class DatabaseOperations(BaseDatabaseOperations):
         return "DATEADD(%s, DATEDIFF(%s, 0, %s), 0)" % (lookup_type, lookup_type, field_name)
 
 
-    def _switch_tz_offset(self, field_name, tzname):
+    def _switch_tz_offset_sql(self, field_name, tzname):
+        """
+        Returns the SQL that will convert field_name to UTC from tzname.
+        """
         field_name = self.quote_name(field_name)
         if settings.USE_TZ:
             if pytz is None:
@@ -127,7 +130,7 @@ class DatabaseOperations(BaseDatabaseOperations):
             lookup_type = 'weekday'
         return 'DATEPART({0}, {1})'.format(
             lookup_type,
-            self.__switch_tz_offset(field_name, tzname),
+            self._switch_tz_offset_sql(field_name, tzname),
             ), []
 
     def datetime_trunc_sql(self, lookup_type, field_name, tzname):
@@ -137,7 +140,7 @@ class DatabaseOperations(BaseDatabaseOperations):
         field_name to a datetime object with only the given specificity, and
         a tuple of parameters.
         """
-        field_name = self._switch_tz_offset(field_name, tzname)
+        field_name = self._switch_tz_offset_sql(field_name, tzname)
         reference_date = '0' # 1900-01-01
         if lookup_type in ['minute', 'second']:
             # Prevent DATEDIFF overflow by using the first day of the year as
