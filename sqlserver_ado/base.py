@@ -247,7 +247,7 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         been established, a connection will be made when `make_connection` is True.
         """
         if not self.connection and make_connection:
-            self.__connect()
+            self.connect()
         return self.connection.adoConnProperties.get('DBMS Version', '') if self.connection else ''
 
     def is_sql2000(self, make_connection=True):
