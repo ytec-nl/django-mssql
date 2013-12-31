@@ -12,6 +12,7 @@ from . import dbapi as Database
 from .introspection import DatabaseIntrospection
 from .creation import DatabaseCreation
 from .operations import DatabaseOperations
+from .schema import DatabaseSchemaEditor
 
 try:
     import pytz
@@ -46,6 +47,8 @@ class DatabaseFeatures(BaseDatabaseFeatures):
 
     supports_paramstyle_pyformat = False
 
+    # connection_persists_old_columns = True
+
     @cached_property
     def has_zoneinfo_database(self):
         return pytz is not None
@@ -65,32 +68,17 @@ def is_ip_address(value):
 
 def connection_string_from_settings():
     from django.conf import settings
-    db_settings = getattr(settings, 'DATABASES', {}).get('default', None) or settings
+    db_settings = getattr(settings, 'DATABASES', {}).get('default', None)
     return make_connection_string(db_settings)
 
 def make_connection_string(settings):
-    class wrap(object):
-        def __init__(self, mapping):
-            self._dict = mapping
-            
-        def __getattr__(self, name):
-            d = self._dict
-            result = None
-            if hasattr(d, "get"):
-                if d.has_key(name):
-                    result = d.get(name)
-                else:
-                    result = d.get('DATABASE_' + name)    
-            elif hasattr(d, 'DATABASE_' + name):
-                result = getattr(d, 'DATABASE_' + name)
-            else:
-                result = getattr(d, name, None)
-            return result
+    db_name = settings['NAME'].strip()
+    db_host = settings['HOST'] or '127.0.0.1'
+    db_port = settings['PORT']
+    db_user = settings['USER']
+    db_password = settings['PASSWORD']
+    options = settings.get('OPTIONS', {})
 
-    settings = wrap(settings) 
-    
-    db_name = settings.NAME.strip()
-    db_host = settings.HOST or '127.0.0.1'
     if len(db_name) == 0:
         raise ImproperlyConfigured("You need to specify a DATABASE NAME in your Django settings file.")
 
@@ -98,18 +86,18 @@ def make_connection_string(settings):
     # http://www.connectionstrings.com/?carrier=sqlserver
 
     # If a port is given, force a TCP/IP connection. The host should be an IP address in this case.
-    if settings.PORT:
+    if db_port:
         if not is_ip_address(db_host):
             raise ImproperlyConfigured("When using DATABASE PORT, DATABASE HOST must be an IP address.")
         try:
-            port = int(settings.PORT)
+            port = int(db_port)
         except ValueError:
             raise ImproperlyConfigured("DATABASE PORT must be a number.")
-        db_host = '{0},{1};Network Library=DBMSSOCN'.format(db_host, port)
+        db_host = '{0},{1};Network Library=DBMSSOCN'.format(db_host, db_port)
 
     # If no user is specified, use integrated security.
-    if settings.USER != '':
-        auth_string = 'UID={0};PWD={1}'.format(settings.USER, settings.PASSWORD)
+    if db_user != '':
+        auth_string = 'UID={0};PWD={1}'.format(db_user, db_password)
     else:
         auth_string = 'Integrated Security=SSPI'
 
@@ -117,8 +105,6 @@ def make_connection_string(settings):
         'DATA SOURCE={0};Initial Catalog={1}'.format(db_host, db_name),
         auth_string
     ]
-
-    options = settings.OPTIONS
 
     if not options.get('provider', None):
         options['provider'] = 'sqlncli10'
@@ -206,9 +192,17 @@ class DatabaseWrapper(BaseDatabaseWrapper):
 
     def get_connection_params(self):
         """Returns a dict of parameters suitable for get_new_connection."""
-        settings_dict = self.settings_dict
-        options = settings_dict.get('OPTIONS', {})
-        autocommit = options.get('autocommit', False)
+        settings_dict = self.settings_dict.copy()
+        if settings_dict['NAME'] == '':
+            from django.core.exceptions import ImproperlyConfigured
+            raise ImproperlyConfigured(
+                "settings.DATABASES is improperly configured. "
+                "Please supply the NAME value.")
+        if not settings_dict['NAME']:
+            # if _nodb_connection, connect to master
+            settings_dict['NAME'] = 'master'
+
+        autocommit = settings_dict.get('OPTIONS', {}).get('autocommit', False)
         return {
             'connection_string': make_connection_string(settings_dict),
             'timeout': self.command_timeout,
@@ -325,3 +319,6 @@ class DatabaseWrapper(BaseDatabaseWrapper):
                 'sql': '-- RELEASE SAVEPOINT %s -- (because assertNumQueries)' % self.ops.quote_name(sid),
                 'time': '0.000',
             })
+
+    def schema_editor(self, *args, **kwargs):
+        return DatabaseSchemaEditor(self, *args, **kwargs)

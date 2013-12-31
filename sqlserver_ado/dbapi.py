@@ -90,7 +90,8 @@ class MultiMap(object):
 
 def standardErrorHandler(connection, cursor, errorclass, errorvalue):
     err = (errorclass, errorvalue)
-    connection.messages.append(err)
+    if connection is not None:
+        connection.messages.append(err)
     if cursor is not None:
         cursor.messages.append(err)
     raise errorclass(errorvalue)
@@ -431,7 +432,7 @@ class Cursor(object):
         self.messages = []
 
         if self.connection is None:
-            self._raiseCursorError(Error, None)
+            self._raiseCursorError(InterfaceError, None)
             return
 
         try:

@@ -90,7 +90,7 @@ DJANGO_TESTS_TO_INCLUDE = [
     'reserved_names',
     'reverse_lookup',
     'reverse_single_related',
-    'string_lookup',
+    'schema',
     'select_for_update',
     'select_related',
     'select_related_onetoone',

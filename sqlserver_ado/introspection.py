@@ -3,6 +3,15 @@ from __future__ import absolute_import, unicode_literals
 from django.db.backends import BaseDatabaseIntrospection
 from . import ado_consts
 
+try:
+    # Added with Django 1.7
+    from django.db.backends import FileInfo
+except ImportError:
+    from collections import namedtuple
+    # Structure returned by the DB-API cursor.description interface (PEP 249)
+    FieldInfo = namedtuple('FieldInfo',
+        'name type_code display_size internal_size precision scale null_ok')
+
 AUTO_FIELD_MARKER = -1000
 BIG_AUTO_FIELD_MARKER = -1001
 MONEY_FIELD_MARKER = -1002
@@ -103,7 +112,7 @@ WHERE [TABLE_NAME] LIKE \'%s\'
             elif column[1] == ado_consts.adVarWChar and char_length == -1:
                 # treat varchar(max) as text
                 column[1] = self._datatype_to_ado_type('text')
-            items.append(column)
+            items.append(FieldInfo(*column))
         return items
 
     def _name_to_index(self, cursor, table_name):
@@ -259,3 +268,98 @@ where
         ado_consts.adBinary: 'BinaryField',
         ado_consts.adVarBinary: 'BinaryField',
     }
+
+    def get_constraints(self, cursor, table_name):
+        """
+        Retrieves any constraints or keys (unique, pk, fk, check, index)
+        across one or more columns.
+
+        Returns a dict mapping constraint names to their attributes,
+        where attributes is a dict with keys:
+         * columns: List of columns this covers
+         * primary_key: True if primary key, False otherwise
+         * unique: True if this is a unique constraint, False otherwise
+         * foreign_key: (table, column) of target, or None
+         * check: True if check constraint, False otherwise
+         * index: True if index, False otherwise.
+
+        Some backends may return special constraint names that don't exist
+        if they don't name constraints of a certain type (e.g. SQLite)
+        """
+        constraints = dict()
+
+        # getting indexes (primary keys, unique, regular)
+        sql = """
+        select object_id, name, index_id, is_unique, is_primary_key
+        from sys.indexes where object_id = OBJECT_ID(%s)
+        """
+        cursor.execute(sql,[table_name])
+        for object_id, name, index_id, unique, primary_key in list(cursor.fetchall()):
+            sql = """
+            select name from sys.index_columns ic
+            inner join sys.columns c on ic.column_id = c.column_id and ic.object_id = c.object_id
+            where ic.object_id = %s and ic.index_id = %s
+            """
+            cursor.execute(sql, [object_id, index_id])
+            columns = [row[0] for row in cursor.fetchall()]
+            constraint = {"columns": list(columns),
+                          "primary_key": primary_key,
+                          "unique": unique,
+                          "index": True,
+                          "check": False,
+                          "foreign_key": None,
+                          }
+            constraints[name] = constraint
+
+        # getting foreign keys
+        sql = """
+        select fk.object_id, fk.name, rt.name from sys.foreign_keys fk
+        inner join sys.tables rt on fk.referenced_object_id = rt.object_id
+        where fk.parent_object_id = OBJECT_ID(%s)
+        """
+        cursor.execute(sql, [table_name])
+        for id, name, ref_table_name in list(cursor.fetchall()):
+            sql = """
+            select cc.name, rc.name from sys.foreign_key_columns fkc
+            inner join sys.columns rc on fkc.referenced_object_id = rc.object_id and fkc.referenced_column_id = rc.column_id
+            inner join sys.columns cc on fkc.parent_object_id = cc.object_id and fkc.parent_column_id = cc.column_id
+            where fkc.constraint_object_id = %s
+            """
+            cursor.execute(sql, [id])
+            columns, fkcolumns = zip(*cursor.fetchall())
+            constraint = {"columns": list(columns),
+                          "primary_key": False,
+                          "unique": False,
+                          "index": False,
+                          "check": False,
+                          "foreign_key": (ref_table_name, fkcolumns[0]),
+                          }
+            constraints[name] = constraint
+
+        # get check constraints
+        sql = """
+        SELECT kc.constraint_name, kc.column_name
+        FROM information_schema.constraint_column_usage AS kc
+        JOIN information_schema.table_constraints AS c ON
+            kc.table_schema = c.table_schema AND
+            kc.table_name = c.table_name AND
+            kc.constraint_name = c.constraint_name
+        WHERE
+            c.constraint_type = 'CHECK' 
+            AND
+            kc.table_name = %s
+        """
+        cursor.execute(sql,[table_name])
+        for constraint, column in list(cursor.fetchall()):
+            if column not in constraint:
+                constraints[constraint] = {
+                    "columns": [],
+                    "primary_key": False,
+                    "unique": False,
+                    "index": False,
+                    "check": True,
+                    "foreign_key": None,
+                }
+            constraints[constraint]['columns'].append(column)
+
+        return constraints
