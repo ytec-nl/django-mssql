@@ -438,3 +438,11 @@ class DatabaseOperations(BaseDatabaseOperations):
 
     def savepoint_rollback_sql(self, sid):
         return "ROLLBACK TRANSACTION {0}".format(self.quote_name(sid))
+
+    def combine_expression(self, connector, sub_expressions):
+        """
+        MSSQL requires special cases for ^ operators in query expressions
+        """
+        if connector == '^':
+            return 'POWER(%s)' % ','.join(sub_expressions)
+        return super(DatabaseOperations, self).combine_expression(connector, sub_expressions)
