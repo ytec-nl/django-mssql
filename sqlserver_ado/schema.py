@@ -38,15 +38,19 @@ class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
 
     def delete_model(self, model):
         # Drop all inbound FKs before dropping table
-        for rel in model._meta.get_all_related_objects():
-            rel_fk_names = self._constraint_names(rel.model, [rel.field.column], foreign_key=True)
-            for fk_name in rel_fk_names:
-                self.execute(
-                    self.sql_delete_fk % {
-                        "table": self.quote_name(rel.model._meta.db_table),
-                        "name": fk_name,
-                    }
-                )
+        sql = '''
+DECLARE @sql nvarchar(max)
+WHILE 1=1
+BEGIN
+    SELECT TOP 1
+        @sql = N'ALTER TABLE [' + OBJECT_SCHEMA_NAME(parent_object_id) + N'].[' +
+        OBJECT_NAME(parent_object_id) +'] DROP CONSTRAINT [' + name + N']'
+    FROM sys.foreign_keys
+    WHERE referenced_object_id = object_id(%s)
+    IF @@ROWCOUNT = 0 BREAK
+    EXEC (@sql)
+END'''
+        self.execute(sql, [model._meta.db_table])
         super(DatabaseSchemaEditor, self).delete_model(model)
 
 
