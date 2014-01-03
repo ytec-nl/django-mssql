@@ -52,24 +52,15 @@ class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
 
     def delete_db_column(self, model, column):
         # drop all of the column constraints to avoid the database blocking the column removal
-        drop_column_constraints_sql = """
-DECLARE @sql nvarchar(max)
-WHILE 1=1
-BEGIN
-    SELECT TOP 1 @sql = N'ALTER TABLE [%(table)s] DROP CONSTRAINT [' + dc.NAME + N']'
-    FROM sys.default_constraints dc
-        JOIN sys.columns c ON c.default_object_id = dc.object_id
-    WHERE 
-        dc.parent_object_id = OBJECT_ID('%(table)s')
-        AND c.name = N'%(column)s'
-    IF @@ROWCOUNT = 0 BREAK
-    EXEC (@sql)
-END""" %    {
-                'table': model._meta.db_table,
-                'column': column,
-            }
-
-        self.execute(drop_column_constraints_sql)
+        with self.connection.cursor() as cursor:
+            constraints = self.connection.introspection.get_constraints(cursor, model._meta.db_table)
+            for name, constraint in six.iteritems(constraints):
+                if column in constraint['columns']:
+                    sql = 'ALTER TABLE %(table)s DROP CONSTRAINT [%(constraint)s]' % {
+                        'table': model._meta.db_table,
+                        'constraint': name,
+                    }
+                    cursor.execute(sql)
         super(DatabaseSchemaEditor, self).delete_db_column(model, column)
 
     def rename_db_column(self, model, old_db_column, new_db_column, new_type):
@@ -145,8 +136,6 @@ END''' % {'table': model._meta.db_table}
     #     """
     #     if not sql:
     #         return
-    #     # Get the cursor
-    #     cursor = self.connection.cursor()
     #     # Log the command we're running, then run it
     #     logger.debug("%s; (params %r)" % (sql, params))
     #     if self.collect_sql:
@@ -157,4 +146,6 @@ END''' % {'table': model._meta.db_table}
     #     else:
     #         print 'sql=', sql
     #         print 'params=', params
-    #         cursor.execute(sql, params)
+    #         # Get the cursor
+    #         with self.connection.cursor() as cursor:
+    #             cursor.execute(sql, params)
