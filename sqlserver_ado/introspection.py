@@ -351,7 +351,7 @@ where
         """
         cursor.execute(sql,[table_name])
         for constraint, column in list(cursor.fetchall()):
-            if column not in constraint:
+            if column not in constraints:
                 constraints[constraint] = {
                     "columns": [],
                     "primary_key": False,

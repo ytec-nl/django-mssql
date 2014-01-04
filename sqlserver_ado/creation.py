@@ -1,8 +1,11 @@
 from __future__ import absolute_import, unicode_literals
 
+import django
 from django.conf import settings
 from django.db.backends.creation import BaseDatabaseCreation, TEST_DATABASE_PREFIX
 from django.utils import six
+
+IS_DJANGO_16 = django.VERSION[1] == 1 and django.VERSION[2] == 6
 
 class DatabaseCreation(BaseDatabaseCreation):
     # This dictionary maps Field objects to their associated Server Server column
@@ -34,15 +37,28 @@ class DatabaseCreation(BaseDatabaseCreation):
         'NewTimeField':                 'time',
         'NullBooleanField':             'bit',
         'OneToOneField':                'int',
-        'PositiveIntegerField':         'int CHECK ([%(column)s] >= 0)',
-        'PositiveSmallIntegerField':    'smallint CHECK ([%(column)s] >= 0)',
+        'PositiveIntegerField':         'int',
+        'PositiveSmallIntegerField':    'smallint',
         'SlugField':                    'nvarchar(%(max_length)s)',
         'SmallIntegerField':            'smallint',
         'TextField':                    'nvarchar(max)',
         'TimeField':                    'time',
     }
 
+    # Starting with Django 1.7, check constraints are no longer included in with
+    # the data_types value.
+    data_type_check_constraints = {
+        'PositiveIntegerField': '%(qn_column)s >= 0',
+        'PositiveSmallIntegerField': '%(qn_column)s >= 0',
+    }
+
+
     def __init__(self, *args, **kwargs):
+        if IS_DJANGO_16:
+            # Django 1.6 expects the data type to contain the CHECK constraint
+            self.data_types['PositiveIntegerField'] = 'int CHECK ([%(column)s] >= 0)'
+            self.data_types['PositiveSmallIntegerField'] = 'smallint CHECK ([%(column)s] >= 0)'
+
         super(DatabaseCreation, self).__init__(*args, **kwargs)
 
         if self.connection.use_legacy_date_fields:
