@@ -29,16 +29,7 @@ class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
 
     sql_delete_index = "DROP INDEX %(name)s ON %(table)s"
 
-    def alter_db_table(self, model, old_db_table, new_db_table):
-        # sp_rename requires that objects not be quoted because they are string literals
-        self.execute(self.sql_rename_table % {
-            "old_table": old_db_table,
-            "new_table": new_db_table,
-        })
-
-    def delete_model(self, model):
-        # Drop all inbound FKs before dropping table
-        sql = '''
+    _sql_drop_inbound_foreign_keys = '''
 DECLARE @sql nvarchar(max)
 WHILE 1=1
 BEGIN
@@ -50,7 +41,31 @@ BEGIN
     IF @@ROWCOUNT = 0 BREAK
     EXEC (@sql)
 END'''
-        self.execute(sql, [model._meta.db_table])
+
+    _sql_drop_primary_key = '''
+DECLARE @sql nvarchar(max)
+WHILE 1=1
+BEGIN
+    SELECT TOP 1
+        @sql = N'ALTER TABLE [' + CONSTRAINT_SCHEMA + N'].[' + TABLE_NAME +
+        N'] DROP CONSTRAINT [' + CONSTRAINT_NAME+ N']'
+    FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS tc
+        JOIN INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE ccu ON tc.CONSTRAINT_NAME = ccu.Constraint_name
+    WHERE CONSTRAINT_TYPE = 'PRIMARY KEY' AND TABLE_NAME LIKE %s AND COLUMN_NAME = %s
+    IF @@ROWCOUNT = 0 BREAK
+    EXEC (@sql)
+END'''
+
+    def alter_db_table(self, model, old_db_table, new_db_table):
+        # sp_rename requires that objects not be quoted because they are string literals
+        self.execute(self.sql_rename_table % {
+            "old_table": old_db_table,
+            "new_table": new_db_table,
+        })
+
+    def delete_model(self, model):
+        # Drop all inbound FKs before dropping table
+        self.execute(self._sql_drop_inbound_foreign_keys, [model._meta.db_table])
         super(DatabaseSchemaEditor, self).delete_model(model)
 
 
@@ -78,7 +93,66 @@ END'''
             "type": new_type,
         })
 
+    def __remove_identity_from_column(self, model, column, old_type, new_type):
+        """
+        Remove IDENTITY from a column. This is done by creating a new column and
+        swapping in the values.
+        """
+        # removing identity from column
+        args = {
+            'table': model._meta.db_table,
+            'column': column,
+            'tmp_column': 'mssql_tmp_%s' % column,
+            'type': new_type,
+        }
+        sql = []
+
+        try:
+            pk_constraint_name = self._constraint_names(model, primary_key=True)[0]
+            print '\tname=', pk_constraint_name
+            # drop the existing primary key to allow drop of column later
+            sql.append(self._delete_db_constraint_sql(model, pk_constraint_name, 'pk'))
+            args['type'] += ' NOT NULL' # pkey cannot be null
+        except IndexError: # no existing primary key
+            pk_constraint_name = None
+
+        # rename existing column to tmp name
+        sql.append(("exec sp_rename %s, %s, 'COLUMN'", [
+            '%s.%s' % (model._meta.db_table, args['column']),
+            args['tmp_column'],
+        ]))
+        # create new column of type
+        sql.append(("ALTER TABLE [%(table)s] ADD [%(column)s] %(type)s" % args, []))
+        # copy identity values from old column
+        sql.append(("UPDATE [%(table)s] SET [%(column)s] = [%(tmp_column)s]" % args, []))
+        if pk_constraint_name:
+            # create a primary key because alter_field expects one
+            sql.append(self._create_db_constraint_sql(model, args['column'], 'pk'))
+
+        # drop old column
+        sql.append(("ALTER TABLE [%(table)s] DROP COLUMN [%(tmp_column)s]" % args, []))
+        return [([], [])], sql
+
+    def __add_identity_to_column(self, model, column, old_type, new_type):
+        """
+        Add IDENTITY to a column.
+        """
+        # To do this properly, we'd need to create a temporary table with the
+        # new schema, copy the data, drop all inbound foreign keys to old table,
+        # swap in the temp table, and finally rebuild all inbound foreign keys.
+        raise NotImplementedError(
+            "django-mssql doesn't support adding an IDENTITY column to a table."
+        )
+
     def _alter_db_column_sql(self, model, column, alteration=None, values={}, fragment=False, params=None):
+        if alteration == 'type':
+            new_type = values.get('type', '').lower()
+            old_type = values.get('old_type', '').lower()
+            if 'identity' in old_type and 'identity' not in new_type:
+                return self.__remove_identity_from_column(model, column, old_type, new_type)
+            elif 'identity' not in old_type and 'identity' in new_type:
+                return self.__add_identity_to_column(model, column, old_type, new_type)
+
         if alteration == 'default':
             # remove old default constraint
             remove_actions = self._alter_db_column_sql(model, column, alteration='no_default', values=values,
