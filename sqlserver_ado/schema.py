@@ -109,7 +109,6 @@ END'''
 
         try:
             pk_constraint_name = self._constraint_names(model, primary_key=True)[0]
-            print '\tname=', pk_constraint_name
             # drop the existing primary key to allow drop of column later
             sql.append(self._delete_db_constraint_sql(model, pk_constraint_name, 'pk'))
             args['type'] += ' NOT NULL' # pkey cannot be null
