@@ -4,8 +4,8 @@ Changelog
 v1.5 (In Development)
 ---------------------
 
-- This version only support Django v1.6 and later. Support for v1.4 and v1.5 is
-  not guaranteed.
+- This version only supports Django v1.6 and later. Use a previous version if
+  you are using Django v1.5 or earlier.
 - Added ``BinaryField`` as ``varbinary(max)``
 - Refactored DatabaseOperations.sql_flush to use a faster method of disabling/enabling constraints.
 - ``sqlserver_ado.fields.DateTimeField`` will now do a better job of returning an aware or naive datetime.
