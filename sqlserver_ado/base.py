@@ -4,6 +4,7 @@ from __future__ import absolute_import, unicode_literals
 from django.core.exceptions import ImproperlyConfigured, ValidationError
 from django.db.backends import BaseDatabaseWrapper, BaseDatabaseFeatures, BaseDatabaseValidation, BaseDatabaseClient
 from django.db.backends.signals import connection_created
+from django.db.utils import InterfaceError
 from django.utils.functional import cached_property
 from django.utils import six
 
@@ -46,6 +47,8 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     uses_savepoints = True
 
     supports_paramstyle_pyformat = False
+
+    closed_cursor_error_class = InterfaceError
 
     # connection_persists_old_columns = True
 
