@@ -21,6 +21,7 @@ v1.5 (In Development)
 - Database introspection will now identify a ``varchar(max)`` field as a ``TextField``.
 - DatabaseIntrospection.get_indexes now properly finds regular, non-unique, non-primary indices.
 - Complete refactor of django-mssql test suite and abandoned tests that are covered by Django test suite.
+- Test database is dropped in a more forcible way to avoid "database in use" errors.
 
 v1.4
 ----

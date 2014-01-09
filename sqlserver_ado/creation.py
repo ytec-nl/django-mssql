@@ -1,11 +1,22 @@
 from __future__ import absolute_import, unicode_literals
 
+from contextlib import contextmanager
+import sys
+import time
+
 import django
 from django.conf import settings
+from django.db import connections
 from django.db.backends.creation import BaseDatabaseCreation, TEST_DATABASE_PREFIX
 from django.utils import six
+from django.utils.functional import cached_property
 
-IS_DJANGO_16 = django.VERSION[1] == 1 and django.VERSION[2] == 6
+IS_DJANGO_16 = django.VERSION[0] == 1 and django.VERSION[1] == 6
+
+try:
+    from django.db.backends.creation import NO_DB_ALIAS
+except ImportError:
+    NO_DB_ALIAS = '__no_db__'
 
 class DatabaseCreation(BaseDatabaseCreation):
     # This dictionary maps Field objects to their associated Server Server column
@@ -68,51 +79,41 @@ class DatabaseCreation(BaseDatabaseCreation):
                 'TimeField': 'datetime',
             })
 
+
     def _create_master_connection(self):
         """
         Create a transactionless connection to 'master' database.
         """
         from .base import DatabaseWrapper
-        
-        master_settings = self.connection.settings_dict
-        if not master_settings['TEST_NAME']:
-            master_settings['TEST_NAME'] = 'test_' + master_settings['NAME']
-        master_settings['NAME'] = 'master'
-        return DatabaseWrapper(master_settings, use_transactions=False)
+        settings_dict = self.connection.settings_dict.copy()
+        settings_dict['NAME'] = 'master'
+        nodb_connection = DatabaseWrapper(
+            settings_dict,
+            alias=NO_DB_ALIAS,
+            allow_thread_sharing=False)
+        return nodb_connection
+    # Override on 1.7 and add to 1.6
+    _nodb_connection = cached_property(_create_master_connection)
 
     def _create_test_db(self, verbosity=1, autoclobber=False):
         """
         Create the test databases using a connection to database 'master'.
         """
-        test_database_name = self._test_database_name(settings)
-
-        if not self._test_database_create(settings):
-            if verbosity >= 1:
-                six.print_("Skipping Test DB creation")
+        if self._test_database_create(settings):
+            try:
+                with use_master_connection(self):
+                    test_database_name = super(DatabaseCreation, self)._create_test_db(verbosity, autoclobber)
+            except Exception as e:
+                if 'Choose a different database name.' in str(e):
+                    six.print_('Database "%s" could not be created because it already exists.' % test_database_name)
+                else:
+                    six.reraise(*sys.exc_info())
+            self.install_regex_clr(test_database_name)
             return test_database_name
 
-        # clear any existing connections to the database
-        old_wrapper = self.connection
-        old_wrapper.close()
-
-        # connect to master database
-        self.connection = self._create_master_connection()
-
-        try:
-            super(DatabaseCreation, self)._create_test_db(verbosity, autoclobber)
-
-            self.install_regex_clr(test_database_name)
-        except Exception as e:
-            if 'Choose a different database name.' in str(e):
-                print 'Database "%s" could not be created because it already exists.' % test_database_name
-            else:
-                raise
-        finally:
-            # set thing back
-            self.connection = old_wrapper
-
-        return test_database_name
-
+        if verbosity >= 1:
+            six.print_("Skipping Test DB creation")
+        return self._get_test_db_name()
 
     def _destroy_test_db(self, test_database_name, verbosity=1):
         """
@@ -123,19 +124,21 @@ class DatabaseCreation(BaseDatabaseCreation):
                 six.print_("Skipping Test DB destruction")
             return
 
-        old_wrapper = self.connection
-        old_wrapper.close()
-        self.connection = self._create_master_connection()
-
+        for alias in connections:
+            connections[alias].close()
         try:
-            super(DatabaseCreation, self)._destroy_test_db(test_database_name, verbosity)
+            with self._nodb_connection.cursor() as cursor:
+                qn_db_name = self.connection.ops.quote_name(test_database_name)
+                # boot all other connections to the database, leaving only this connection
+                cursor.execute("ALTER DATABASE %s SET SINGLE_USER WITH ROLLBACK IMMEDIATE" % qn_db_name)
+                time.sleep(1)
+                # database is now clear to drop
+                cursor.execute("DROP DATABASE %s" % qn_db_name)
         except Exception as e:
-            if 'it is currently in use' in str(e):
-                print 'Cannot drop database %s because it is in use' % test_database_name
-            else:
-                raise
-        finally:
-            self.connection = old_wrapper
+            # if 'it is currently in use' in str(e):
+            #     six.print_('Cannot drop database %s because it is in use' % test_database_name)
+            # else:
+                six.reraise(*sys.exc_info())
 
     def _test_database_create(self, settings):
         """
@@ -147,22 +150,6 @@ class DatabaseCreation(BaseDatabaseCreation):
             return settings.TEST_DATABASE_CREATE
         else:
             return True
-
-    def _test_database_name(self, settings):
-        """
-        Get the test database name.
-        """
-        try:
-            name = TEST_DATABASE_PREFIX + self.connection.settings_dict['NAME']
-            if self.connection.settings_dict['TEST_NAME']:
-                name = self.connection.settings_dict['TEST_NAME']
-        except AttributeError:
-            if hasattr(settings, 'TEST_DATABASE_NAME') and settings.TEST_DATABASE_NAME:
-                name = settings.TEST_DATABASE_NAME
-            else:
-                name = TEST_DATABASE_PREFIX + settings.DATABASE_NAME
-        return name
-
 
 
     def install_regex_clr(self, database_name):
@@ -200,7 +187,7 @@ EXTERNAL NAME regex_clr.UserDefinedFunctions.REGEXP_LIKE
             assembly_hex=self.get_regex_clr_assembly_hex(),
         ).split(';')
 
-        with self.connection.cursor() as cursor:
+        with self._nodb_connection.cursor() as cursor:
             for s in sql:
                 cursor.execute(s)
 
@@ -210,3 +197,22 @@ EXTERNAL NAME regex_clr.UserDefinedFunctions.REGEXP_LIKE
         with open(os.path.join(os.path.dirname(__file__), 'regex_clr.dll'), 'rb') as f:
             assembly = binascii.hexlify(f.read()).decode('ascii')
         return assembly
+
+
+@contextmanager
+def use_master_connection(creation):
+    if IS_DJANGO_16:
+        test_db_name = creation._get_test_db_name()
+        # swap in a master connection to allow add/drop of non-existant database
+        old_wrapper = creation.connection
+        try:
+            creation.connection = creation._create_master_connection()
+            # set the TEST_NAME for master connection so that it creates the
+            # right one.
+            creation.connection.settings_dict['TEST_NAME'] = test_db_name
+            yield
+        finally:
+            creation.connection = old_wrapper
+    else:
+        # Django 1.7 uses the master connection already
+        yield
