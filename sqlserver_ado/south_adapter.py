@@ -16,8 +16,8 @@ class DatabaseOperations(generic.DatabaseOperations):
 
     def callproc(self, procname, params=None):
         """Call a stored procedure with the given parameter values"""
-        cursor = connection.cursor()
-        cursor.callproc( procname, params)
+        with connection.cursor() as cursor:
+            cursor.callproc( procname, params)
 
     def create_table(self, table_name, fields):
         # Tweak stuff as needed
