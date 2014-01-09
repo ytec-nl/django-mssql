@@ -390,6 +390,12 @@ class Cursor(object):
         "Allow database cursors to be used with context managers."
         self.close()
 
+    def __del__(self):
+        try:
+            self.close()
+        except:
+        	pass
+
     def _raiseCursorError(self, errorclass, errorvalue):
         eh = self.errorhandler
         if eh is None:
