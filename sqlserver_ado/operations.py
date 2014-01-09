@@ -226,22 +226,23 @@ class DatabaseOperations(BaseDatabaseOperations):
 
         # Cannot use TRUNCATE on tables that are referenced by a FOREIGN KEY; use DELETE instead.
         # (which is slow)
-        cursor = self.connection.cursor()
-        # Try to minimize the risks of the braindeaded inconsistency in
-        # DBCC CHEKIDENT(table, RESEED, n) behavior.
-        seqs = []
-        for seq in sequences:
-            cursor.execute("SELECT COUNT(*) FROM %s" % self.quote_name(seq["table"]))
-            rowcnt = cursor.fetchone()[0]
-            elem = dict()
 
-            if rowcnt:
-                elem['start_id'] = 0
-            else:
-                elem['start_id'] = 1
+        with self.connection.cursor() as cursor:
+            # Try to minimize the risks of the braindeaded inconsistency in
+            # DBCC CHEKIDENT(table, RESEED, n) behavior.
+            seqs = []
+            for seq in sequences:
+                cursor.execute("SELECT COUNT(*) FROM %s" % self.quote_name(seq["table"]))
+                rowcnt = cursor.fetchone()[0]
+                elem = dict()
 
-            elem.update(seq)
-            seqs.append(elem)
+                if rowcnt:
+                    elem['start_id'] = 0
+                else:
+                    elem['start_id'] = 1
+
+                elem.update(seq)
+                seqs.append(elem)
 
         sql_list = list()
 
