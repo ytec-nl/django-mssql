@@ -323,5 +323,15 @@ class DatabaseWrapper(BaseDatabaseWrapper):
                 'time': '0.000',
             })
 
+    def is_usable(self):
+        try:
+            # Use a mssql cursor directly, bypassing Django's utilities.
+            with self.connection.cursor() as cursor:
+                cursor.execute("SELECT 1")
+        except Database.DatabaseError:
+            return False
+        else:
+            return True
+
     def schema_editor(self, *args, **kwargs):
         return DatabaseSchemaEditor(self, *args, **kwargs)
