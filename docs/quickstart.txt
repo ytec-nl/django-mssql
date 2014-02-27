@@ -4,6 +4,9 @@ Quickstart
 Installation
 ------------
 
+* Install SQL Server Management Studio or manually install Microsoft Data Access
+  Components (MDAC).
+
 * Install ``django-mssql`` with your favorite Python package manager::
 
     pip install django-mssql
