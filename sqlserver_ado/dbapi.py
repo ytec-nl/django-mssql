@@ -32,10 +32,7 @@ import time
 import datetime
 import re
 
-try:
-    import decimal
-except ImportError:
-    from django.utils import _decimal as decimal
+import decimal
 
 from django.conf import settings
 from django.db.utils import IntegrityError as DjangoIntegrityError, \
@@ -181,6 +178,27 @@ def format_parameters(parameters, show_value=False):
 
     return '[' + ', '.join(desc) + ']'
 
+def format_decimal_as_string(value):
+    """
+    Convert a decimal.Decimal to a fixed point string. Code borrowed from
+    Python's moneyfmt recipe.
+    https://docs.python.org/2/library/decimal.html#recipes
+    """
+    sign, digits, exp = value.as_tuple()
+    result = []
+    digits = map(str, digits)
+    build, next = result.append, digits.pop
+    for i in range(-exp):
+        build(next() if digits else '0')
+    build('.')
+    if not digits:
+        build('0')
+    while digits:
+        build(next())
+    if sign:
+        build('-')
+    return ''.join(reversed(result))
+
 def _configure_parameter(p, value):
     """Configure the given ADO Parameter 'p' with the Python 'value'."""
     if p.Direction not in [adParamInput, adParamInputOutput, adParamUnknown]:
@@ -195,21 +213,8 @@ def _configure_parameter(p, value):
         p.AppendChunk(value)
 
     elif isinstance(value, decimal.Decimal):
-        p.Value = value
-        exponent = value.as_tuple()[2]
-        digit_count = len(value.as_tuple()[1])
-        
-        if exponent == 0:
-            p.NumericScale = 0
-            p.Precision =  digit_count
-        elif exponent < 0:
-            p.NumericScale = -exponent
-            p.Precision = digit_count
-            if p.Precision < p.NumericScale:
-                p.Precision = p.NumericScale            
-        elif exponent > 0:
-            p.NumericScale = 0
-            p.Precision = digit_count + exponent
+        p.Type = adBSTR
+        p.Value = format_decimal_as_string(value)
 
     elif isinstance(value, datetime.datetime):
         p.Type = adBSTR

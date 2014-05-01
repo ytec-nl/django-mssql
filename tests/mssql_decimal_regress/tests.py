@@ -4,9 +4,9 @@ import decimal
 
 from django.test import TestCase
 
-from .models import DecimalTable
+from .models import DecimalTable, PreciseDecimalTable
 
-class Bug85TestCase(TestCase):
+class GoogleBug85TestCase(TestCase):
     def test_european_decimal_conversion(self):
         from sqlserver_ado.dbapi import _cvtDecimal
         val1 = _cvtDecimal('0,05')
@@ -18,7 +18,7 @@ class Bug85TestCase(TestCase):
         self.assertEqual(float('0.05'), val1)
 
 
-class Bug38TestCase(TestCase):
+class GoogleBug38TestCase(TestCase):
     def testInsertVariousFormats(self):
         """
         Test adding decimals as strings with various formats.
@@ -82,3 +82,12 @@ class Bug38TestCase(TestCase):
         DecimalTable(d=decimal.Decimal('0450.0')).save()
         d1 = DecimalTable.objects.all()[0]
         self.assertEquals(decimal.Decimal('450.0'), d1.d)
+
+class DecimalRegressTestCase(TestCase):
+    def test_very_precise_decimal(self):
+        """
+        Issue #50 - decimals are rounded to 4 places by ADO
+        """
+        expected = decimal.Decimal('1234567890.0123456789')
+        PreciseDecimalTable(d=expected).save()
+        self.assertEquals(expected, PreciseDecimalTable.objects.all()[0].d)
