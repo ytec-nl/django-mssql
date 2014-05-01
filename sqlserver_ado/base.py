@@ -191,18 +191,6 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         self.introspection = DatabaseIntrospection(self)
         self.validation = BaseDatabaseValidation(self)
 
-    def get_new_connection(self, conn_params):
-        """Connect to the database"""
-        conn = self._get_new_connection(conn_params)
-        # The OUTPUT clause is supported in 2005+ sql servers
-        self.features.can_return_id_from_insert = self._is_sql2005_and_up(conn)
-        self.features.has_bulk_insert = self._is_sql2008_and_up(conn)
-        if self.settings_dict["OPTIONS"].get("allow_nulls_in_unique_constraints", True):
-            self.features.ignores_nulls_in_unique_constraints = self._is_sql2008_and_up(conn)
-            if self._is_sql2008_and_up(conn):
-                self.creation.sql_create_model = self.creation.sql_create_model_sql2008
-        return conn
-
     def get_connection_params(self):
         """Returns a dict of parameters suitable for get_new_connection."""
         settings_dict = self.settings_dict.copy()
