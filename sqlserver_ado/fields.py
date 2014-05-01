@@ -104,7 +104,7 @@ class DateTimeOffsetField(models.DateTimeField):
             value = self.get_prep_value(value)
         if value is None:
             return None
-        return value.isoformat(b' ')
+        return value.isoformat()
 
 class TimeField(models.TimeField):
     """

@@ -12,6 +12,20 @@ class LegacyDateTimeTable(models.Model):
     def __str__(self):
         return self.val
 
+    class Meta:
+        db_table = 'LegacyDateTimeTable'
+
+@python_2_unicode_compatible
+class DateTimeLegacyDateTimeTable(models.Model):
+    val = DateTimeField()
+
+    def __str__(self):
+        return self.val
+
+    class Meta:
+        managed = False
+        db_table = 'LegacyDateTimeTable'
+
 @python_2_unicode_compatible
 class LegacyDateTable(models.Model):
     val = LegacyDateField()

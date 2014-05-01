@@ -215,7 +215,8 @@ def _configure_parameter(p, value):
         p.Type = adBSTR
         if timezone.is_aware(value):
             value = timezone.make_naive(value, timezone.utc)
-        s = value.isoformat(b' ')
+        # Strip '-' so SQL Server parses as YYYYMMDD for all languages/formats
+        s = value.isoformat(b' ').replace('-', '')
         p.Value = s
         p.Size = len(s)
 

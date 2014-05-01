@@ -1,6 +1,8 @@
 """Microsoft SQL Server database backend for Django."""
 from __future__ import absolute_import, unicode_literals
 
+import warnings
+
 from django.core.exceptions import ImproperlyConfigured, ValidationError
 from django.db.backends import BaseDatabaseWrapper, BaseDatabaseFeatures, BaseDatabaseValidation, BaseDatabaseClient
 from django.db.backends.signals import connection_created
@@ -168,11 +170,19 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         except ValueError:
             self.cast_avg_to_float = False
 
-        USE_LEGACY_DATE_FIELDS_DEFAULT = True
+        USE_LEGACY_DATE_FIELDS_DEFAULT = False
         try:
             self.use_legacy_date_fields = bool(options.get('use_legacy_date_fields', USE_LEGACY_DATE_FIELDS_DEFAULT))
         except ValueError:
             self.use_legacy_date_fields = USE_LEGACY_DATE_FIELDS_DEFAULT
+
+        if self.use_legacy_date_fields:
+                warnings.warn(
+                    "The `use_legacy_date_fields` setting has been deprecated. "
+                    "The default option value has changed to 'False'. "
+                    "If you need to use the legacy SQL 'datetime' datatype, "
+                    "you must replace them with the provide model field.",
+                    DeprecationWarning)
 
         self.features = DatabaseFeatures(self)
         self.ops = DatabaseOperations(self)

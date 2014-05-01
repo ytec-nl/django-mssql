@@ -275,6 +275,21 @@ class DatabaseOperations(BaseDatabaseOperations):
     def tablespace_sql(self, tablespace, inline=False):
         return "ON %s" % self.quote_name(tablespace)
 
+    def __to_truncated_datetime_string(self, value):
+        """
+        Format a datetime to a internationalize string parsable by either a
+        'datetime' or 'datetime2'.
+        """
+        if isinstance(value, datetime.datetime):
+            # Strip '-' so SQL Server parses as YYYYMMDD for all languages/formats
+            val = value.isoformat(b' ').replace('-', '')
+            if value.microsecond:
+                # truncate to millisecond so SQL's 'datetime' can parse it
+                idx = val.rindex('.')
+                val = val[:idx + 4] + val[idx + 7:]
+            return val
+        raise TypeError("'value' must be a date or datetime")
+
     def _legacy_value_to_db_datetime(self, value):
         if value is None or isinstance(value, six.string_types):
             return value
@@ -288,24 +303,20 @@ class DatabaseOperations(BaseDatabaseOperations):
         # SQL Server 2005 doesn't support microseconds
         if self.connection.is_sql2005():
            value = value.replace(microsecond=0)
-        val = value.isoformat(b' ')
-        if value.microsecond:
-            # truncate microsecond to millisecond
-            idx = val.rindex('.')
-            val = val[:idx + 4] + val[idx + 7:]
+        val = self.__to_truncated_datetime_string(value)
         return val
-        
+
     def _new_value_to_db_datetime(self, value):
         if value is None or isinstance(value, six.string_types):
             return value
-            
+
         if timezone.is_aware(value):# and not self.connection.features.supports_timezones:
             if getattr(settings, 'USE_TZ', False):
                 value = value.astimezone(timezone.utc).replace(tzinfo=None)
             else:
                 raise ValueError("SQL Server backend does not support timezone-aware datetimes.")
-        return value.isoformat(b' ')
-    
+        return value.isoformat()
+
     def _legacy_value_to_db_time(self, value):
         if value is None or isinstance(value, six.string_types):
             return value
@@ -322,7 +333,7 @@ class DatabaseOperations(BaseDatabaseOperations):
             value = value.replace(microsecond=0)
         val = value.isoformat()
         if value.microsecond:
-            # truncate microsecond to millisecond
+            # truncate to millisecond so SQL's 'datetime' can parse it
             idx = val.rindex('.')
             val = val[:idx + 4] + val[idx + 7:]
         return val

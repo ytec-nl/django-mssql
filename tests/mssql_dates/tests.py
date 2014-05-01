@@ -4,9 +4,11 @@ import datetime
 from operator import attrgetter
 
 from django.test import TestCase
+from django.utils.unittest import expectedFailure
 
 from .models import (LegacyDateTimeTable, LegacyDateTable, LegacyTimeTable,
-	DateTable, DateTimeTable, TimeTable, DateTimeOffsetTable)
+	DateTable, DateTimeTable, TimeTable, DateTimeOffsetTable,
+    DateTimeLegacyDateTimeTable)
 
 class Bug93LookupTest(TestCase):
     # Google code bug #93
@@ -49,6 +51,15 @@ class DatesTest(TestCase):
 
     def test_legacy_datetime(self):
         self._test(LegacyDateTimeTable, datetime.datetime(1901, 1, 1, 1, 1, 1, 123000))
+
+    # There is no good way to make this scenario pass
+    @expectedFailure
+    def test_wrapped_legacy_datetime(self):
+        """
+        Test a legacy 'datetime' column referenced with a newer 'DateTimeField'
+        that expects a 'datetime2' column.
+        """
+        self._test(DateTimeLegacyDateTimeTable, datetime.datetime(1901, 1, 1, 1, 1, 1, 123000))
 
     def test_legacy_time(self):
         self._test(LegacyTimeTable, datetime.time(13, 13, 59, 123000))

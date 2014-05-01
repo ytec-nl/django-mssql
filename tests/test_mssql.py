@@ -16,10 +16,11 @@ DATABASES = {
     'default': {
         'ENGINE': 'sqlserver_ado',
         'NAME': 'django_mssql',
-        'HOST': r'localhost\ss2008',
+        'HOST': r'localhost\ss2012',
         'USER': '',
         'PASSWORD': '',
         'OPTIONS': {
+            # 'provider': 'SQLOLEDB',
             'provider': 'SQLNCLI11',
             # 'extra_params': 'DataTypeCompatibility=80;MARS Connection=True;',
             'use_legacy_date_fields': False,
@@ -28,10 +29,11 @@ DATABASES = {
     'other': {
         'ENGINE': 'sqlserver_ado',
         'NAME': 'django_mssql_other',
-        'HOST': r'localhost\ss2008',
+        'HOST': r'localhost\ss2012',
         'USER': '',
         'PASSWORD': '',
         'OPTIONS': {
+            # 'provider': 'SQLOLEDB',
             'provider': 'SQLNCLI11',
             # 'extra_params': 'DataTypeCompatibility=80;MARS Connection=True;',
             'use_legacy_date_fields': False,

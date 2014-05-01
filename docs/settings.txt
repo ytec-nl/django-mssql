@@ -192,13 +192,16 @@ with ``AVG``.
 use_legacy_date_fields
 ~~~~~~~~~~~~~~~~~~~~~~
 
-Default: ``True``
+Default: ``False``
 
 This setting alters which data types are used for the ``DateField``, 
 ``DateTimeField``, and ``TimeField`` fields. When ``True``, the fields will all 
 use the ``datetime`` data type. When ``False``, they will use ``date``, 
 ``datetime``, and ``time`` data types.
 
-
+.. note::
+    The default value changed to ``False`` with version 1.5.1.
 
 .. versionadded:: 1.4
+
+.. deprecated:: 1.5.1

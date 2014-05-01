@@ -12,6 +12,11 @@ be enabled using the :setting:`use_legacy_date_fields` option, or using the
 fields ``LegacyDateField``,  ``LegacyDateTimeField``, and ``LegacyTimeField`` in
 ``sqlserver_ado.fields``.
 
+.. note::
+    ::setting:`use_legacy_date_fields` option has been deprecated and will be
+    removed. Anyone still needing to use the 'datetime' data type must update
+    their models to use the appropriate legacy model field.
+
 To allow migrating specific apps or only some of your models to the new date 
 times, the model fields ``DateField``, ``DateTimeField``, and ``TimeField`` in
 ``sqlserver_ado.fields`` use the new data types regardless of the 
@@ -19,19 +24,19 @@ times, the model fields ``DateField``, ``DateTimeField``, and ``TimeField`` in
 
 .. code:: python
 
-	from django.db import models
-	from sqlserver_ado.fields import DateField, DateTimeField, TimeField
+    from django.db import models
+    from sqlserver_ado.fields import DateField, DateTimeField, TimeField
 
-	class MyModel(models.Model):
-		# when use_legecy_date_fields is False, models.*Field will behave like these
-		a_real_date = DateField() # date data type
-		a_datetime2 = DateTimeField() # datetime2 data type
-		a_real_time = TimeField() # time data type
+    class MyModel(models.Model):
+        # when use_legecy_date_fields is False, models.*Field will behave like these
+        a_real_date = DateField() # date data type
+        a_datetime2 = DateTimeField() # datetime2 data type
+        a_real_time = TimeField() # time data type
 
-		# when use_legecy_date_fields is True, models.*Field will behave like these
-		a_date = LegacyDateField() # datetime data type
-		a_datetime = LegacyDateTime() # datetime data type
-		a_time = LegacyTimeField() # datetime data type
+        # when use_legecy_date_fields is True, models.*Field will behave like these
+        a_date = LegacyDateField() # datetime data type
+        a_datetime = LegacyDateTime() # datetime data type
+        a_time = LegacyTimeField() # datetime data type
 
 datetime limitations
 ~~~~~~~~~~~~~~~~~~~~
