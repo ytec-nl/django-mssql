@@ -224,9 +224,19 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         # cache the properties on the connection
         self.connection.adoConnProperties = dict([(x.Name, x.Value) for x in self.connection.adoConn.Properties])
 
+        unsupported_sql = False
         if self.is_sql2000(make_connection=False):
             # SQL 2000 doesn't support the OUTPUT clause
             self.features.can_return_id_from_insert = False
+            unsupported_sql = True
+        elif self.is_sql2005(make_connection=False):
+            unsupported_sql = True
+
+        if unsupported_sql:
+            warnings.warn(
+                "This version of MS SQL server is no longer tested with "
+                "django-mssql and not officially supported/maintained.",
+                DeprecationWarning)
 
     def create_cursor(self):
         """Creates a cursor. Assumes that a connection is established."""

@@ -16,7 +16,7 @@ SQL Server Versions
 -------------------
 
 Supported Versions:
-    * 2005
+    * 2005 (not tested, pending deprecation)
     * 2008
     * 2008r2
     * 2012

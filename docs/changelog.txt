@@ -8,6 +8,7 @@ v1.5.1
 - The default value for :setting:`use_legacy_date_fields` has changed to 'False'. This setting will be removed in a
   later version. Once removed, any usage of the legacy 'datetime' datatype will require using the provided
   'Legacy*Field' model fields.
+- SQL Server 2005 has not been tested in a while and support will officially be removed in the next release.
 
 
 v1.5
