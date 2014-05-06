@@ -84,10 +84,9 @@ class DatabaseCreation(BaseDatabaseCreation):
         """
         Create a transactionless connection to 'master' database.
         """
-        from .base import DatabaseWrapper
         settings_dict = self.connection.settings_dict.copy()
         settings_dict['NAME'] = 'master'
-        nodb_connection = DatabaseWrapper(
+        nodb_connection = type(self.connection)(
             settings_dict,
             alias=NO_DB_ALIAS,
             allow_thread_sharing=False)

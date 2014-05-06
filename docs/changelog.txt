@@ -11,6 +11,7 @@ v1.5.1
 - SQL Server 2005 has not been tested in a while and support will officially be removed in the next release.
 - Decimals are passed through ADO as strings to avoid rounding to four places. :issue:`55`.
 - Database introspection will now identify an char type with a length over 8000 as a ``TextField``. :issue:`53`
+- Minor changes to make it possible to subclass django-mssql for use on a non-Windows platform.
 
 v1.5
 ----

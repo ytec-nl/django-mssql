@@ -40,9 +40,6 @@ from django.db.utils import IntegrityError as DjangoIntegrityError, \
 
 from django.utils import timezone
 
-import pythoncom
-import win32com.client
-
 from ado_consts import *
 
 # DB API default values
@@ -131,6 +128,9 @@ def connect(connection_string, timeout=30, use_transactions=None):
         http://www.connectionstrings.com/?carrier=sqlserver2005
     timeout -- A command timeout value, in seconds (default 30 seconds)
     """
+    # Inner imports to make this module importable on non-Windows platforms
+    import pythoncom
+    import win32com.client
     try:
         pythoncom.CoInitialize()
         c = win32com.client.Dispatch('ADODB.Connection')
@@ -282,6 +282,8 @@ class Connection(object):
         except Exception, e:
             self._raiseConnectionError(InternalError, e)
         self.adoConn = None
+         # Inner import to make this module importable on non-Windows platforms.
+        import pythoncom
         pythoncom.CoUninitialize()
 
     def commit(self):
