@@ -336,7 +336,7 @@ class DatabaseWrapper(BaseDatabaseWrapper):
             # Use a mssql cursor directly, bypassing Django's utilities.
             with self.connection.cursor() as cursor:
                 cursor.execute("SELECT 1")
-        except Database.DatabaseError:
+        except self.Database.Error:
             return False
         else:
             return True
