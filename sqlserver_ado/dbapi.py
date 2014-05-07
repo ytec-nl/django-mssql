@@ -128,7 +128,7 @@ def connect(connection_string, timeout=30, use_transactions=None):
         http://www.connectionstrings.com/?carrier=sqlserver2005
     timeout -- A command timeout value, in seconds (default 30 seconds)
     """
-    # Inner imports to make this module importable on non-Windows platforms
+    # Inner imports to make this module importable on non-Windows platforms.
     import pythoncom
     import win32com.client
     try:
@@ -448,6 +448,9 @@ class Cursor(object):
         if self.connection is None:
             self._raiseCursorError(InterfaceError, None)
             return
+
+        # Inner import to make this module importable on non-Windows platforms.
+        import win32com.client
 
         try:
             self.cmd = win32com.client.Dispatch("ADODB.Command")
