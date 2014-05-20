@@ -54,6 +54,8 @@ class DatabaseFeatures(BaseDatabaseFeatures):
 
     # connection_persists_old_columns = True
 
+    requires_literal_defaults = True
+
     @cached_property
     def has_zoneinfo_database(self):
         return pytz is not None

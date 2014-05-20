@@ -1,15 +1,7 @@
 import datetime
 from django.utils import encoding, six
 
-try:
-    from django.db.backends.schema import BaseDatabaseSchemaEditor, logger
-except ImportError:
-    # Stub for newly added class
-    class BaseDatabaseSchemaEditor(object):
-        pass
-    import logging
-    logger = logging.getLogger('mssql')
-
+from .base_schema import BaseDatabaseSchemaEditor, logger
 
 class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
     sql_rename_table = "sp_rename '%(old_table)s', '%(new_table)s'"
@@ -19,13 +11,13 @@ class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
     sql_alter_column_type = "ALTER COLUMN %(column)s %(type)s"
     sql_alter_column_null = "ALTER COLUMN %(column)s %(type)s NULL"
     sql_alter_column_not_null = "ALTER COLUMN %(column)s %(type)s NOT NULL"
-    # sql_alter_column_default = "ALTER COLUMN %(column)s ADD CONSTRAINT %(constraint_name)s DEFAULT %(default)s"
+    sql_alter_column_default = "ALTER COLUMN %(column)s ADD CONSTRAINT %(constraint_name)s DEFAULT %(default)s"
     sql_alter_column_default = "ADD CONSTRAINT %(constraint_name)s DEFAULT %(default)s FOR %(column)s"
     sql_alter_column_no_default = "ALTER COLUMN %(column)s DROP CONSTRAINT %(constraint_name)s"
     sql_delete_column = "ALTER TABLE %(table)s DROP COLUMN %(column)s"
     sql_rename_column = "sp_rename '%(table)s.%(old_column)s', '%(new_column)s', 'COLUMN'"
 
-    sql_create_fk = "ALTER TABLE %(table)s ADD CONSTRAINT %(name)s FOREIGN KEY (%(columns)s) REFERENCES %(to_table)s (%(to_columns)s)"
+    sql_create_fk = "ALTER TABLE %(table)s ADD CONSTRAINT %(name)s FOREIGN KEY (%(column)s) REFERENCES %(to_table)s (%(to_column)s)"
 
     sql_delete_index = "DROP INDEX %(name)s ON %(table)s"
 
@@ -193,19 +185,19 @@ END''' % {'table': model._meta.db_table}
         return sql, params
 
     def prepare_default(self, value):
-        return "%s" % self._quote_parameter(value), []
+        return "%s" % self.quote_value(value), []
 
-    def _quote_parameter(self, value):
+    def quote_value(self, value):
         if isinstance(value, (datetime.date, datetime.time, datetime.datetime)):
             return "'%s'" % value
         elif isinstance(value, six.string_types):
-            return "'%s'" % value
+            return "'%s'" % six.text_type(value).replace("\'", "\'\'")
         elif isinstance(value, bool):
             return "1" if value else "0"
         elif value is None:
             return "NULL"
         else:
-            return str(value)
+            return six.text_type(value)
 
     # def execute(self, sql, params=[]):
     #     """

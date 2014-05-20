@@ -16,7 +16,6 @@ SQL Server Versions
 -------------------
 
 Supported Versions:
-    * 2005 (not tested, pending deprecation)
     * 2008
     * 2008r2
     * 2012
@@ -26,8 +25,9 @@ The SQL Server version will be detected upon initial connection.
 Django Version
 --------------
 
-The current version of django-mssql supports Django 1.6. If using an older
-version of Django, you will need to use an earlier version of django-mssql.
+	* Django 1.6
+	* Django 1.7 (schema migrations is not fully supported)
+
 
 django-mssql 1.4 supports Django 1.4 and 1.5.
 

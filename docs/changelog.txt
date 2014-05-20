@@ -1,6 +1,16 @@
 Changelog
 =========
 
+v1.6 (In Development)
+---------------------
+
+- SQL Server 2005 is no longer supported. It should not be used.
+- Added support for Django 1.7.
+
+  - Schema migrations is not fully supported. Django has known issues with this
+    new API that prevents django-mssql from fully supporting it. Do not use
+    migrations in production.
+
 v1.5.1
 ------
 
@@ -10,7 +20,7 @@ v1.5.1
   'Legacy*Field' model fields.
 - SQL Server 2005 has not been tested in a while and support will officially be removed in the next release.
 - Decimals are passed through ADO as strings to avoid rounding to four places. :issue:`55`.
-- Database introspection will now identify an char type with a length over 8000 as a ``TextField``. :issue:`53`
+- Database introspection will now identify a char type with a length over 8000 as a ``TextField``. :issue:`53`
 - Minor changes to make it possible to subclass django-mssql for use on a non-Windows platform.
 
 v1.5
