@@ -120,6 +120,13 @@ class _DbType(object):
     def __eq__(self, other): return other in self.values
     def __ne__(self, other): return other not in self.values
 
+_re_find_password = re.compile('(pwd|password)=[^;]*;', re.IGNORECASE)
+
+def mask_connection_string_password(s, mask='******'):
+    """
+    Look for a connection string password in 's' and mask it.
+    """
+    return re.sub(_re_find_password, '\g<1>=%s;' % mask, s)
 
 def connect(connection_string, timeout=30, use_transactions=None):
     """Connect to a database.
@@ -143,7 +150,11 @@ def connect(connection_string, timeout=30, use_transactions=None):
             useTransactions = use_transactions
         return Connection(c, useTransactions)
     except Exception, e:
-        raise OperationalError(e, "Error opening connection: " + connection_string)
+        raise OperationalError(e,
+            "Error opening connection: {0}".format(
+                mask_connection_string_password(connection_string)
+            )
+        )
 
 def _use_transactions(c):
     """Return True if the given ADODB.Connection supports transactions."""

@@ -15,7 +15,8 @@
 DATABASES = {
     'default': {
         'ENGINE': 'sqlserver_ado',
-        'NAME': 'django_mssql',
+        'NAME': 'test_django_mssql',
+        'TEST_NAME': 'test_django_mssql',
         'HOST': r'localhost\ss2012',
         'USER': '',
         'PASSWORD': '',
@@ -28,7 +29,8 @@ DATABASES = {
     },
     'other': {
         'ENGINE': 'sqlserver_ado',
-        'NAME': 'django_mssql_other',
+        'NAME': 'test_django_mssql_other',
+        'TEST_NAME': 'test_django_mssql_other',
         'HOST': r'localhost\ss2012',
         'USER': '',
         'PASSWORD': '',

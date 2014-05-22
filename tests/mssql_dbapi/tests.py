@@ -139,3 +139,37 @@ end
             self.assertEqual(result[0], expected)
         finally:
             con.close()
+
+class MaskConnectionStringPasswordTest(unittest.TestCase):
+
+    def test_mask(self):
+        """
+        Ensure the mask function does the proper substitution.
+        """
+        base_conn_string = 'SOURCE=127.0.0.1\\ss2008;Initial Catalog=MyDatabase;UID=testuser;%s=%s;PROVIDER=SQLNCLI10;DataTypeCompatibility=80;MARS Connection=True;DataTypeCompatibility=80;MARS Connection=True;'
+        names = ['pwd', 'Pwd', 'PWD', 'password', 'PASSWORD', 'Password']
+        passwords = ['', '12345', 'SLDFKJD**$#$', 'asd asdf']
+        for n in names:
+            for p in passwords:
+                conn_str = dbapi.mask_connection_string_password(
+                    base_conn_string % (n, p), mask='*')
+                self.assertNotIn('%s=%s;' % (n,p), conn_str)
+                self.assertIn('%s=*;' % n, conn_str)
+
+    def test_connection_error(self):
+        """
+        Attempt an invalid connection and check the error for a password.
+        """
+        from django.conf import settings
+
+        databases = {}
+        databases.update(settings.DATABASES['default'])
+        databases['USER'] = 'user'
+        databases['PASSWORD'] = 'myPass'
+
+        connection_string = base.make_connection_string(databases)
+
+        with self.assertRaises(dbapi.OperationalError) as err:
+            dbapi.connect(connection_string)
+        self.assertNotIn('PWD=myPass;', str(err.exception))
+        self.assertIn('PWD=******;', str(err.exception))

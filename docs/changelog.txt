@@ -11,6 +11,9 @@ v1.6 (In Development)
     new API that prevents django-mssql from fully supporting it. Do not use
     migrations in production.
 
+- Password is masked from the connection string if there are connection errors.
+  Thanks Martijn Pieters.
+
 v1.5.1
 ------
 
