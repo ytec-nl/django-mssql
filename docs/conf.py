@@ -42,8 +42,8 @@ source_suffix = '.txt'
 master_doc = 'index'
 
 # General information about the project.
-project = u'Django MSSQL'
-copyright = u'2012, Django MSSQL authors'
+project = 'Django MSSQL'
+copyright = '2012, Django MSSQL authors'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -189,8 +189,8 @@ latex_elements = {
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'django-mssql.tex', u'Django MSSQL Documentation',
-   u'Django MSSQL authors', 'manual'),
+  ('index', 'django-mssql.tex', 'Django MSSQL Documentation',
+   'Django MSSQL authors', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -219,8 +219,8 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'django-mssql', u'Django MSSQL Documentation',
-     [u'Django MSSQL authors'], 1)
+    ('index', 'django-mssql', 'Django MSSQL Documentation',
+     ['Django MSSQL authors'], 1)
 ]
 
 # If true, show URL addresses after external links.
@@ -233,8 +233,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  ('index', 'django-mssql', u'Django MSSQL Documentation',
-   u'Django MSSQL authors', 'django-mssql', 'One line description of project.',
+  ('index', 'django-mssql', 'Django MSSQL Documentation',
+   'Django MSSQL authors', 'django-mssql', 'One line description of project.',
    'Miscellaneous'),
 ]
 

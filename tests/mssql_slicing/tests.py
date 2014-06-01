@@ -29,13 +29,13 @@ class DistinctTestCase(TestCase):
         self.assertEquals(len(stuff), 5)
 
         stuff = list(baseQ[:2])
-        self.assertEquals(stuff, [u'abc', u'def'])
+        self.assertEquals(stuff, ['abc', 'def'])
 
         stuff = list(baseQ[3:])
-        self.assertEquals(stuff, [u'ijk', u'xyz'])
+        self.assertEquals(stuff, ['ijk', 'xyz'])
 
         stuff = list(baseQ[2:4])
-        self.assertEquals(stuff, [u'fgh', u'ijk'])
+        self.assertEquals(stuff, ['fgh', 'ijk'])
 
     def testUnusedDistinct(self):
 
@@ -47,17 +47,17 @@ class DistinctTestCase(TestCase):
         stuff = list(baseQ[:2])
         self.assertEquals(
             [o.s for o in stuff],
-            [u'abc', u'abc'])
+            ['abc', 'abc'])
 
         stuff = list(baseQ[3:])
         self.assertEquals(
             [o.s for o in stuff],
-            [u'def', u'def', u'fgh', u'fgh', u'fgh', u'fgh', u'ijk', u'ijk', u'xyz'])
+            ['def', 'def', 'fgh', 'fgh', 'fgh', 'fgh', 'ijk', 'ijk', 'xyz'])
 
         stuff = list(baseQ[2:4])
         self.assertEquals(
             [o.s for o in stuff],
-            [u'abc', u'def'])
+            ['abc', 'def'])
 
 
 class SlicingRegressionTests(TestCase):

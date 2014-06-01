@@ -14,7 +14,7 @@ import sqlserver_ado.dbapi as db
 
 def _print_names(results):
     for item in results:
-        print item[1]
+        print(item[1])
 
 def sproc_1(connection):
     "Calls a sproc using execute with explicit parameter markers."

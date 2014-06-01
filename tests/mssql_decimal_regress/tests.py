@@ -3,6 +3,7 @@ from __future__ import absolute_import
 import decimal
 
 from django.test import TestCase
+from django.utils import six
 
 from .models import DecimalTable, PreciseDecimalTable
 
@@ -52,7 +53,7 @@ class GoogleBug38TestCase(TestCase):
         Test if return value is a python Decimal object
         when saving the model with a unicode object as value.
         """
-        DecimalTable(d=u'123').save()
+        DecimalTable(d=six.text_type('123')).save()
         d1 = DecimalTable.objects.all()[0]
         self.assertEquals(decimal.Decimal, d1.d.__class__)
 

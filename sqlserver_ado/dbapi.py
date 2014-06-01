@@ -105,10 +105,10 @@ class IntegrityError(DatabaseError, DjangoIntegrityError): pass
 class DataError(DatabaseError): pass
 class NotSupportedError(DatabaseError): pass
 
-class FetchFailedError(Error): 
+class FetchFailedError(Error):
     """
     Error is used by RawStoredProcedureQuerySet to determine when a fetch
-    failed due to a connection being closed or there is no record set 
+    failed due to a connection being closed or there is no record set
     returned.
     """
     pass
@@ -149,7 +149,7 @@ def connect(connection_string, timeout=30, use_transactions=None):
         else:
             useTransactions = use_transactions
         return Connection(c, useTransactions)
-    except Exception, e:
+    except Exception as e:
         raise OperationalError(e,
             "Error opening connection: {0}".format(
                 mask_connection_string_password(connection_string)
@@ -290,7 +290,7 @@ class Connection(object):
         self.messages = []
         try:
             self._close_connection()
-        except Exception, e:
+        except Exception as e:
             self._raiseConnectionError(InternalError, e)
         self.adoConn = None
          # Inner import to make this module importable on non-Windows platforms.
@@ -314,7 +314,7 @@ class Connection(object):
                 #calling CommitTrans automatically starts a new transaction. Not all providers support this.
                 #If not, we will have to start a new transaction by this command:
                 self.adoConn.BeginTrans()
-        except Exception, e:
+        except Exception as e:
             self._raiseConnectionError(Error, e)
 
     def rollback(self):
@@ -338,22 +338,22 @@ class Connection(object):
         return Cursor(self)
 
     def printADOerrors(self):
-        print 'ADO Errors (%i):' % self.adoConn.Errors.Count
+        print('ADO Errors (%i):' % self.adoConn.Errors.Count)
         for e in self.adoConn.Errors:
-            print 'Description: %s' % e.Description
-            print 'Error: %s %s ' % (e.Number, adoErrors.get(e.Number, "unknown"))
+            print('Description: %s' % e.Description)
+            print('Error: %s %s ' % (e.Number, adoErrors.get(e.Number, "unknown")))
             if e.Number == ado_error_TIMEOUT:
-                print 'Timeout Error: Try using adodbpi.connect(constr,timeout=Nseconds)'
-            print 'Source: %s' % e.Source
-            print 'NativeError: %s' % e.NativeError
-            print 'SQL State: %s' % e.SQLState
-            
+                print('Timeout Error: Try using adodbpi.connect(constr,timeout=Nseconds)')
+            print('Source: %s' % e.Source)
+            print('NativeError: %s' % e.NativeError)
+            print('SQL State: %s' % e.SQLState)
+
     def _suggest_error_class(self):
         """Introspect the current ADO Errors and determine an appropriate error class.
-        
+
         Error.SQLState is a SQL-defined error condition, per the SQL specification:
         http://www.contrib.andrew.cmu.edu/~shadow/sql/sql1992.txt
-        
+
         The 23000 class of errors are integrity errors.
         Error 40002 is a transactional integrity error.
         """
@@ -362,7 +362,7 @@ class Connection(object):
                 state = str(e.SQLState)
                 if state.startswith('23') or state=='40002':
                     return IntegrityError
-            
+
         return DatabaseError
 
     def __del__(self):
@@ -400,11 +400,11 @@ class Cursor(object):
 
     def __iter__(self):
         return iter(self.fetchone, None)
-        
+
     def __enter__(self):
         "Allow database cursors to be used with context managers."
         return self
-        
+
     def __exit__(self, exc_type, exc_val, exc_tb):
         "Allow database cursors to be used with context managers."
         self.close()
@@ -432,7 +432,7 @@ class Cursor(object):
         self.rowcount = -1
         self.rs = recordset
         desc = list()
-        
+
         for f in self.rs.Fields:
             display_size = None
             if not(self.rs.EOF or self.rs.BOF):
@@ -441,7 +441,7 @@ class Cursor(object):
             null_ok = bool(f.Attributes & adFldMayBeNull)
 
             desc.append( (f.Name, f.Type, display_size, f.DefinedSize, f.Precision, f.NumericScale, null_ok) )
-            
+
         self.description = desc
 
     def close(self):
@@ -479,7 +479,7 @@ class Cursor(object):
             recordset = self.cmd.Execute()
             self.rowcount = recordset[1]
             self._description_from_recordset(recordset[0])
-        except Exception, e:
+        except Exception as e:
             _message = ""
             if hasattr(e, 'args'): _message += str(e.args)+"\n"
             _message += "Command:\n%s\nParameters:\n%s" %  (self.cmd.CommandText, format_parameters(self.cmd.Parameters, True))
@@ -540,7 +540,7 @@ class Cursor(object):
             if value is None:
                 parameter_replacements.append('NULL')
                 continue
-                
+
             if isinstance(value, basestring) and value == "":
                 parameter_replacements.append("''")
                 continue
@@ -653,7 +653,7 @@ class Cursor(object):
         recordset = self.rs.NextRecordset()[0]
         if recordset is None:
             return None
-            
+
         self._description_from_recordset(recordset)
         return True
 
@@ -737,8 +737,8 @@ _variantConversions = MultiMap(
         (adBoolean,): bool,
         adoLongTypes+adoRowIdTypes : long,
         adoIntegerTypes: int,
-        adoBinaryTypes: buffer, 
-    }, 
+        adoBinaryTypes: buffer,
+    },
     lambda x: x)
 
 # Mapping Python data types to ADO type codes
@@ -756,5 +756,5 @@ _map_to_adotype = {
     decimal.Decimal: adDecimal,
     datetime.date: adDate,
     datetime.datetime: adDate,
-    datetime.time: adDate, 
+    datetime.time: adDate,
 }

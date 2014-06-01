@@ -15,4 +15,4 @@ class Command(BaseCommand):
             return
 
         connection.creation.install_regex_clr(database_name)
-        print 'Installed regex_clr to database %s' % database_name
+        print('Installed regex_clr to database %s' % database_name)
