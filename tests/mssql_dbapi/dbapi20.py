@@ -12,6 +12,8 @@ __author__ = 'Stuart Bishop <stuart@stuartbishop.net>'
 import unittest
 import time
 
+from django.utils import six
+
 
 class DatabaseAPI20Test(unittest.TestCase):
     ''' Test a database self.driver for DB API 2.0 compatibility.
@@ -121,8 +123,8 @@ class DatabaseAPI20Test(unittest.TestCase):
     def test_Exceptions(self):
         # Make sure required exceptions exist, and are in the
         # defined heirarchy.
-        self.failUnless(issubclass(self.driver.Warning,StandardError))
-        self.failUnless(issubclass(self.driver.Error,StandardError))
+        self.failUnless(issubclass(self.driver.Warning,Exception if six.PY3 else StandardError))
+        self.failUnless(issubclass(self.driver.Error,Exception if six.PY3 else StandardError))
         self.failUnless(issubclass(self.driver.InterfaceError,self.driver.Error))
         self.failUnless(issubclass(self.driver.DatabaseError,self.driver.Error))
         self.failUnless(issubclass(self.driver.OperationalError,self.driver.Error))

@@ -268,21 +268,21 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         Returns True if the current connection is SQL2000. Establishes a
         connection if needed when make_connection is True.
         """
-        return self.__get_dbms_version(make_connection).startswith(unicode(VERSION_SQL2000))
+        return self.__get_dbms_version(make_connection).startswith(six.text_type(VERSION_SQL2000))
 
     def is_sql2005(self, make_connection=True):
         """
         Returns True if the current connection is SQL2005. Establishes a
         connection if needed when make_connection is True.
         """
-        return self.__get_dbms_version(make_connection).startswith(unicode(VERSION_SQL2005))
+        return self.__get_dbms_version(make_connection).startswith(six.text_type(VERSION_SQL2005))
 
     def is_sql2008(self, make_connection=True):
         """
         Returns True if the current connection is SQL2008. Establishes a
         connection if needed when make_connection is True.
         """
-        return self.__get_dbms_version(make_connection).startswith(unicode(VERSION_SQL2008))
+        return self.__get_dbms_version(make_connection).startswith(six.text_type(VERSION_SQL2008))
 
     def disable_constraint_checking(self):
         """

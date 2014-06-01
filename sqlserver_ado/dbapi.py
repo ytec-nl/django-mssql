@@ -25,7 +25,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 DB-API 2.0 specification: http://www.python.org/dev/peps/pep-0249/
 """
-from __future__ import unicode_literals
+from __future__ import absolute_import, unicode_literals
 
 import sys
 import time
@@ -38,9 +38,10 @@ from django.conf import settings
 from django.db.utils import IntegrityError as DjangoIntegrityError, \
     DatabaseError as DjangoDatabaseError
 
+from django.utils import six
 from django.utils import timezone
 
-from ado_consts import *
+from .ado_consts import *
 
 # DB API default values
 apilevel = '2.0'
@@ -74,7 +75,7 @@ class MultiMap(object):
         self.storage = dict()
         self.default = default
 
-        for keys, value in mapping.iteritems():
+        for keys, value in six.iteritems(mapping):
             for key in keys:
                 self.storage[key] = value
 
@@ -91,8 +92,8 @@ def standardErrorHandler(connection, cursor, errorclass, errorvalue):
     raise errorclass(errorvalue)
 
 
-class Error(StandardError): pass
-class Warning(StandardError): pass
+class Error(Exception if six.PY3 else StandardError): pass
+class Warning(Exception if six.PY3 else StandardError): pass
 
 class InterfaceError(Error): pass
 
@@ -215,11 +216,11 @@ def _configure_parameter(p, value):
     if p.Direction not in [adParamInput, adParamInputOutput, adParamUnknown]:
         return
 
-    if isinstance(value, basestring):
+    if isinstance(value, six.string_types):
         p.Value = value
         p.Size = len(value)
 
-    elif isinstance(value, buffer):
+    elif isinstance(value, six.memoryview):
         p.Size = len(value)
         p.AppendChunk(value)
 
@@ -541,7 +542,7 @@ class Cursor(object):
                 parameter_replacements.append('NULL')
                 continue
 
-            if isinstance(value, basestring) and value == "":
+            if isinstance(value, six.string_types) and value == "":
                 parameter_replacements.append("''")
                 continue
 
@@ -664,7 +665,7 @@ class Cursor(object):
 Date = datetime.date
 Time = datetime.time
 Timestamp = datetime.datetime
-Binary = buffer
+Binary = six.memoryview
 
 def DateFromTicks(ticks):
     """Construct an object holding a date value from the given # of ticks."""
@@ -735,26 +736,28 @@ _variantConversions = MultiMap(
         adoExactNumericTypes: _cvtDecimal,
         adoApproximateNumericTypes: _cvtFloat,
         (adBoolean,): bool,
-        adoLongTypes+adoRowIdTypes : long,
+        adoLongTypes+adoRowIdTypes : int if six.PY3 else long,
         adoIntegerTypes: int,
-        adoBinaryTypes: buffer,
+        adoBinaryTypes: bytes if six.PY3 else buffer,
     },
     lambda x: x)
 
 # Mapping Python data types to ADO type codes
 def _ado_type(data):
-    if isinstance(data, basestring):
+    if isinstance(data, six.string_types):
         return adBSTR
     return _map_to_adotype[type(data)]
 
 _map_to_adotype = {
-    buffer: adBinary,
+    bytes if six.PY3 else buffer: adBinary,
     float: adDouble,
     int: adInteger,
-    long: adBigInt,
     bool: adBoolean,
     decimal.Decimal: adDecimal,
     datetime.date: adDate,
     datetime.datetime: adDate,
     datetime.time: adDate,
 }
+
+if six.PY2:
+    _map_to_adotype[long] = adBigInt

@@ -6,6 +6,8 @@ from django.forms import ValidationError
 from django.utils import six, timezone
 from django.utils.translation import ugettext_lazy as _
 
+if six.PY3:
+    long = int
 
 __all__ = (
     'BigAutoField',
