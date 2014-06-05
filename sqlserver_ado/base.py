@@ -43,6 +43,7 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     ignores_nulls_in_unique_constraints = False
     # Django >= 1.7
     supports_nullable_unique_constraints = False
+    supports_partially_nullable_unique_constraints = False
 
     can_introspect_autofield = True
 
