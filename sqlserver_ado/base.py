@@ -6,7 +6,8 @@ import warnings
 from django.core.exceptions import ImproperlyConfigured, ValidationError
 from django.db.backends import BaseDatabaseWrapper, BaseDatabaseFeatures, BaseDatabaseValidation, BaseDatabaseClient
 from django.db.backends.signals import connection_created
-from django.db.utils import InterfaceError
+from django.db.utils import IntegrityError as DjangoIntegrityError, \
+    InterfaceError as DjangoInterfaceError
 from django.utils.functional import cached_property
 from django.utils import six
 
@@ -53,7 +54,7 @@ class DatabaseFeatures(BaseDatabaseFeatures):
 
     supports_paramstyle_pyformat = False
 
-    closed_cursor_error_class = InterfaceError
+    closed_cursor_error_class = DjangoInterfaceError
 
     # connection_persists_old_columns = True
 
@@ -314,7 +315,7 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         if not table_names:
             result = cursor.execute('DBCC CHECKCONSTRAINTS WITH ALL_CONSTRAINTS')
             if cursor.description:
-                raise self.Database.IntegrityError(cursor.fetchall())
+                raise DjangoIntegrityError(cursor.fetchall())
         else:
             qn = self.ops.quote_name
             for name in table_names:
@@ -322,7 +323,7 @@ class DatabaseWrapper(BaseDatabaseWrapper):
                     qn(name)
                 ))
                 if cursor.description:
-                    raise self.Database.IntegrityError(cursor.fetchall())
+                    raise DjangoIntegrityError(cursor.fetchall())
 
     # # MS SQL Server doesn't support explicit savepoint commits; savepoints are
     # # implicitly committed with the transaction.
