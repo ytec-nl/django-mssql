@@ -1,14 +1,14 @@
 import os
 import re
 import sys
-import codecs
 from fnmatch import fnmatchcase
 from distutils.util import convert_path
 from setuptools import setup, find_packages
 
 
 def read(*parts):
-    return codecs.open(os.path.join(os.path.dirname(__file__), *parts)).read()
+    with open(os.path.join(os.path.dirname(__file__), *parts)) as handle:
+        return handle.read()
 
 
 def find_version(*file_paths):
