@@ -46,6 +46,7 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     supports_partially_nullable_unique_constraints = False
 
     can_introspect_autofield = True
+    can_introspect_small_integer_field = True
 
     supports_subqueries_in_group_by = False
 
