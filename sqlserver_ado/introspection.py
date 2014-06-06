@@ -19,7 +19,9 @@ MONEY_FIELD_MARKER = -1002
 class DatabaseIntrospection(BaseDatabaseIntrospection):
     def get_field_type(self, data_type, description):
         field_type = self.data_types_reverse[data_type]
-        if field_type == 'CharField' and description.internal_size > 8000:
+        if (field_type == 'CharField'
+                and description.internal_size is not None
+                and description.internal_size > 8000):
             field_type = 'TextField'
         return field_type
 
