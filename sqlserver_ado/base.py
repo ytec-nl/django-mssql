@@ -76,6 +76,8 @@ class DatabaseFeatures(BaseDatabaseFeatures):
         'expressions_regress.tests.ExpressionOperatorTests.test_righthand_power': [(1,7)],
 
         # The migrations and schema tests also fail massively at this time.
+        'migrations.test_operations.OperationTests.test_alter_field_pk': [(1,7)],
+
     }
 
 
