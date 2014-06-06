@@ -28,17 +28,17 @@ IntegrityError = Database.IntegrityError
 class DatabaseFeatures(BaseDatabaseFeatures):
     uses_custom_query_class = True
     has_bulk_insert = False
-    
+
     # DateTimeField doesn't support timezones, only DateTimeOffsetField
     supports_timezones = False
     supports_sequence_reset = False
-    
+
     can_return_id_from_insert = True
-    
+
     supports_regex_backreferencing = False
-    
+
     supports_tablespaces = True
-    
+
     # Django < 1.7
     ignores_nulls_in_unique_constraints = False
     # Django >= 1.7
@@ -65,6 +65,19 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     @cached_property
     def has_zoneinfo_database(self):
         return pytz is not None
+
+    # Dict of test import path and list of versions on which it fails
+    failing_tests = {
+        # Some tests are known to fail with django-mssql.
+        'aggregation.tests.BaseAggregateTestCase.test_dates_with_aggregation': [(1,6), (1,7)],
+        'aggregation_regress.tests.AggregationTests.test_more_more_more': [(1,6), (1,7)],
+
+        # MSSQL throws an arithmetic overflow error.
+        'expressions_regress.tests.ExpressionOperatorTests.test_righthand_power': [(1,7)],
+
+        # The migrations and schema tests also fail massively at this time.
+    }
+
 
 def is_ip_address(value):
     """
