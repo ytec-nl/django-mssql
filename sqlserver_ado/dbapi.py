@@ -198,7 +198,7 @@ def format_decimal_as_string(value):
     """
     sign, digits, exp = value.as_tuple()
     result = []
-    digits = map(str, digits)
+    digits = list(map(str, digits))
     build, next = result.append, digits.pop
     for i in range(-exp):
         build(next() if digits else '0')
