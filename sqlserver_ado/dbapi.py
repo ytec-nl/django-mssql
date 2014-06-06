@@ -233,7 +233,7 @@ def _configure_parameter(p, value):
         if timezone.is_aware(value):
             value = timezone.make_naive(value, timezone.utc)
         # Strip '-' so SQL Server parses as YYYYMMDD for all languages/formats
-        s = value.isoformat(b' ').replace('-', '')
+        s = value.isoformat(' ' if six.PY3 else b' ').replace('-', '')
         p.Value = s
         p.Size = len(s)
 
@@ -719,12 +719,15 @@ def _convertNumberWithCulture(variant, f):
         except (ValueError,TypeError): pass
 
 def _cvtComDate(comDate):
-    date_as_float = float(comDate)
-    day_count = int(date_as_float)
-    fraction_of_day = abs(date_as_float - day_count)
+    if isinstance(comDate, datetime.datetime):
+        dt = comDate
+    else:
+        date_as_float = float(comDate)
+        day_count = int(date_as_float)
+        fraction_of_day = abs(date_as_float - day_count)
 
-    dt = (datetime.datetime.fromordinal(day_count + _ordinal_1899_12_31) +
-        datetime.timedelta(milliseconds=fraction_of_day * _milliseconds_per_day))
+        dt = (datetime.datetime.fromordinal(day_count + _ordinal_1899_12_31) +
+            datetime.timedelta(milliseconds=fraction_of_day * _milliseconds_per_day))
 
     if getattr(settings, 'USE_TZ', False):
         dt = dt.replace(tzinfo=timezone.utc)
@@ -738,7 +741,7 @@ _variantConversions = MultiMap(
         (adBoolean,): bool,
         adoLongTypes+adoRowIdTypes : int if six.PY3 else long,
         adoIntegerTypes: int,
-        adoBinaryTypes: bytes if six.PY3 else buffer,
+        adoBinaryTypes: six.memoryview,
     },
     lambda x: x)
 
@@ -749,15 +752,18 @@ def _ado_type(data):
     return _map_to_adotype[type(data)]
 
 _map_to_adotype = {
-    bytes if six.PY3 else buffer: adBinary,
+    six.memoryview: adBinary,
     float: adDouble,
-    int: adInteger,
+    int: adInteger if six.PY2 else adBigInt,
     bool: adBoolean,
     decimal.Decimal: adDecimal,
     datetime.date: adDate,
     datetime.datetime: adDate,
     datetime.time: adDate,
 }
+
+if six.PY3:
+    _map_to_adotype[bytes] = adBinary
 
 if six.PY2:
     _map_to_adotype[long] = adBigInt
