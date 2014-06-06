@@ -11,6 +11,15 @@ from django.db.backends.creation import BaseDatabaseCreation, TEST_DATABASE_PREF
 from django.utils import six
 from django.utils.functional import cached_property
 
+from unittest import expectedFailure
+
+try:
+    from django.utils.module_loading import import_string   # Django >= 1.7
+except ImportError:
+    from django.utils.module_loading import import_by_path as import_string
+
+
+
 IS_DJANGO_16 = django.VERSION[0] == 1 and django.VERSION[1] == 6
 
 try:
@@ -93,6 +102,31 @@ class DatabaseCreation(BaseDatabaseCreation):
         return nodb_connection
     # Override on 1.7 and add to 1.6
     _nodb_connection = cached_property(_create_master_connection)
+
+    def mark_tests_as_expected_failure(self, failing_tests):
+        """
+        Flag tests as expectedFailure. This should only run during the
+        testsuite.
+        """
+        django_version = django.VERSION[:2]
+        for test_name, versions in six.iteritems(failing_tests):
+            if not versions or not isinstance(versions, (list, tuple)):
+                # skip None, empty, or invalid
+                continue
+            if not isinstance(versions[0], (list, tuple)):
+                # Ensure list of versions
+                versions = [versions]
+            if all(map(lambda v: v[:2] != django_version, versions)):
+                continue
+            test_case_name, _, method_name = test_name.rpartition('.')
+            test_case = import_string(test_case_name)
+            method = getattr(test_case, method_name)
+            method = expectedFailure(method)
+            setattr(test_case, method_name, method)
+
+    def create_test_db(self, *args, **kwargs):
+        self.mark_tests_as_expected_failure(self.connection.features.failing_tests)
+        super(DatabaseCreation, self).create_test_db(*args, **kwargs)
 
     def _create_test_db(self, verbosity=1, autoclobber=False):
         """
