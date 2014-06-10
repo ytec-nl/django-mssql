@@ -346,10 +346,19 @@ class DatabaseWrapper(BaseDatabaseWrapper):
     # # implicitly committed with the transaction.
     # # Ignore them.
     def _savepoint_commit(self, sid):
-        # if something is populating self.queries, include a fake entry to avoid
-        # issues with tests that use assertNumQueries.
-        if self.queries:
-            self.queries.append({
+        # If Django is logging queries -- which can be explicitly tested for
+        # in Django 1.8+ and implicitly in earlier versions -- include a fake
+        # entry to avoid issues with tests that use assertNumQueries.
+        queries_log = None
+        if hasattr(self, 'queries_logged'):     # Django 1.8+
+            if self.queries_logged:
+                queries_log = self.queries_log
+        else:                                   # Django <1.8
+            if self.queries:
+                queries_log = self.queries
+
+        if queries_log:
+            queries_log.append({
                 'sql': '-- RELEASE SAVEPOINT %s -- (because assertNumQueries)' % self.ops.quote_name(sid),
                 'time': '0.000',
             })
