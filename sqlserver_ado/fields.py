@@ -81,7 +81,7 @@ class DateTimeField(models.DateTimeField):
         result = super(DateTimeField, self).to_python(convert_microsoft_date_to_isoformat(value))
         if result:
             if timezone.is_aware(result) and not settings.USE_TZ:
-                result = timezone.make_naive(result)
+                result = timezone.make_naive(result, timezone.utc)
             elif settings.USE_TZ:
                 result = timezone.make_aware(result, timezone.utc)
         return result
