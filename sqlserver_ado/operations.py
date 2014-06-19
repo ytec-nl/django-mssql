@@ -33,6 +33,16 @@ class DatabaseOperations(BaseDatabaseOperations):
         'NewTimeField':         mssql_fields.TimeField(),
     }
 
+
+    # map of sql_function: (new sql_function, new sql_template )
+    # If sql_template is None, it will not be overridden.
+    _sql_function_overrides = {
+        'STDDEV_SAMP': ('STDEV', None),
+        'STDDEV_POP': ('STDEVP', None),
+        'VAR_SAMP': ('VAR', None),
+        'VAR_POP': ('VARP', None),
+    }
+
     def __init__(self, *args, **kwargs):
         super(DatabaseOperations, self).__init__(*args, **kwargs)
 
@@ -54,6 +64,11 @@ class DatabaseOperations(BaseDatabaseOperations):
                 'DateTimeField':    self._convert_values_map['NewDateTimeField'],
                 'TimeField':        self._convert_values_map['NewTimeField'],
             })
+
+        if self.connection.cast_avg_to_float:
+            # Need to cast as float to avoid truncating to an int
+            self._sql_function_overrides['AVG'] = ('AVG', '%(function)s(CAST(%(field)s AS FLOAT))')
+
 
     def cache_key_culling_sql(self):
         return """
