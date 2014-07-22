@@ -136,19 +136,21 @@ def make_connection_string(settings):
 
     if not options.get('provider', None):
         options['provider'] = 'sqlncli10'
-    
+
     parts.append('PROVIDER={0}'.format(options['provider']))
 
-    if 'sqlncli' in options['provider'].lower():
+    extra_params = options.get('extra_params', '')
+
+    if 'sqlncli' in options['provider'].lower() and 'datatypecompatibility=' not in extra_params.lower():
         # native client needs a compatibility mode that behaves like OLEDB
         parts.append('DataTypeCompatibility=80')
 
-    if options.get('use_mars', True):
+    if options.get('use_mars', True) and 'mars connection=' not in extra_params.lower():
         parts.append('MARS Connection=True')
-    
-    if options.get('extra_params', None):
-        parts.append(options['extra_params'])    
-    
+
+    if extra_params:
+        parts.append(options['extra_params'])
+
     return ";".join(parts)
 
 
