@@ -26,7 +26,7 @@ Django Version
 --------------
 
 	* Django 1.6
-	* Django 1.7 (schema migrations is not fully supported)
+	* Django 1.7 (schema migrations may not be fully supported)
 
 
 django-mssql 1.4 supports Django 1.4 and 1.5.

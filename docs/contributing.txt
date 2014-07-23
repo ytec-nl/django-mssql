@@ -1,0 +1,84 @@
+.. _Contributing:
+
+Contributing to Django-mssql
+============================
+
+.. _project-goals:
+
+Project Goals
+-------------
+
+Django-mssql is a Microsoft SQL Server database backend for Django that is
+meant to be run on Windows. Development of this project is made possible by the
+generosity of `Semiconductor Research Corporation (SRC)`_, which allows me to
+spend time making improvements.
+
+The primary goal of this project is to allow the SRC website to function and
+stay current with newer versions of Django and Microsoft SQL Server. SRC is a
+Windows shop with a large, legacy business database that makes use of many of
+the standard features you'd expect to find in a Microsoft database.
+
+.. _`Semiconductor Research Corporation (SRC)`: https://www.src.org
+
+**Django Versions**
+
+Database backends are very dependent upon Django's "internal APIs" that are not
+subject to the standard deprecation cycles. At times, this makes it not
+practical to support multiple versions of Django. Whenever this occurs, code
+clarity and ease of maintenance are given a higher priority than supporting
+older versions of Django. Patches that add support for legacy versions of Django
+are less likely to be accepted.
+
+An example of this is the various ORM changes that landed
+for Django 1.6, which resulted in Django-mssql 1.5 dropping support for all
+previous versions of Django.
+
+**SQL Server Versions**
+
+Support for older versions of Microsoft SQL Server will be dropped when its
+convenient. This usually happens in response to Microsoft adding support for new
+data types or other standard SQL features that allow for easier maintenance of
+django-mssql. Whenever possible, the two most recent versions of SQL Server will
+be supported with each version of Django-mssql to allow for an easier migration.
+
+.. note::
+
+	When I declare that django-mssql has dropped support for a specific version
+	of SQL Server, this means that I am no longer testing it and will begin to
+	remove any code specific to that version. Some projects that use that
+	version may still work, but I strongly recommend not using it in production.
+
+
+Getting the code
+----------------
+
+The project code and issue tracker are hosted on `Bitbucket`_. You can get the
+code with the following command::
+
+    hg clone https://bitbucket.org/Manfre/django-mssql/
+
+If you are planning to submit changes, please fork the code on Bitbucket and
+work against your fork. When your changes are ready, submit a pull request.
+
+.. _`Bitbucket`: https://bitbucket.org/Manfre/django-mssql/
+
+Pull Requests
+-------------
+
+Pull requests are the prefered method for getting changes in to django-mssql.
+There are no set guidelines for what will be deemed an acceptable changeset and
+commit message. A more descriptive commit message is appreciated. Before
+starting a large or questionable change, please open an issue or contact me
+directly to make sure there are no immediate red flags that would prevent the
+change from being merged.
+
+All changes will need to pass the full Django test suite
+(See :doc:`testing <testing>`) before being merged.
+
+Uploading to PyPi
+-----------------
+
+To build and upload the source and wheel packages to
+http://pypi.python.org/pypi/django-mssql::
+
+	python setup.py sdist bdist_wheel upload

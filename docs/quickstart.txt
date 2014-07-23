@@ -15,7 +15,7 @@ Installation
 * Add the :setting:`DATABASES` configuration.
 
     .. code-block:: django
-    
+
         DATABASES = {
             'default': {
                 'NAME': 'my_database',
@@ -26,7 +26,13 @@ Installation
             }
         }
 
-    .. note:: Although the project is named ``django-mssql`` the python module is named ``sqlserver_ado``.
+    .. note::
+
+    	Although the project is named ``django-mssql`` the python module is
+    	named ``sqlserver_ado``.
+
+    	Do not include a ``django.db.backends.`` prefix. That is only for core
+    	backends that are included with Django, not 3\ :sup:`rd` party backends.
 
 Getting the code
 ----------------
@@ -34,8 +40,10 @@ Getting the code
 The project code is hosted on `Bitbucket`_
 
     .. code-block:: cmd
-    
+
         hg clone https://bitbucket.org/Manfre/django-mssql/
+
+Are you planning to contribute? See :ref:`contributing`.
 
 .. _`Bitbucket`: https://bitbucket.org/Manfre/django-mssql/
 
@@ -45,14 +53,18 @@ Dependencies
 Django
 ^^^^^^
 
-Django_ 1.2 and newer are supported by the current release. Support for Django 1.1 requires getting code from tag ``legacy-1.1``.
+Django_ 1.6 and 1.7 are supported by the current release.
+
+Support for Django 1.5 requires `django-mssql v1.5`_
 
 .. _Django: http://www.djangoproject.com/
+.. _`django-mssql v1.5`: https://pypi.python.org/pypi/django-mssql/1.5
 
 Python
 ^^^^^^
 
-This backend requires Python 2.6 or newer. Python 3.x support will be investigated when Django supports it.
+This backend requires Python 2.6 or newer. Python 3.3+ support has been added
+and should be considered experimental.
 
 PyWin32
 ^^^^^^^

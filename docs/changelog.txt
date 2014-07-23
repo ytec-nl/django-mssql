@@ -14,6 +14,8 @@ v1.6 (In Development)
 
 - Password is masked from the connection string if there are connection errors.
   Thanks Martijn Pieters.
+- Added :ref:`project-goals` and documentation geared toward those wanting to
+  contribute to Django-mssql. See :ref:`contributing`.
 
 v1.5.1
 ------
