@@ -7,9 +7,10 @@ v1.6 (In Development)
 - SQL Server 2005 is no longer supported. It should not be used.
 - Added support for Django 1.7.
 
-  - Schema migrations is not fully supported. Django has known issues with this
-    new API that prevents django-mssql from fully supporting it. Do not use
-    migrations in production.
+  - Schema migrations is a new Django feature that may have unexpected issues
+    that could result in data loss or destruction of the database schema. You
+    should inspect all generated SQL before manually applying to your production
+    database.
 
 - Password is masked from the connection string if there are connection errors.
   Thanks Martijn Pieters.
