@@ -16,6 +16,7 @@ v1.6 (In Development)
   Thanks Martijn Pieters.
 - Added :ref:`project-goals` and documentation geared toward those wanting to
   contribute to Django-mssql. See :ref:`contributing`.
+- Removed the `dbgui` management command, which didn't work anyway.
 
 v1.5.1
 ------
