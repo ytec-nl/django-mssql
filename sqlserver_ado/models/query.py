@@ -1,8 +1,8 @@
 from __future__ import unicode_literals
-from django.db import connections, router
+
+from django.db import connections
 from django.db.models import sql
 from django.db.models.query import RawQuerySet
-from django.db.models.query_utils import deferred_class_factory, InvalidQuery
 
 from sqlserver_ado.dbapi import FetchFailedError
 
@@ -11,13 +11,14 @@ __all__ = [
     'RawStoredProcedureQuerySet',
 ]
 
+
 class RawStoredProcedureQuery(sql.RawQuery):
     """
     A single raw SQL stored procedure query
     """
     def clone(self, using):
         return RawStoredProcedureQuery(self.sql, using, params=self.params)
-        
+
     def __repr__(self):
         return "<RawStoredProcedureQuery: %r %r>" % (self.sql, self.params)
 
@@ -33,7 +34,7 @@ class RawStoredProcedureQuerySet(RawQuerySet):
     """
     Provides an iterator which converts the results of raw SQL queries into
     annotated model instances.
-    
+
     raw_query should only be the name of the stored procedure.
     """
     def __init__(self, raw_query, model=None, query=None, params=None, translations=None, using=None):
@@ -66,9 +67,9 @@ class RawStoredProcedureQuerySet(RawQuerySet):
                 self._columns = self.query.get_columns()
             except TypeError:
                 # "'NoneType' object is not iterable" thrown when stored procedure
-                # doesn't return a result set.            
+                # doesn't return a result set.
                 # no result means no column names, so grab them from the model
-                self._columns = [self.model._meta.pk.db_column] #[x.db_column for x in self.model._meta.fields]
+                self._columns = [self.model._meta.pk.db_column]  # [x.db_column for x in self.model._meta.fields]
 
             # Adjust any column names which don't match field names
             for (query_name, model_name) in self.translations.items():

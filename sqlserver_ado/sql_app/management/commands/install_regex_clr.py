@@ -2,6 +2,7 @@ from __future__ import unicode_literals
 from django.core.management.base import BaseCommand
 from django.db import connection
 
+
 class Command(BaseCommand):
     help = "Installs the regex_clr.dll assembly with the database"
 

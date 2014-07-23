@@ -5,7 +5,6 @@ import warnings
 
 from django.core.exceptions import ImproperlyConfigured, ValidationError
 from django.db.backends import BaseDatabaseWrapper, BaseDatabaseFeatures, BaseDatabaseValidation, BaseDatabaseClient
-from django.db.backends.signals import connection_created
 from django.db.utils import IntegrityError as DjangoIntegrityError, \
     InterfaceError as DjangoInterfaceError
 from django.utils.functional import cached_property
@@ -24,6 +23,7 @@ except ImportError:
     pytz = None
 
 IntegrityError = Database.IntegrityError
+
 
 class DatabaseFeatures(BaseDatabaseFeatures):
     uses_custom_query_class = True
@@ -69,14 +69,14 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     # Dict of test import path and list of versions on which it fails
     failing_tests = {
         # Some tests are known to fail with django-mssql.
-        'aggregation.tests.BaseAggregateTestCase.test_dates_with_aggregation': [(1,6), (1,7)],
-        'aggregation_regress.tests.AggregationTests.test_more_more_more': [(1,6), (1,7)],
+        'aggregation.tests.BaseAggregateTestCase.test_dates_with_aggregation': [(1, 6), (1, 7)],
+        'aggregation_regress.tests.AggregationTests.test_more_more_more': [(1, 6), (1, 7)],
 
         # MSSQL throws an arithmetic overflow error.
-        'expressions_regress.tests.ExpressionOperatorTests.test_righthand_power': [(1,7)],
+        'expressions_regress.tests.ExpressionOperatorTests.test_righthand_power': [(1, 7)],
 
         # The migrations and schema tests also fail massively at this time.
-        'migrations.test_operations.OperationTests.test_alter_field_pk': [(1,7)],
+        'migrations.test_operations.OperationTests.test_alter_field_pk': [(1, 7)],
 
     }
 
@@ -94,10 +94,12 @@ def is_ip_address(value):
         return False
     return True
 
+
 def connection_string_from_settings():
     from django.conf import settings
     db_settings = getattr(settings, 'DATABASES', {}).get('default', None)
     return make_connection_string(db_settings)
+
 
 def make_connection_string(settings):
     db_name = settings['NAME'].strip()
@@ -118,7 +120,7 @@ def make_connection_string(settings):
         if not is_ip_address(db_host):
             raise ImproperlyConfigured("When using DATABASE PORT, DATABASE HOST must be an IP address.")
         try:
-            port = int(db_port)
+            db_port = int(db_port)
         except ValueError:
             raise ImproperlyConfigured("DATABASE PORT must be a number.")
         db_host = '{0},{1};Network Library=DBMSSOCN'.format(db_host, db_port)
@@ -159,6 +161,7 @@ VERSION_SQL2005 = 9
 VERSION_SQL2008 = 10
 VERSION_SQL2012 = 11
 
+
 class DatabaseWrapper(BaseDatabaseWrapper):
     vendor = 'microsoft'
 
@@ -181,14 +184,14 @@ class DatabaseWrapper(BaseDatabaseWrapper):
 
     def __init__(self, *args, **kwargs):
         self.use_transactions = kwargs.pop('use_transactions', None)
-        
+
         super(DatabaseWrapper, self).__init__(*args, **kwargs)
 
         try:
             self.command_timeout = int(self.settings_dict.get('COMMAND_TIMEOUT', 30))
-        except ValueError:   
+        except ValueError:
             self.command_timeout = 30
-        
+
         options = self.settings_dict.get('OPTIONS', {})
         try:
             self.cast_avg_to_float = not bool(options.get('disable_avg_cast', False))
@@ -233,7 +236,7 @@ class DatabaseWrapper(BaseDatabaseWrapper):
             'connection_string': make_connection_string(settings_dict),
             'timeout': self.command_timeout,
             'use_transactions': not autocommit,
-            }
+        }
 
     def get_new_connection(self, conn_params):
         """Opens a connection to the database."""
@@ -332,7 +335,7 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         else:
             cursor = self._cursor()
         if not table_names:
-            result = cursor.execute('DBCC CHECKCONSTRAINTS WITH ALL_CONSTRAINTS')
+            cursor.execute('DBCC CHECKCONSTRAINTS WITH ALL_CONSTRAINTS')
             if cursor.description:
                 raise DjangoIntegrityError(cursor.fetchall())
         else:

@@ -16,6 +16,7 @@ AUTO_FIELD_MARKER = -1000
 BIG_AUTO_FIELD_MARKER = -1001
 MONEY_FIELD_MARKER = -1002
 
+
 class DatabaseIntrospection(BaseDatabaseIntrospection):
     def get_field_type(self, data_type, description):
         field_type = self.data_types_reverse[data_type]
@@ -27,7 +28,14 @@ class DatabaseIntrospection(BaseDatabaseIntrospection):
 
     def get_table_list(self, cursor):
         "Return a list of table and view names in the current database."
-        cursor.execute("SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' UNION SELECT TABLE_NAME FROM INFORMATION_SCHEMA.VIEWS")
+        cursor.execute("""\
+SELECT TABLE_NAME
+FROM INFORMATION_SCHEMA.TABLES
+WHERE TABLE_TYPE = 'BASE TABLE'
+UNION
+SELECT TABLE_NAME
+FROM INFORMATION_SCHEMA.VIEWS
+""")
         return [row[0] for row in cursor.fetchall()]
 
     def _is_auto_field(self, cursor, table_name, column_name):
@@ -43,7 +51,7 @@ class DatabaseIntrospection(BaseDatabaseIntrospection):
 
     def _get_table_field_type_map(self, cursor, table_name):
         """
-        Return a dict mapping field name to data type. DB-API cursor description 
+        Return a dict mapping field name to data type. DB-API cursor description
         interprets the date columns as chars.
         """
         cursor.execute('''
@@ -125,7 +133,7 @@ WHERE [TABLE_NAME] LIKE \'%s\'
 
     def _name_to_index(self, cursor, table_name):
         """Return a dictionary of {field_name: field_index} for the given table.
-        
+
         Indexes are 0-based.
         """
         return dict([(d[0], i) for i, d in enumerate(self.get_table_description(cursor, table_name, False))])
@@ -140,26 +148,26 @@ select
     REFERENCED_COLUMN_NAME = pk_cols.COLUMN_NAME
 from INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS ref_const
 join INFORMATION_SCHEMA.TABLE_CONSTRAINTS fk
-	on ref_const.CONSTRAINT_CATALOG = fk.CONSTRAINT_CATALOG
-	and ref_const.CONSTRAINT_SCHEMA = fk.CONSTRAINT_SCHEMA
-	and ref_const.CONSTRAINT_NAME = fk.CONSTRAINT_NAME
-	and fk.CONSTRAINT_TYPE = 'FOREIGN KEY'
+    on ref_const.CONSTRAINT_CATALOG = fk.CONSTRAINT_CATALOG
+    and ref_const.CONSTRAINT_SCHEMA = fk.CONSTRAINT_SCHEMA
+    and ref_const.CONSTRAINT_NAME = fk.CONSTRAINT_NAME
+    and fk.CONSTRAINT_TYPE = 'FOREIGN KEY'
 
 join INFORMATION_SCHEMA.TABLE_CONSTRAINTS pk
-	on ref_const.UNIQUE_CONSTRAINT_CATALOG = pk.CONSTRAINT_CATALOG
-	and ref_const.UNIQUE_CONSTRAINT_SCHEMA = pk.CONSTRAINT_SCHEMA
-	and ref_const.UNIQUE_CONSTRAINT_NAME = pk.CONSTRAINT_NAME
-	And pk.CONSTRAINT_TYPE = 'PRIMARY KEY'
+    on ref_const.UNIQUE_CONSTRAINT_CATALOG = pk.CONSTRAINT_CATALOG
+    and ref_const.UNIQUE_CONSTRAINT_SCHEMA = pk.CONSTRAINT_SCHEMA
+    and ref_const.UNIQUE_CONSTRAINT_NAME = pk.CONSTRAINT_NAME
+    And pk.CONSTRAINT_TYPE = 'PRIMARY KEY'
 
 join INFORMATION_SCHEMA.KEY_COLUMN_USAGE fk_cols
-	on ref_const.CONSTRAINT_NAME = fk_cols.CONSTRAINT_NAME
+    on ref_const.CONSTRAINT_NAME = fk_cols.CONSTRAINT_NAME
 
 join INFORMATION_SCHEMA.KEY_COLUMN_USAGE pk_cols
-	on pk.CONSTRAINT_NAME = pk_cols.CONSTRAINT_NAME
+    on pk.CONSTRAINT_NAME = pk_cols.CONSTRAINT_NAME
 where
-	fk.TABLE_NAME = %s"""
+    fk.TABLE_NAME = %s"""
 
-        cursor.execute(sql,[table_name])
+        cursor.execute(sql, [table_name])
         relations = cursor.fetchall()
         relation_map = dict()
 
@@ -205,50 +213,49 @@ join INFORMATION_SCHEMA.KEY_COLUMN_USAGE pk_cols
 where
     fk.TABLE_NAME = %s"""
 
-        cursor.execute(sql,[table_name])
+        cursor.execute(sql, [table_name])
         relations = cursor.fetchall()
 
         key_columns = []
-        key_columns.extend([(source_column, target_table, target_column) \
+        key_columns.extend([(source_column, target_table, target_column)
             for source_column, target_table, target_column in relations])
         return key_columns
 
     def get_indexes(self, cursor, table_name):
-    #    Returns a dictionary of fieldname -> infodict for the given table,
-    #    where each infodict is in the format:
-    #        {'primary_key': boolean representing whether it's the primary key,
-    #         'unique': boolean representing whether it's a unique index}
+        #    Returns a dictionary of fieldname -> infodict for the given table,
+        #    where each infodict is in the format:
+        #        {'primary_key': boolean representing whether it's the primary key,
+        #         'unique': boolean representing whether it's a unique index}
         sql = """
 select
-	C.name as [column_name],
-	IX.is_unique as [unique],
+    C.name as [column_name],
+    IX.is_unique as [unique],
     IX.is_primary_key as [primary_key]
 from
-	sys.tables T
-	join sys.index_columns IC on IC.object_id = T.object_id
-	join sys.columns C on C.object_id = T.object_id and C.column_id = IC.column_id
-	join sys.indexes IX on IX.object_id = T.object_id and IX.index_id = IC.index_id
+    sys.tables T
+    join sys.index_columns IC on IC.object_id = T.object_id
+    join sys.columns C on C.object_id = T.object_id and C.column_id = IC.column_id
+    join sys.indexes IX on IX.object_id = T.object_id and IX.index_id = IC.index_id
 where
-	T.name = %s
+    T.name = %s
     -- Omit multi-column keys
-	and not exists (
-		select *
-		from sys.index_columns cols
-		where
-			cols.object_id = T.object_id
-			and cols.index_id = IC.index_id
-			and cols.key_ordinal > 1
-	)
+    and not exists (
+        select *
+        from sys.index_columns cols
+        where
+            cols.object_id = T.object_id
+            and cols.index_id = IC.index_id
+            and cols.key_ordinal > 1
+    )
 """
-        cursor.execute(sql,[table_name])
+        cursor.execute(sql, [table_name])
         constraints = cursor.fetchall()
         indexes = dict()
 
         for column_name, unique, primary_key in constraints:
-            indexes[column_name.lower()] = {"primary_key":primary_key, "unique":unique}
+            indexes[column_name.lower()] = {"primary_key": primary_key, "unique": unique}
 
         return indexes
-
 
     data_types_reverse = {
         AUTO_FIELD_MARKER: 'AutoField',
@@ -301,7 +308,7 @@ where
         select object_id, name, index_id, is_unique, is_primary_key
         from sys.indexes where object_id = OBJECT_ID(%s)
         """
-        cursor.execute(sql,[table_name])
+        cursor.execute(sql, [table_name])
         for object_id, name, index_id, unique, primary_key in list(cursor.fetchall()):
             sql = """
             select name from sys.index_columns ic
@@ -353,11 +360,11 @@ where
             kc.table_name = c.table_name AND
             kc.constraint_name = c.constraint_name
         WHERE
-            c.constraint_type = 'CHECK' 
+            c.constraint_type = 'CHECK'
             AND
             kc.table_name = %s
         """
-        cursor.execute(sql,[table_name])
+        cursor.execute(sql, [table_name])
         for constraint, column in list(cursor.fetchall()):
             if column not in constraints:
                 constraints[constraint] = {

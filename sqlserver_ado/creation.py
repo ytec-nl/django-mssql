@@ -7,7 +7,7 @@ import time
 import django
 from django.conf import settings
 from django.db import connections
-from django.db.backends.creation import BaseDatabaseCreation, TEST_DATABASE_PREFIX
+from django.db.backends.creation import BaseDatabaseCreation
 from django.utils import six
 from django.utils.functional import cached_property
 
@@ -19,13 +19,13 @@ except ImportError:
     from django.utils.module_loading import import_by_path as import_string
 
 
-
 IS_DJANGO_16 = django.VERSION[0] == 1 and django.VERSION[1] == 6
 
 try:
     from django.db.backends.creation import NO_DB_ALIAS
 except ImportError:
     NO_DB_ALIAS = '__no_db__'
+
 
 class DatabaseCreation(BaseDatabaseCreation):
     # This dictionary maps Field objects to their associated Server Server column
@@ -72,7 +72,6 @@ class DatabaseCreation(BaseDatabaseCreation):
         'PositiveSmallIntegerField': '%(qn_column)s >= 0',
     }
 
-
     def __init__(self, *args, **kwargs):
         if IS_DJANGO_16:
             # Django 1.6 expects the data type to contain the CHECK constraint
@@ -87,7 +86,6 @@ class DatabaseCreation(BaseDatabaseCreation):
                 'DateTimeField': 'datetime',
                 'TimeField': 'datetime',
             })
-
 
     def _create_master_connection(self):
         """
@@ -167,7 +165,7 @@ class DatabaseCreation(BaseDatabaseCreation):
                 time.sleep(1)
                 # database is now clear to drop
                 cursor.execute("DROP DATABASE %s" % qn_db_name)
-        except Exception as e:
+        except Exception:
             # if 'it is currently in use' in str(e):
             #     six.print_('Cannot drop database %s because it is in use' % test_database_name)
             # else:
@@ -183,7 +181,6 @@ class DatabaseCreation(BaseDatabaseCreation):
             return settings.TEST_DATABASE_CREATE
         else:
             return True
-
 
     def install_regex_clr(self, database_name):
         sql = '''

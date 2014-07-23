@@ -11,18 +11,13 @@ if VERSION[:2] <= (1, 6):
         pass
 else:
 
-    import hashlib
     import operator
 
-    from django.db.backends.creation import BaseDatabaseCreation
     from django.db.backends.utils import truncate_name
     from django.db.models.fields.related import ManyToManyField
     from django.db.transaction import atomic
-    from django.utils.encoding import force_bytes
     from django.utils.six.moves import reduce
     from django.utils.six import callable
-
-
 
     class BaseDatabaseSchemaEditor(object):
         """
@@ -62,7 +57,8 @@ else:
         sql_create_unique = "ALTER TABLE %(table)s ADD CONSTRAINT %(name)s UNIQUE (%(column)s)"
         sql_delete_unique = "ALTER TABLE %(table)s DROP CONSTRAINT %(name)s"
 
-        sql_create_fk = "ALTER TABLE %(table)s ADD CONSTRAINT %(name)s FOREIGN KEY (%(column)s) REFERENCES %(to_table)s (%(to_column)s) DEFERRABLE INITIALLY DEFERRED"
+        sql_create_fk = "ALTER TABLE %(table)s ADD CONSTRAINT %(name)s FOREIGN KEY (%(column)s) " +\
+                        "REFERENCES %(to_table)s (%(to_column)s) DEFERRABLE INITIALLY DEFERRED"
         sql_create_fk_inline = ""
         sql_delete_fk = "ALTER TABLE %(table)s DROP CONSTRAINT %(name)s"
 
@@ -90,7 +86,11 @@ else:
             if exc_type is None:
                 for sql, params in self.deferred_sql:
                     self.execute(sql, params)
-            atomic(self.connection.alias, self.connection.features.can_rollback_ddl).__exit__(exc_type, exc_value, traceback)
+            atomic(self.connection.alias, self.connection.features.can_rollback_ddl).__exit__(
+                exc_type,
+                exc_value,
+                traceback
+            )
 
         # Core utility functions
 
@@ -510,13 +510,18 @@ else:
             old_type = old_db_params['type']
             new_db_params = new_field.db_parameters(connection=self.connection)
             new_type = new_db_params['type']
-            if old_type is None and new_type is None and (old_field.rel.through and new_field.rel.through and old_field.rel.through._meta.auto_created and new_field.rel.through._meta.auto_created):
+            if old_type is None and new_type is None \
+                and (old_field.rel.through and new_field.rel.through and old_field.rel.through._meta.auto_created
+                    and new_field.rel.through._meta.auto_created):
                 return self._alter_many_to_many(model, old_field, new_field, strict)
             elif old_type is None or new_type is None:
-                raise ValueError("Cannot alter field %s into %s - they are not compatible types (probably means only one is an M2M with implicit through model)" % (
-                    old_field,
-                    new_field,
-                ))
+                raise ValueError(
+                    "Cannot alter field %s into %s - they are not compatible types "
+                    "(probably means only one is an M2M with implicit through model)" % (
+                        old_field,
+                        new_field,
+                    )
+                )
             # Has unique been removed?
             if old_field.unique and (not new_field.unique or (not old_field.primary_key and new_field.primary_key)):
                 # Find the unique constraint for this field
@@ -530,7 +535,8 @@ else:
                 for constraint_name in constraint_names:
                     self.execute(*self._delete_db_constraint_sql(model, constraint_name, constraint_type='unique'))
             # Removed an index?
-            if old_field.db_index and not new_field.db_index and not old_field.unique and not (not new_field.unique and old_field.unique):
+            if old_field.db_index and not new_field.db_index and not old_field.unique \
+                    and not (not new_field.unique and old_field.unique):
                 # Find the index for this field
                 index_names = self._constraint_names(model, [old_field.column], index=True)
                 if strict and len(index_names) != 1:
@@ -630,7 +636,8 @@ else:
             if not old_field.unique and new_field.unique:
                 self.execute(*self._create_db_constraint_sql(model, new_field.column, 'unique'))
             # Added an index?
-            if not old_field.db_index and new_field.db_index and not new_field.unique and not (not old_field.unique and new_field.unique):
+            if not old_field.db_index and new_field.db_index and not new_field.unique \
+                    and not (not old_field.unique and new_field.unique):
                 self.execute(*self._create_db_constraint_sql(model, new_field.column, 'unique'))
             # Type alteration on primary key? Then we need to alter the column
             # referring to us.
@@ -656,15 +663,14 @@ else:
                 rels_to_update.extend(new_field.model._meta.get_all_related_objects())
             # Handle our type alters on the other end of rels from the PK stuff above
             for rel in rels_to_update:
-                rel_db_params = rel.field.db_parameters(connection=self.connection)
-                rel_type = rel_db_params['type']
+                # rel_db_params = rel.field.db_parameters(connection=self.connection)
+                # rel_type = rel_db_params['type']
                 type_actions = self._alter_db_column_sql(rel.model, rel.field.column, 'type',
                     values={
                         'type': new_type,
                         'old_type': old_type,
                     },
                 )
-
 
             # Does it have a foreign key?
             if new_field.rel:
@@ -693,7 +699,11 @@ else:
             Alters M2Ms to repoint their to= endpoints.
             """
             # Rename the through table
-            self.alter_db_table(old_field.rel.through, old_field.rel.through._meta.db_table, new_field.rel.through._meta.db_table)
+            self.alter_db_table(
+                old_field.rel.through,
+                old_field.rel.through._meta.db_table,
+                new_field.rel.through._meta.db_table
+            )
             # Repoint the FK to the other side
             self.alter_field(
                 new_field.rel.through,
@@ -756,7 +766,8 @@ else:
             )
             return truncate_name(name, length=self.connection.ops.max_name_length(), hash_len=8)
 
-        def _constraint_names(self, model, column_names=None, unique=None, primary_key=None, index=None, foreign_key=None, check=None):
+        def _constraint_names(self, model, column_names=None, unique=None,
+                              primary_key=None, index=None, foreign_key=None, check=None):
             """
             Returns all constraint names matching the columns and conditions
             """

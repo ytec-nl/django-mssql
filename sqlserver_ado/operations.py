@@ -19,9 +19,10 @@ from django.utils import six, timezone
 
 from . import fields as mssql_fields
 
+
 class DatabaseOperations(BaseDatabaseOperations):
     compiler_module = "sqlserver_ado.compiler"
-    
+
     _convert_values_map = {
         # custom fields
         'DateTimeOffsetField':  mssql_fields.DateTimeOffsetField(),
@@ -32,7 +33,6 @@ class DatabaseOperations(BaseDatabaseOperations):
         'NewDateTimeField':     mssql_fields.DateTimeField(),
         'NewTimeField':         mssql_fields.TimeField(),
     }
-
 
     # map of sql_function: (new sql_function, new sql_template )
     # If sql_template is None, it will not be overridden.
@@ -68,7 +68,6 @@ class DatabaseOperations(BaseDatabaseOperations):
         if self.connection.cast_avg_to_float:
             # Need to cast as float to avoid truncating to an int
             self._sql_function_overrides['AVG'] = ('AVG', '%(function)s(CAST(%(field)s AS FLOAT))')
-
 
     def cache_key_culling_sql(self):
         return """
@@ -109,7 +108,6 @@ class DatabaseOperations(BaseDatabaseOperations):
     def date_trunc_sql(self, lookup_type, field_name):
         return "DATEADD(%s, DATEDIFF(%s, 0, %s), 0)" % (lookup_type, lookup_type, field_name)
 
-
     def _switch_tz_offset_sql(self, field_name, tzname):
         """
         Returns the SQL that will convert field_name to UTC from tzname.
@@ -132,7 +130,8 @@ class DatabaseOperations(BaseDatabaseOperations):
             total_minutes = total_seconds(td) // 60
             hours, minutes = divmod(total_minutes, 60)
             tzoffset = "%+03d:%02d" % (hours, minutes)
-            field_name = "CAST(SWITCHOFFSET(TODATETIMEOFFSET(%s, '+00:00'), '%s') AS DATETIME2)" % (field_name, tzoffset)
+            field_name =\
+                "CAST(SWITCHOFFSET(TODATETIMEOFFSET(%s, '+00:00'), '%s') AS DATETIME2)" % (field_name, tzoffset)
         return field_name
 
     def datetime_extract_sql(self, lookup_type, field_name, tzname):
@@ -146,7 +145,7 @@ class DatabaseOperations(BaseDatabaseOperations):
         return 'DATEPART({0}, {1})'.format(
             lookup_type,
             self._switch_tz_offset_sql(field_name, tzname),
-            ), []
+        ), []
 
     def datetime_trunc_sql(self, lookup_type, field_name, tzname):
         """
@@ -175,7 +174,7 @@ class DatabaseOperations(BaseDatabaseOperations):
         """
         Fetch the last inserted ID by executing another query.
         """
-        # IDENT_CURRENT   returns the last identity value generated for a 
+        # IDENT_CURRENT   returns the last identity value generated for a
         #                 specific table in any session and any scope.
         # http://msdn.microsoft.com/en-us/library/ms175098.aspx
         cursor.execute("SELECT CAST(IDENT_CURRENT(%s) as bigint)", [self.quote_name(table_name)])
@@ -184,17 +183,17 @@ class DatabaseOperations(BaseDatabaseOperations):
     def return_insert_id(self):
         """
         MSSQL implements the RETURNING SQL standard extension differently from
-        the core database backends and this function is essentially a no-op. 
+        the core database backends and this function is essentially a no-op.
         The SQL is altered in the SQLInsertCompiler to add the necessary OUTPUT
         clause.
         """
         if django.VERSION[0] == 1 and django.VERSION[1] < 5:
-            # This gets around inflexibility of SQLInsertCompiler's need to 
+            # This gets around inflexibility of SQLInsertCompiler's need to
             # append an SQL fragment at the end of the insert query, which also must
             # expect the full quoted table and column name.
             return ('/* %s */', '')
-        
-        # Django #19096 - As of Django 1.5, can return None, None to bypass the 
+
+        # Django #19096 - As of Django 1.5, can return None, None to bypass the
         # core's SQL mangling.
         return (None, None)
 
@@ -204,13 +203,13 @@ class DatabaseOperations(BaseDatabaseOperations):
     def prep_for_like_query(self, x):
         """Prepares a value for use in a LIKE query."""
         return (
-            smart_text(x).\
-                replace("\\", "\\\\").\
-                replace("%", "\%").\
-                replace("_", "\_").\
-                replace("[", "\[").\
+            smart_text(x).
+                replace("\\", "\\\\").
+                replace("%", "\%").
+                replace("_", "\_").
+                replace("[", "\[").
                 replace("]", "\]")
-            )
+        )
 
     def quote_name(self, name):
         if name.startswith('[') and name.endswith(']'):
@@ -222,7 +221,7 @@ class DatabaseOperations(BaseDatabaseOperations):
 
     def regex_lookup(self, lookup_type):
         # Case sensitivity
-        match_option = {'iregex':0, 'regex':1}[lookup_type]
+        match_option = {'iregex': 0, 'regex': 1}[lookup_type]
         return "dbo.REGEXP_LIKE(%%s, %%s, %s)=1" % (match_option,)
 
     def sql_flush(self, style, tables, sequences, allow_cascade=False):
@@ -265,22 +264,26 @@ class DatabaseOperations(BaseDatabaseOperations):
         sql_list.append('EXEC sp_MSforeachtable "ALTER TABLE ? NOCHECK CONSTRAINT all"')
 
         # Delete data from tables.
-        sql_list.extend(['%s %s %s;' % (
-            style.SQL_KEYWORD('DELETE'),
-            style.SQL_KEYWORD('FROM'),
-            style.SQL_FIELD(self.quote_name(t))
-            ) for t in tables])
+        sql_list.extend(
+            ['%s %s %s;' % (
+                style.SQL_KEYWORD('DELETE'),
+                style.SQL_KEYWORD('FROM'),
+                style.SQL_FIELD(self.quote_name(t))
+            ) for t in tables]
+        )
 
         # Reset the counters on each table.
-        sql_list.extend(['%s %s (%s, %s, %s) %s %s;' % (
-            style.SQL_KEYWORD('DBCC'),
-            style.SQL_KEYWORD('CHECKIDENT'),
-            style.SQL_FIELD(self.quote_name(seq["table"])),
-            style.SQL_KEYWORD('RESEED'),
-            style.SQL_FIELD('%d' % seq['start_id']),
-            style.SQL_KEYWORD('WITH'),
-            style.SQL_KEYWORD('NO_INFOMSGS'),
-            ) for seq in seqs])
+        sql_list.extend(
+            ['%s %s (%s, %s, %s) %s %s;' % (
+                style.SQL_KEYWORD('DBCC'),
+                style.SQL_KEYWORD('CHECKIDENT'),
+                style.SQL_FIELD(self.quote_name(seq["table"])),
+                style.SQL_KEYWORD('RESEED'),
+                style.SQL_FIELD('%d' % seq['start_id']),
+                style.SQL_KEYWORD('WITH'),
+                style.SQL_KEYWORD('NO_INFOMSGS'),
+            ) for seq in seqs]
+        )
 
         # Turn constraints back on.
         sql_list.append('EXEC sp_MSforeachtable "ALTER TABLE ? WITH NOCHECK CHECK CONSTRAINT all"')
@@ -317,7 +320,7 @@ class DatabaseOperations(BaseDatabaseOperations):
 
         # SQL Server 2005 doesn't support microseconds
         if self.connection.is_sql2005():
-           value = value.replace(microsecond=0)
+            value = value.replace(microsecond=0)
         val = self.__to_truncated_datetime_string(value)
         return val
 
@@ -343,7 +346,7 @@ class DatabaseOperations(BaseDatabaseOperations):
                 raise ValueError("SQL Server backend does not support timezone-aware times.")
 
         # MS SQL 2005 doesn't support microseconds
-        #...but it also doesn't really suport bare times
+        # ...but it also doesn't really suport bare times
         if self.connection.is_sql2005():
             value = value.replace(microsecond=0)
         val = value.isoformat()
@@ -424,8 +427,8 @@ class DatabaseOperations(BaseDatabaseOperations):
 
     def _supports_stddev(self):
         """
-        Work around for django ticket #18334. 
-        This backend supports StdDev and the SQLCompilers will remap to 
+        Work around for django ticket #18334.
+        This backend supports StdDev and the SQLCompilers will remap to
         the correct function names.
         """
         return True
@@ -434,7 +437,7 @@ class DatabaseOperations(BaseDatabaseOperations):
         """
         Backends can implement as needed to enable inserts in to
         the identity column.
-        
+
         Should return True if identity inserts have been enabled.
         """
         if table:
@@ -444,12 +447,12 @@ class DatabaseOperations(BaseDatabaseOperations):
             ))
             return True
         return False
-    
+
     def disable_identity_insert(self, table):
         """
         Backends can implement as needed to disable inserts in to
         the identity column.
-        
+
         Should return True if identity inserts have been disabled.
         """
         if table:

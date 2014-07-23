@@ -1,7 +1,8 @@
 import datetime
-from django.utils import encoding, six
+from django.utils import six
 
 from .base_schema import BaseDatabaseSchemaEditor, logger
+
 
 class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
     sql_rename_table = "sp_rename '%(old_table)s', '%(new_table)s'"
@@ -60,7 +61,6 @@ END'''
         self.execute(self._sql_drop_inbound_foreign_keys, [model._meta.db_table])
         super(DatabaseSchemaEditor, self).delete_model(model)
 
-
     def delete_db_column(self, model, column):
         # drop all of the column constraints to avoid the database blocking the column removal
         with self.connection.cursor() as cursor:
@@ -81,7 +81,7 @@ END'''
         self.execute(self.sql_rename_column % {
             "table": self.quote_name(model._meta.db_table),
             "old_column": self.quote_name(old_db_column),
-            "new_column": new_db_column, # not quoting because it's a string literal
+            "new_column": new_db_column,  # not quoting because it's a string literal
             "type": new_type,
         })
 
@@ -103,8 +103,8 @@ END'''
             pk_constraint_name = self._constraint_names(model, primary_key=True)[0]
             # drop the existing primary key to allow drop of column later
             sql.append(self._delete_db_constraint_sql(model, pk_constraint_name, 'pk'))
-            args['type'] += ' NOT NULL' # pkey cannot be null
-        except IndexError: # no existing primary key
+            args['type'] += ' NOT NULL'  # pkey cannot be null
+        except IndexError:  # no existing primary key
             pk_constraint_name = None
 
         # rename existing column to tmp name
@@ -152,8 +152,8 @@ END'''
             actions = super(DatabaseSchemaEditor, self)._alter_db_column_sql(model, column, alteration,
                 values, fragment, params)
             return (
-                remove_actions[0] + actions[0], # sql
-                remove_actions[1] + actions[1]  # params
+                remove_actions[0] + actions[0],  # sql
+                remove_actions[1] + actions[1]   # params
             )
         if alteration == 'no_default':
             # only post_actions to delete the default constraint
