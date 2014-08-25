@@ -4,6 +4,7 @@ Changelog
 v1.7 (In Development)
 ---------------------
 
+- Enabled bulk_insert database feature. :issue:`6` (Thanks João Pedro Francese)
 
 v1.6
 ----
