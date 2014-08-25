@@ -92,3 +92,11 @@ class DecimalRegressTestCase(TestCase):
         expected = decimal.Decimal('1234567890.0123456789')
         PreciseDecimalTable(d=expected).save()
         self.assertEquals(expected, PreciseDecimalTable.objects.all()[0].d)
+
+    def test_positive_exp(self):
+        """
+        Issue #55 - Decimals like '2.82E+3' fail.
+        """
+        expected = decimal.Decimal('28.2') / decimal.Decimal('0.01')
+        PreciseDecimalTable(d=expected).save()
+        self.assertEquals(expected, PreciseDecimalTable.objects.all()[0].d)
