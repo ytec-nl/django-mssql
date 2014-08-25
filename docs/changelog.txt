@@ -1,6 +1,11 @@
 Changelog
 =========
 
+v1.6.1
+------
+
+- Fixed issue with setup.py that prevented installing on Python 3.4. :issue:`60`
+
 v1.6
 ----
 
