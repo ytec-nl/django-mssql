@@ -236,6 +236,9 @@ def format_decimal_as_string(value):
     https://docs.python.org/2/library/decimal.html#recipes
     """
     sign, digits, exp = value.as_tuple()
+    if exp > 0:
+        # Handle Decimals like '2.82E+3'
+        return "%d" % value
     result = []
     digits = list(map(str, digits))
     build, next = result.append, digits.pop
