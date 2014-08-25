@@ -1,8 +1,12 @@
 Changelog
 =========
 
-v1.6 (In Development)
+v1.7 (In Development)
 ---------------------
+
+
+v1.6
+----
 
 - SQL Server 2005 is no longer supported. It should not be used.
 - Added support for Django 1.7.

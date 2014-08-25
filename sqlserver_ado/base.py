@@ -27,7 +27,7 @@ IntegrityError = Database.IntegrityError
 
 class DatabaseFeatures(BaseDatabaseFeatures):
     uses_custom_query_class = True
-    has_bulk_insert = False
+    has_bulk_insert = True
 
     # DateTimeField doesn't support timezones, only DateTimeOffsetField
     supports_timezones = False
