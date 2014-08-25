@@ -476,3 +476,10 @@ class DatabaseOperations(BaseDatabaseOperations):
         if connector == '^':
             return 'POWER(%s)' % ','.join(sub_expressions)
         return super(DatabaseOperations, self).combine_expression(connector, sub_expressions)
+
+
+    def bulk_batch_size(self, fields, objs):
+        """
+        MSSQL only allows 1000 rows per insert.
+        """
+        return min(len(objs), 1000)

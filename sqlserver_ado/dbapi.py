@@ -807,7 +807,7 @@ _variantConversions = MultiMap(
 # Mapping Python data types to ADO type codes
 def _ado_type(data):
     if isinstance(data, six.string_types):
-        return adBSTR
+        return adVarWChar
     return _map_to_adotype[type(data)]
 
 _map_to_adotype = {
