@@ -5,6 +5,8 @@ v1.7 (In Development)
 ---------------------
 
 - Enabled bulk_insert database feature. :issue:`6` (Thanks João Pedro Francese)
+- Fixed string representation for Decimals in format '2.82E+3'. :issue:`55`
+  (Thanks João Pedro Francese)
 
 v1.6
 ----
