@@ -252,19 +252,18 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         # cache the properties on the connection
         self.connection.adoConnProperties = dict([(x.Name, x.Value) for x in self.connection.adoConn.Properties])
 
-        unsupported_sql = False
-        if self.is_sql2000(make_connection=False):
-            # SQL 2000 doesn't support the OUTPUT clause
-            self.features.can_return_id_from_insert = False
-            unsupported_sql = True
-        elif self.is_sql2005(make_connection=False):
-            unsupported_sql = True
-
-        if unsupported_sql:
+        try:
+            sql_version = int(self.__get_dbms_version().split('.', 2)[0])
+        except (IndexError, ValueError):
             warnings.warn(
-                "This version of MS SQL server is no longer tested with "
-                "django-mssql and not officially supported/maintained.",
-                DeprecationWarning)
+                "Unable to determine MS SQL server version. Only SQL 2012 or "
+                "newer is supported.", DeprecationWarning)
+        else:
+            if sql_version < VERSION_SQL2012:
+                warnings.warn(
+                    "This version of MS SQL server is no longer tested with "
+                    "django-mssql and not officially supported/maintained.",
+                    DeprecationWarning)
 
     def create_cursor(self):
         """Creates a cursor. Assumes that a connection is established."""
@@ -282,27 +281,6 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         if not self.connection and make_connection:
             self.connect()
         return self.connection.adoConnProperties.get('DBMS Version', '') if self.connection else ''
-
-    def is_sql2000(self, make_connection=True):
-        """
-        Returns True if the current connection is SQL2000. Establishes a
-        connection if needed when make_connection is True.
-        """
-        return self.__get_dbms_version(make_connection).startswith(six.text_type(VERSION_SQL2000))
-
-    def is_sql2005(self, make_connection=True):
-        """
-        Returns True if the current connection is SQL2005. Establishes a
-        connection if needed when make_connection is True.
-        """
-        return self.__get_dbms_version(make_connection).startswith(six.text_type(VERSION_SQL2005))
-
-    def is_sql2008(self, make_connection=True):
-        """
-        Returns True if the current connection is SQL2008. Establishes a
-        connection if needed when make_connection is True.
-        """
-        return self.__get_dbms_version(make_connection).startswith(six.text_type(VERSION_SQL2008))
 
     def disable_constraint_checking(self):
         """

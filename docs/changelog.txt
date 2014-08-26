@@ -7,6 +7,9 @@ v1.7 (In Development)
 - Enabled bulk_insert database feature. :issue:`6` (Thanks João Pedro Francese)
 - Fixed string representation for Decimals in format '2.82E+3'. :issue:`55`
   (Thanks João Pedro Francese)
+- Simplified the ``SQLCompiler`` by taking advantage of *OFFSET*/*FETCH* for
+  slicing.
+- SQL 2008 and 2008r2 and no longer supported.
 
 v1.6.1
 ------
