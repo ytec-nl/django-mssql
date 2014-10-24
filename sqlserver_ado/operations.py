@@ -477,9 +477,10 @@ class DatabaseOperations(BaseDatabaseOperations):
             return 'POWER(%s)' % ','.join(sub_expressions)
         return super(DatabaseOperations, self).combine_expression(connector, sub_expressions)
 
-
     def bulk_batch_size(self, fields, objs):
         """
-        MSSQL only allows 1000 rows per insert.
+        Returns the maximum allowed batch size for the backend. The fields
+        are the fields going to be inserted in the batch, the objs contains
+        all the objects to be inserted.
         """
-        return min(len(objs), 1000)
+        return min(len(objs), 2100 // len(fields), 1000)
