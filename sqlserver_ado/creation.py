@@ -182,15 +182,28 @@ class DatabaseCreation(BaseDatabaseCreation):
         else:
             return True
 
+    def enable_clr(self):
+        """ Enables clr for server if not already enabled
+
+        This function will not fail if current user doesn't have
+        permissions to enable clr, and clr is already enabled
+        """
+        with self._nodb_connection.cursor() as cursor:
+            # check whether clr is enabled
+            cursor.execute('''
+            SELECT value FROM sys.configurations
+            WHERE name = 'clr enabled'
+            ''')
+            res = cursor.fetchone()
+
+            if not res or not res[0]:
+                # if not enabled enable clr
+                cursor.execute("sp_configure 'clr enabled', 1")
+                cursor.execute("RECONFIGURE")
+
     def install_regex_clr(self, database_name):
         sql = '''
 USE {database_name};
-
--- Enable CLR in this database
-sp_configure 'show advanced options', 1;
-RECONFIGURE;
-sp_configure 'clr enabled', 1;
-RECONFIGURE;
 
 -- Drop and recreate the function if it already exists
 IF OBJECT_ID('REGEXP_LIKE') IS NOT NULL
@@ -216,6 +229,8 @@ EXTERNAL NAME regex_clr.UserDefinedFunctions.REGEXP_LIKE
             database_name=self.connection.ops.quote_name(database_name),
             assembly_hex=self.get_regex_clr_assembly_hex(),
         ).split(';')
+
+        self.enable_clr()
 
         with self._nodb_connection.cursor() as cursor:
             for s in sql:
