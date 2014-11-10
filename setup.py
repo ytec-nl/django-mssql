@@ -7,13 +7,13 @@ from setuptools import setup, find_packages
 
 
 def read(*parts):
-    with open(os.path.join(os.path.dirname(__file__), *parts)) as handle:
-        return handle.read()
+    with open(os.path.join(os.path.dirname(__file__), *parts), 'rb') as handle:
+        return handle.read().decode('utf8')
 
 
 def find_version(*file_paths):
     version_file = read(*file_paths)
-    version_match = re.search(b"^__version__ = ['\"]([^'\"]*)['\"]",
+    version_match = re.search("^__version__ = ['\"]([^'\"]*)['\"]",
                               version_file, re.M)
     if version_match:
         return version_match.group(1)
