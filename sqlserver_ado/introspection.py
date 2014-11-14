@@ -354,8 +354,8 @@ where
         # get check constraints
         sql = """
         SELECT kc.constraint_name, kc.column_name
-        FROM information_schema.constraint_column_usage AS kc
-        JOIN information_schema.table_constraints AS c ON
+        FROM INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE AS kc
+        JOIN INFORMATION_SCHEMA.TABLE_CONSTRAINTS AS c ON
             kc.table_schema = c.table_schema AND
             kc.table_name = c.table_name AND
             kc.constraint_name = c.constraint_name
