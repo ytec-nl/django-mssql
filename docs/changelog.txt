@@ -1,6 +1,11 @@
 Changelog
 =========
 
+v1.6.2
+------
+
+- Better fixed for :issue:`60`. Thanks Mikhail Denisenko.
+
 v1.6.1
 ------
 
@@ -69,7 +74,7 @@ v1.4
 - Added option :setting:`use_legacy_date_fields` (defaults to True) to allow changing the DatabaseCreation.data_types to
   not use the Microsoft preferred date data types that were added with SQL Server 2008. :issue:`31`
 - Improved accuracy of field type guessing with inspectdb. See :ref:`introspecting-custom-fields`
-- Fixed issue with identity insert using a cursor to the wrong database in a multi-database environment. Thanks Mikhail 
+- Fixed issue with identity insert using a cursor to the wrong database in a multi-database environment. Thanks Mikhail
   Denisenko
 - Fixed constraint checking. :issue:`35` Thanks Mikhail Denisenko
 - Enabled ``can_introspect_autofield`` database feature. :djangoticket:`21097`
@@ -81,7 +86,7 @@ v1.4
 - Improved ``date_interval_sql`` support for the various date/time related datatypes. The ``timedelta`` value will
   control whether the database will ``DATEADD`` using ``DAY`` or ``SECOND``. Trying to add seconds to a ``date``, or
   days to a ``time`` will generate database exceptions.
-- Fixed issue with provider detection that prevented ``DataTypeCompatibility=80`` from being automatically added to the 
+- Fixed issue with provider detection that prevented ``DataTypeCompatibility=80`` from being automatically added to the
   connection string for the native client providers.
 - Fixed SQL generation error that occured when ordering the query based upon a column that is not being returned.
 - Added savepoint support. MS SQL Server doesn't support savepoint commits and will no-op it. Other databases, e.g.
@@ -103,8 +108,8 @@ v1.3
 
   - This will work even if the table has a trigger. :issue:`20`
 
-- Subqueries will have their ordering removed because SQL Server only supports it when using TOP or FOR XML. 
-  This relies upon the ``with_col_aliases`` argument to ``SQLCompiler.as_sql`` only being ``True`` when the query 
+- Subqueries will have their ordering removed because SQL Server only supports it when using TOP or FOR XML.
+  This relies upon the ``with_col_aliases`` argument to ``SQLCompiler.as_sql`` only being ``True`` when the query
   is a subquery, which is currently the case for all usages in Django 1.5 master. :issue:`18`
 - UPDATE statements will now return the number of rows affected, instead of -1. :issue:`19`
 - Apply fix for :djangoticket:`12192`. If QuerySet slicing would result in ``LIMIT 0``, then it shouldn't reach
@@ -112,7 +117,7 @@ v1.3
 - Implemented DatabaseOperation ``cache_key_culling_sql``. :djangoticket:`18330`
 - Fixed ``cast_avg_to_float`` so that it only controls the cast for ``AVG`` and not mapping other aggregates.
 - Improved IP address detection of :setting:`HOST` setting. :issue:`21`
-- Set database feature ``ignores_nulls_in_unique_constraints = False`` because MSSQL cannot ignore NULLs in 
+- Set database feature ``ignores_nulls_in_unique_constraints = False`` because MSSQL cannot ignore NULLs in
   unique constraints.
 - :issue:`26` Documented clustered index issue with Azure SQL. See :ref:`azure-clustered-indices`.
 
@@ -136,7 +141,7 @@ v1.1
 - Implemented ``DatabaseOperations.date_interval_sql`` to allow using expressions like ``end__lte=F('start')+delta``.
 - Fixed date part extraction for ``week_day``.
 - DatabaseWrapper reports vendor as 'microsoft'.
-- AVG function now matches core backend behaviors and will auto-cast to ``float``, instead of maintaining datatype. 
+- AVG function now matches core backend behaviors and will auto-cast to ``float``, instead of maintaining datatype.
   Set database ``OPTIONS`` setting ``disable_avg_cast`` to turn off the auto-cast behavior.
 - StdDev and Variance aggregate functions are now supported and will map to the proper MSSQL named functions. Includes work around for :djangoticket:`18334`.
 - Monkey patched ``django.db.backends.util.CursorWrapper`` to allow using cursors as ContextManagers in Python 2.7. :djangoticket:`17671`.
