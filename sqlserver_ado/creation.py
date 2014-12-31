@@ -6,6 +6,7 @@ import time
 
 import django
 from django.conf import settings
+from django.core.exceptions import ImproperlyConfigured
 from django.db import connections
 from django.db.backends.creation import BaseDatabaseCreation
 from django.utils import six
@@ -116,11 +117,14 @@ class DatabaseCreation(BaseDatabaseCreation):
                 versions = [versions]
             if all(map(lambda v: v[:2] != django_version, versions)):
                 continue
-            test_case_name, _, method_name = test_name.rpartition('.')
-            test_case = import_string(test_case_name)
-            method = getattr(test_case, method_name)
-            method = expectedFailure(method)
-            setattr(test_case, method_name, method)
+            try:
+                test_case_name, _, method_name = test_name.rpartition('.')
+                test_case = import_string(test_case_name)
+                method = getattr(test_case, method_name)
+                method = expectedFailure(method)
+                setattr(test_case, method_name, method)
+            except (ImportError, ImproperlyConfigured):
+                pass
 
     def create_test_db(self, *args, **kwargs):
         self.mark_tests_as_expected_failure(self.connection.features.failing_tests)

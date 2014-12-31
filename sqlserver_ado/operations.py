@@ -318,9 +318,6 @@ class DatabaseOperations(BaseDatabaseOperations):
             else:
                 raise ValueError("SQL Server backend does not support timezone-aware datetimes.")
 
-        # SQL Server 2005 doesn't support microseconds
-        if self.connection.is_sql2005():
-            value = value.replace(microsecond=0)
         val = self.__to_truncated_datetime_string(value)
         return val
 
@@ -345,10 +342,6 @@ class DatabaseOperations(BaseDatabaseOperations):
             else:
                 raise ValueError("SQL Server backend does not support timezone-aware times.")
 
-        # MS SQL 2005 doesn't support microseconds
-        # ...but it also doesn't really suport bare times
-        if self.connection.is_sql2005():
-            value = value.replace(microsecond=0)
         val = value.isoformat()
         if value.microsecond:
             # truncate to millisecond so SQL's 'datetime' can parse it
