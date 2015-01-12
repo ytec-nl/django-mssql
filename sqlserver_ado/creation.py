@@ -130,7 +130,7 @@ class DatabaseCreation(BaseDatabaseCreation):
         self.mark_tests_as_expected_failure(self.connection.features.failing_tests)
         super(DatabaseCreation, self).create_test_db(*args, **kwargs)
 
-    def _create_test_db(self, verbosity=1, autoclobber=False):
+    def _create_test_db(self, verbosity=1, autoclobber=False, keepdb=False):
         """
         Create the test databases using a connection to database 'master'.
         """
