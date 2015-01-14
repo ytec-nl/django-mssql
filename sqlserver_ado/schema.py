@@ -1,12 +1,22 @@
 import binascii
 import datetime
+from django import VERSION
 from django.db.backends.utils import truncate_name
 from django.db.models.fields.related import ManyToManyField
 from django.utils import six
+from django.utils.log import getLogger
 from django.utils.six.moves import reduce
 from django.utils.text import force_text
 
-from .base_schema import BaseDatabaseSchemaEditor, logger
+try:
+    from django.db.backends.schema import BaseDatabaseSchemaEditor
+except ImportError:
+    # Stub for class added in Django 1.7
+    class BaseDatabaseSchemaEditor(object):
+        pass
+
+
+logger = getLogger('django.db.backends.schema')
 
 
 class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
