@@ -17,7 +17,8 @@ DATABASES = {
         'ENGINE': 'sqlserver_ado',
         'NAME': 'test_django_mssql',
         'TEST_NAME': 'test_django_mssql',
-        'HOST': r'localhost\ss2012',
+        # 'HOST': r'localhost\ss2012',
+        'HOST': r'localhost\sqlexpress',
         'USER': '',
         'PASSWORD': '',
         'OPTIONS': {
@@ -31,7 +32,8 @@ DATABASES = {
         'ENGINE': 'sqlserver_ado',
         'NAME': 'test_django_mssql_other',
         'TEST_NAME': 'test_django_mssql_other',
-        'HOST': r'localhost\ss2012',
+        # 'HOST': r'localhost\ss2012',
+        'HOST': r'localhost\sqlexpress',
         'USER': '',
         'PASSWORD': '',
         'OPTIONS': {
@@ -44,7 +46,7 @@ DATABASES = {
 }
 
 SECRET_KEY = "django_tests_secret_key"
-# To speed up tests under SQLite we use the MD5 hasher as the default one. 
+# To speed up tests under SQLite we use the MD5 hasher as the default one.
 # This should not be needed under other databases, as the relative speedup
 # is only marginal there.
 PASSWORD_HASHERS = (

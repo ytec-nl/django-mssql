@@ -1,5 +1,10 @@
+import binascii
 import datetime
+from django.db.backends.utils import truncate_name
+from django.db.models.fields.related import ManyToManyField
 from django.utils import six
+from django.utils.six.moves import reduce
+from django.utils.text import force_text
 
 from .base_schema import BaseDatabaseSchemaEditor, logger
 
@@ -49,6 +54,32 @@ BEGIN
     EXEC (@sql)
 END'''
 
+
+    # Map provides a concise prefix for constraints of the same type
+    constraint_type_prefix_map = {
+        'UNIQUE': 'UX_',
+        'INDEX': 'IX_',
+        'DEFAULT': 'DF_',
+        'CHECK': 'CK_',
+        'PK': 'PK_',
+        'FK': 'FK_',
+        '': '',
+    }
+
+    def _create_constraint_name(self, model, column_names, constraint_type='', suffix=""):
+        """
+        Generates a unique name for a constraint.
+        """
+        column = '_'.join(column_names) if isinstance(column_names, (list, tuple)) else column_names
+        name = '%s%s_%s%s' % (
+            self.constraint_type_prefix_map.get(constraint_type.upper(), ''),
+            model._meta.db_table,
+            column,
+            suffix,
+        )
+        return truncate_name(name, length=self.connection.ops.max_name_length(), hash_len=8)
+
+
     def alter_db_table(self, model, old_db_table, new_db_table):
         # sp_rename requires that objects not be quoted because they are string literals
         self.execute(self.sql_rename_table % {
@@ -74,6 +105,324 @@ END'''
                     cursor.execute(sql)
         super(DatabaseSchemaEditor, self).delete_db_column(model, column)
 
+    def remove_field(self, model, field):
+        """
+        Removes a field from a model. Usually involves deleting a column,
+        but for M2Ms may involve deleting a table.
+        """
+        # Special-case implicit M2M tables
+        if isinstance(field, ManyToManyField) and field.rel.through._meta.auto_created:
+            return self.delete_model(field.rel.through)
+        # It might not actually have a column behind it
+        if field.db_parameters(connection=self.connection)['type'] is None:
+            return
+        # Drop all constraints
+        constraint_types = [
+            (self.sql_delete_fk, {'foreign_key': True}),
+            (self.sql_delete_pk, {'primary_key': True}),
+            (self.sql_delete_index, {'index': True}),
+            (self.sql_delete_unique, {'unique': True}),
+        ]
+        for template, kwargs in constraint_types:
+            names = self._constraint_names(model, [field.column], **kwargs)
+            for name in names:
+                self.execute(self._delete_constraint_sql(template, model, name))
+        # Delete the column
+        sql = self.sql_delete_column % {
+            "table": self.quote_name(model._meta.db_table),
+            "column": self.quote_name(field.column),
+        }
+        self.execute(sql)
+        # Reset connection if required
+        if self.connection.features.connection_persists_old_columns:
+            self.connection.close()
+
+
+    def _alter_field(self, model, old_field, new_field, old_type, new_type, old_db_params, new_db_params, strict=False):
+        """Actually perform a "physical" (non-ManyToMany) field update."""
+
+        # Has unique been removed?
+        if old_field.unique and (not new_field.unique or (not old_field.primary_key and new_field.primary_key)):
+            # Find the unique constraint for this field
+            constraint_names = self._constraint_names(model, [old_field.column], unique=True)
+            if strict and len(constraint_names) != 1:
+                raise ValueError("Found wrong number (%s) of unique constraints for %s.%s" % (
+                    len(constraint_names),
+                    model._meta.db_table,
+                    old_field.column,
+                ))
+            for constraint_name in constraint_names:
+                self.execute(self._delete_constraint_sql(self.sql_delete_unique, model, constraint_name))
+        # Drop any FK constraints, we'll remake them later
+        fks_dropped = set()
+        if old_field.rel and old_field.db_constraint:
+            fk_names = self._constraint_names(model, [old_field.column], foreign_key=True)
+            if strict and len(fk_names) != 1:
+                raise ValueError("Found wrong number (%s) of foreign key constraints for %s.%s" % (
+                    len(fk_names),
+                    model._meta.db_table,
+                    old_field.column,
+                ))
+            for fk_name in fk_names:
+                fks_dropped.add((old_field.column,))
+                self.execute(self._delete_constraint_sql(self.sql_delete_fk, model, fk_name))
+        # Drop incoming FK constraints if we're a primary key and things are going
+        # to change.
+        if old_field.primary_key and new_field.primary_key and old_type != new_type:
+            for rel in new_field.model._meta.get_all_related_objects():
+                rel_fk_names = self._constraint_names(rel.model, [rel.field.column], foreign_key=True)
+                for fk_name in rel_fk_names:
+                    self.execute(self._delete_constraint_sql(self.sql_delete_fk, rel.model, fk_name))
+        # Removed an index? (no strict check, as multiple indexes are possible)
+        if (old_field.db_index and not new_field.db_index and
+                not old_field.unique and not
+                (not new_field.unique and old_field.unique)):
+            # Find the index for this field
+            index_names = self._constraint_names(model, [old_field.column], index=True)
+            for index_name in index_names:
+                self.execute(self._delete_constraint_sql(self.sql_delete_index, model, index_name))
+        # Change check constraints?
+        if old_db_params['check'] != new_db_params['check'] and old_db_params['check']:
+            constraint_names = self._constraint_names(model, [old_field.column], check=True)
+            if strict and len(constraint_names) != 1:
+                raise ValueError("Found wrong number (%s) of check constraints for %s.%s" % (
+                    len(constraint_names),
+                    model._meta.db_table,
+                    old_field.column,
+                ))
+            for constraint_name in constraint_names:
+                self.execute(self._delete_constraint_sql(self.sql_delete_check, model, constraint_name))
+        # Have they renamed the column?
+        if old_field.column != new_field.column:
+            self.rename_db_column(model, old_field.column, new_field.column, new_type)
+        # Next, start accumulating actions to do
+        actions = []
+        null_actions = []
+        post_actions = []
+        # Type change?
+        if old_type != new_type:
+            fragment, other_actions = self._alter_column_type_sql(model._meta.db_table, new_field.column, new_type)
+            actions.append(fragment)
+            post_actions.extend(other_actions)
+        # When changing a column NULL constraint to NOT NULL with a given
+        # default value, we need to perform 4 steps:
+        #  1. Add a default for new incoming writes
+        #  2. Update existing NULL rows with new default
+        #  3. Replace NULL constraint with NOT NULL
+        #  4. Drop the default again.
+        # Default change?
+        old_default = self.effective_default(old_field)
+        new_default = self.effective_default(new_field)
+        needs_database_default = (
+            old_default != new_default and
+            new_default is not None and
+            not self.skip_default(new_field)
+        )
+        if needs_database_default:
+            constraint_name = self._create_constraint_name(model, new_field.column, constraint_type='default')
+            if self.connection.features.requires_literal_defaults:
+                # Some databases can't take defaults as a parameter (oracle)
+                # If this is the case, the individual schema backend should
+                # implement prepare_default
+                actions.append((
+                    self.sql_alter_column_default % {
+                        "column": self.quote_name(new_field.column),
+                        "default": self.prepare_default(new_default),
+                        "constraint_name": constraint_name,
+                    },
+                    [],
+                ))
+            else:
+                actions.append((
+                    self.sql_alter_column_default % {
+                        "column": self.quote_name(new_field.column),
+                        "default": "%s",
+                        "constraint_name": constraint_name,
+                    },
+                    [new_default],
+                ))
+        # Nullability change?
+        if old_field.null != new_field.null:
+            if new_field.null:
+                null_actions.append((
+                    self.sql_alter_column_null % {
+                        "column": self.quote_name(new_field.column),
+                        "type": new_type,
+                    },
+                    [],
+                ))
+            else:
+                null_actions.append((
+                    self.sql_alter_column_not_null % {
+                        "column": self.quote_name(new_field.column),
+                        "type": new_type,
+                    },
+                    [],
+                ))
+        # Only if we have a default and there is a change from NULL to NOT NULL
+        four_way_default_alteration = (
+            new_field.has_default() and
+            (old_field.null and not new_field.null)
+        )
+        if actions or null_actions:
+            if not four_way_default_alteration:
+                # If we don't have to do a 4-way default alteration we can
+                # directly run a (NOT) NULL alteration
+                actions = actions + null_actions
+            # Combine actions together if we can (e.g. postgres)
+            if self.connection.features.supports_combined_alters and actions:
+                sql, params = tuple(zip(*actions))
+                actions = [(", ".join(sql), reduce(operator.add, params))]
+            # Apply those actions
+            for sql, params in actions:
+                self.execute(
+                    self.sql_alter_column % {
+                        "table": self.quote_name(model._meta.db_table),
+                        "changes": sql,
+                    },
+                    params,
+                )
+            if four_way_default_alteration:
+                # Update existing rows with default value
+                self.execute(
+                    self.sql_update_with_default % {
+                        "table": self.quote_name(model._meta.db_table),
+                        "column": self.quote_name(new_field.column),
+                        "default": "%s",
+                    },
+                    [new_default],
+                )
+                # Since we didn't run a NOT NULL change before we need to do it
+                # now
+                for sql, params in null_actions:
+                    self.execute(
+                        self.sql_alter_column % {
+                            "table": self.quote_name(model._meta.db_table),
+                            "changes": sql,
+                        },
+                        params,
+                    )
+        if post_actions:
+            for sql, params in post_actions:
+                self.execute(sql, params)
+        # Added a unique?
+        if not old_field.unique and new_field.unique:
+            self.execute(self._create_unique_sql(model, [new_field.column]))
+        # Added an index?
+        if (not old_field.db_index and new_field.db_index and
+                not new_field.unique and not
+                (not old_field.unique and new_field.unique)):
+            self.execute(self._create_index_sql(model, [new_field], suffix="_uniq"))
+        # Type alteration on primary key? Then we need to alter the column
+        # referring to us.
+        rels_to_update = []
+        if old_field.primary_key and new_field.primary_key and old_type != new_type:
+            rels_to_update.extend(new_field.model._meta.get_all_related_objects())
+        # Changed to become primary key?
+        # Note that we don't detect unsetting of a PK, as we assume another field
+        # will always come along and replace it.
+        if not old_field.primary_key and new_field.primary_key:
+            # First, drop the old PK
+            constraint_names = self._constraint_names(model, primary_key=True)
+            if strict and len(constraint_names) != 1:
+                raise ValueError("Found wrong number (%s) of PK constraints for %s" % (
+                    len(constraint_names),
+                    model._meta.db_table,
+                ))
+            for constraint_name in constraint_names:
+                self.execute(self._delete_constraint_sql(self.sql_delete_pk, model, constraint_name))
+            # Make the new one
+            self.execute(
+                self.sql_create_pk % {
+                    "table": self.quote_name(model._meta.db_table),
+                    "name": self.quote_name(self._create_index_name(model, [new_field.column], suffix="_pk")),
+                    "columns": self.quote_name(new_field.column),
+                }
+            )
+            # Update all referencing columns
+            rels_to_update.extend(new_field.model._meta.get_all_related_objects())
+        # Handle our type alters on the other end of rels from the PK stuff above
+        for rel in rels_to_update:
+            rel_db_params = rel.field.db_parameters(connection=self.connection)
+            rel_type = rel_db_params['type']
+            self.execute(
+                self.sql_alter_column % {
+                    "table": self.quote_name(rel.model._meta.db_table),
+                    "changes": self.sql_alter_column_type % {
+                        "column": self.quote_name(rel.field.column),
+                        "type": rel_type,
+                    }
+                }
+            )
+        # Does it have a foreign key?
+        if new_field.rel and \
+           (fks_dropped or (old_field.rel and not old_field.db_constraint)) and \
+           new_field.db_constraint:
+            self.execute(self._create_fk_sql(model, new_field, "_fk_%(to_table)s_%(to_column)s"))
+        # Rebuild FKs that pointed to us if we previously had to drop them
+        if old_field.primary_key and new_field.primary_key and old_type != new_type:
+            for rel in new_field.model._meta.get_all_related_objects():
+                self.execute(self._create_fk_sql(rel.model, rel.field, "_fk"))
+        # Does it have check constraints we need to add?
+        if old_db_params['check'] != new_db_params['check'] and new_db_params['check']:
+            self.execute(
+                self.sql_create_check % {
+                    "table": self.quote_name(model._meta.db_table),
+                    "name": self.quote_name(self._create_index_name(model, [new_field.column], suffix="_check")),
+                    "column": self.quote_name(new_field.column),
+                    "check": new_db_params['check'],
+                }
+            )
+        # Drop the default if we need to
+        # (Django usually does not use in-database defaults)
+        if needs_database_default:
+            sql, params = self._drop_default_column(model, new_field.column)
+            self.execute(sql, params)
+
+        # Reset connection if required
+        if self.connection.features.connection_persists_old_columns:
+            self.connection.close()
+
+    def add_field(self, model, field):
+        """
+        Creates a field on a model.
+        Usually involves adding a column, but may involve adding a
+        table instead (for M2M fields)
+        """
+        # Special-case implicit M2M tables
+        if isinstance(field, ManyToManyField) and field.rel.through._meta.auto_created:
+            return self.create_model(field.rel.through)
+        # Get the column's definition
+        definition, params = self.column_sql(model, field, include_default=True)
+        # It might not actually have a column behind it
+        if definition is None:
+            return
+        # Check constraints can go on the column SQL here
+        db_params = field.db_parameters(connection=self.connection)
+        if db_params['check']:
+            definition += " CHECK (%s)" % db_params['check']
+        # Build the SQL and run it
+        sql = self.sql_create_column % {
+            "table": self.quote_name(model._meta.db_table),
+            "column": self.quote_name(field.column),
+            "definition": definition,
+        }
+        self.execute(sql, params)
+        # Drop the default if we need to
+        # (Django usually does not use in-database defaults)
+        if not self.skip_default(field) and field.default is not None:
+            sql, params = self._drop_default_column(model, field.column)
+            self.execute(sql, params)
+        # Add an index, if required
+        if field.db_index and not field.unique:
+            self.deferred_sql.append(self._create_index_sql(model, [field]))
+        # Add any FK constraints later
+        if field.rel and self.connection.features.supports_foreign_keys and field.db_constraint:
+            self.deferred_sql.append(self._create_fk_sql(model, field, "_fk_%(to_table)s_%(to_column)s"))
+        # Reset connection if required
+        if self.connection.features.connection_persists_old_columns:
+            self.connection.close()
+
     def rename_db_column(self, model, old_db_column, new_db_column, new_type):
         """
         Renames a column on a table.
@@ -84,84 +433,6 @@ END'''
             "new_column": new_db_column,  # not quoting because it's a string literal
             "type": new_type,
         })
-
-    def __remove_identity_from_column(self, model, column, old_type, new_type):
-        """
-        Remove IDENTITY from a column. This is done by creating a new column and
-        swapping in the values.
-        """
-        # removing identity from column
-        args = {
-            'table': model._meta.db_table,
-            'column': column,
-            'tmp_column': 'mssql_tmp_%s' % column,
-            'type': new_type,
-        }
-        sql = []
-
-        try:
-            pk_constraint_name = self._constraint_names(model, primary_key=True)[0]
-            # drop the existing primary key to allow drop of column later
-            sql.append(self._delete_db_constraint_sql(model, pk_constraint_name, 'pk'))
-            args['type'] += ' NOT NULL'  # pkey cannot be null
-        except IndexError:  # no existing primary key
-            pk_constraint_name = None
-
-        # rename existing column to tmp name
-        sql.append(("exec sp_rename %s, %s, 'COLUMN'", [
-            '%s.%s' % (model._meta.db_table, args['column']),
-            args['tmp_column'],
-        ]))
-        # create new column of type
-        sql.append(("ALTER TABLE [%(table)s] ADD [%(column)s] %(type)s" % args, []))
-        # copy identity values from old column
-        sql.append(("UPDATE [%(table)s] SET [%(column)s] = [%(tmp_column)s]" % args, []))
-        if pk_constraint_name:
-            # create a primary key because alter_field expects one
-            sql.append(self._create_db_constraint_sql(model, args['column'], 'pk'))
-
-        # drop old column
-        sql.append(("ALTER TABLE [%(table)s] DROP COLUMN [%(tmp_column)s]" % args, []))
-        return [([], [])], sql
-
-    def __add_identity_to_column(self, model, column, old_type, new_type):
-        """
-        Add IDENTITY to a column.
-        """
-        # To do this properly, we'd need to create a temporary table with the
-        # new schema, copy the data, drop all inbound foreign keys to old table,
-        # swap in the temp table, and finally rebuild all inbound foreign keys.
-        raise NotImplementedError(
-            "django-mssql doesn't support adding an IDENTITY column to a table."
-        )
-
-    def _alter_db_column_sql(self, model, column, alteration=None, values={}, fragment=False, params=None):
-        if alteration == 'type':
-            new_type = values.get('type', '').lower()
-            old_type = values.get('old_type', '').lower()
-            if 'identity' in old_type and 'identity' not in new_type:
-                return self.__remove_identity_from_column(model, column, old_type, new_type)
-            elif 'identity' not in old_type and 'identity' in new_type:
-                return self.__add_identity_to_column(model, column, old_type, new_type)
-
-        if alteration == 'default':
-            # remove old default constraint
-            remove_actions = self._alter_db_column_sql(model, column, alteration='no_default', values=values,
-                fragment=fragment, params=params)
-            # now add the new one
-            actions = super(DatabaseSchemaEditor, self)._alter_db_column_sql(model, column, alteration,
-                values, fragment, params)
-            return (
-                remove_actions[0] + actions[0],  # sql
-                remove_actions[1] + actions[1]   # params
-            )
-        if alteration == 'no_default':
-            # only post_actions to delete the default constraint
-            sql, params = self._drop_default_column(model, column)
-            return [([], [])], [(sql, params)]
-        else:
-            return super(DatabaseSchemaEditor, self)._alter_db_column_sql(model, column, alteration,
-                values, fragment, params)
 
     def _drop_default_column(self, model, column):
         """
@@ -185,36 +456,36 @@ END''' % {'table': model._meta.db_table}
         return sql, params
 
     def prepare_default(self, value):
-        return "%s" % self.quote_value(value), []
+        return self.quote_value(value)
 
     def quote_value(self, value):
         if isinstance(value, (datetime.date, datetime.time, datetime.datetime)):
             return "'%s'" % value
         elif isinstance(value, six.string_types):
             return "'%s'" % six.text_type(value).replace("\'", "\'\'")
+        elif isinstance(value, six.buffer_types):
+            return '0x%s' % force_text(binascii.hexlify(value))
         elif isinstance(value, bool):
             return "1" if value else "0"
         elif value is None:
             return "NULL"
         else:
-            return six.text_type(value)
+            return str(value)
 
     # def execute(self, sql, params=[]):
     #     """
     #     Executes the given SQL statement, with optional parameters.
     #     """
-    #     if not sql:
-    #         return
     #     # Log the command we're running, then run it
     #     logger.debug("%s; (params %r)" % (sql, params))
     #     if self.collect_sql:
-    #         c = (sql % tuple(map(self._quote_parameter, params))) + ";"
-    #         print 'collected sql=', c
-    #         self.collected_sql.append(c)
-
+    #         ending = "" if sql.endswith(";") else ";"
+    #         if params is not None:
+    #             self.collected_sql.append((sql % tuple(map(self.quote_value, params))) + ending)
+    #         else:
+    #             self.collected_sql.append(sql + ending)
     #     else:
-    #         print 'sql=', sql
-    #         print 'params=', params
-    #         # Get the cursor
+    #         print('sql=', sql)
+    #         print('    params=', params)
     #         with self.connection.cursor() as cursor:
     #             cursor.execute(sql, params)

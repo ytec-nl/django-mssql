@@ -8,7 +8,7 @@ Documentation is available at `django-mssql.readthedocs.org`_.
 Requirements
 ------------
 
-    * Python 2.7
+    * Python 2.7, 3.4
     * PyWin32_
     * SQL Server Management Studio or Microsoft Data Access Components (MDAC)
 
