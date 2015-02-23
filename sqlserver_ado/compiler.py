@@ -45,18 +45,18 @@ class SQLCompiler(compiler.SQLCompiler):
             values.append(value)
         return row[:index_extra_select] + tuple(values)
 
-    def compile(self, node):
-        """
-        Added with Django 1.7 as a mechanism to evalute expressions
-        """
-        sql_function = getattr(node, 'sql_function', None)
-        if sql_function and sql_function in self.connection.ops._sql_function_overrides:
-            sql_function, sql_template = self.connection.ops._sql_function_overrides[sql_function]
-            if sql_function:
-                node.sql_function = sql_function
-            if sql_template:
-                node.sql_template = sql_template
-        return super(SQLCompiler, self).compile(node)
+    # def compile(self, node, select_format=False):
+    #     """
+    #     Added with Django 1.7 as a mechanism to evalute expressions
+    #     """
+    #     sql_function = getattr(node, 'sql_function', None)
+    #     if sql_function and sql_function in self.connection.ops._sql_function_overrides:
+    #         sql_function, sql_template = self.connection.ops._sql_function_overrides[sql_function]
+    #         if sql_function:
+    #             node.sql_function = sql_function
+    #         if sql_template:
+    #             node.sql_template = sql_template
+    #     return super(SQLCompiler, self).compile(node)
 
     def _fix_aggregates(self):
         """
@@ -78,7 +78,7 @@ class SQLCompiler(compiler.SQLCompiler):
             if sql_template:
                 self.query.aggregate_select[alias].sql_template = sql_template
 
-    def as_sql(self, with_limits=True, with_col_aliases=False):
+    def as_sql(self, with_limits=True, with_col_aliases=False, subquery=False):
         # Django #12192 - Don't execute any DB query when QS slicing results in limit 0
         if with_limits and self.query.low_mark == self.query.high_mark:
             return '', ()
@@ -100,6 +100,7 @@ class SQLCompiler(compiler.SQLCompiler):
             sql, fields = super(SQLCompiler, self).as_sql(
                 with_limits=False,
                 with_col_aliases=with_col_aliases,
+                subquery=subquery,
             )
 
             if has_limit_offset:
@@ -226,13 +227,3 @@ class SQLAggregateCompiler(compiler.SQLAggregateCompiler, SQLCompiler):
     def as_sql(self, qn=None):
         self._fix_aggregates()
         return super(SQLAggregateCompiler, self).as_sql(qn=qn)
-
-
-class SQLDateCompiler(compiler.SQLDateCompiler, SQLCompiler):
-    pass
-
-try:
-    class SQLDateTimeCompiler(compiler.SQLDateTimeCompiler, SQLCompiler):
-        pass
-except AttributeError:
-    pass
