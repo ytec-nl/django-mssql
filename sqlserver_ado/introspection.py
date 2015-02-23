@@ -1,6 +1,9 @@
 from __future__ import absolute_import, unicode_literals
 
-from django.db.backends.base.introspection import BaseDatabaseIntrospection
+from django.db.backends.base.introspection import (
+    BaseDatabaseIntrospection, FieldInfo, TableInfo,
+)
+
 from . import ado_consts
 
 try:
@@ -29,14 +32,14 @@ class DatabaseIntrospection(BaseDatabaseIntrospection):
     def get_table_list(self, cursor):
         "Return a list of table and view names in the current database."
         cursor.execute("""\
-SELECT TABLE_NAME
+SELECT TABLE_NAME, 't'
 FROM INFORMATION_SCHEMA.TABLES
 WHERE TABLE_TYPE = 'BASE TABLE'
 UNION
-SELECT TABLE_NAME
+SELECT TABLE_NAME, 'v'
 FROM INFORMATION_SCHEMA.VIEWS
 """)
-        return [row[0] for row in cursor.fetchall()]
+        return [TableInfo(row[0], row[1]) for row in cursor.fetchall()]
 
     def _is_auto_field(self, cursor, table_name, column_name):
         """Check if a column is an identity column.
