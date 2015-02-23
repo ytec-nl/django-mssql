@@ -4,6 +4,7 @@ import datetime
 import django
 from django.conf import settings
 from django.db.backends.base.operations import BaseDatabaseOperations
+from django.utils.duration import duration_string
 
 try:
     from django.utils.encoding import smart_text
@@ -22,6 +23,16 @@ from . import fields as mssql_fields
 
 class DatabaseOperations(BaseDatabaseOperations):
     compiler_module = "sqlserver_ado.compiler"
+
+    # Oracle uses NUMBER(11) and NUMBER(19) for integer fields.
+    integer_field_ranges = {
+        'SmallIntegerField': (-32768, 32767),
+        'IntegerField': (-2147483648, 21474),
+        'BigIntegerField': (-9999999999999999999, 9999999999999999999),
+        'PositiveSmallIntegerField': (0, 99999999999),
+        'PositiveIntegerField': (0, 99999999999),
+    }
+
 
     _convert_values_map = {
         # custom fields
@@ -72,28 +83,11 @@ class DatabaseOperations(BaseDatabaseOperations):
             lookup_type = 'weekday'
         return 'DATEPART(%s, %s)' % (lookup_type, field_name)
 
-    def date_interval_sql(self, sql, connector, timedelta):
+    def date_interval_sql(self, timedelta):
         """
-        implements the interval functionality for expressions
-        format for SQL Server.
+        Do nothing here, we'll handle it in the combine.
         """
-        sign = 1 if connector == '+' else -1
-        if timedelta.seconds or timedelta.microseconds:
-            # assume the underlying datatype supports seconds/microseconds
-            seconds = ((timedelta.days * 86400) + timedelta.seconds) * sign
-            out = sql
-            if seconds:
-                out = 'DATEADD(SECOND, {0}, {1})'.format(seconds, sql)
-            if timedelta.microseconds:
-                # DATEADD with datetime doesn't support ms, must cast up
-                out = 'DATEADD(MICROSECOND, {ms}, CAST({sql} as datetime2))'.format(
-                    ms=timedelta.microseconds * sign,
-                    sql=out,
-                )
-        else:
-            # Only days in the delta, assume underlying datatype can DATEADD with days
-            out = 'DATEADD(DAY, {0}, {1})'.format(timedelta.days * sign, sql)
-        return out
+        return timedelta, []
 
     def date_trunc_sql(self, lookup_type, field_name):
         return "DATEADD(%s, DATEDIFF(%s, 0, %s), 0)" % (lookup_type, lookup_type, field_name)
@@ -159,6 +153,51 @@ class DatabaseOperations(BaseDatabaseOperations):
             reference_date=reference_date,
         )
         return sql, []
+
+    def get_db_converters(self, expression):
+        converters = super(DatabaseOperations, self).get_db_converters(expression)
+        internal_type = expression.output_field.get_internal_type()
+        if internal_type == 'TextField':
+            converters.append(self.convert_textfield_value)
+        elif internal_type in ['BooleanField', 'NullBooleanField']:
+            converters.append(self.convert_booleanfield_value)
+        elif internal_type in 'DateField':
+            converters.append(self.convert_datefield_value)
+        elif internal_type == 'TimeField':
+            converters.append(self.convert_timefield_value)
+        elif internal_type == 'UUIDField':
+            converters.append(self.convert_uuidfield_value)
+        return converters
+
+    def convert_booleanfield_value(self, value, expression, connection, context):
+        if value in (0, 1):
+            value = bool(value)
+        return value
+
+    def convert_datefield_value(self, value, expression, connection, context):
+        if isinstance(value, six.text_type):
+            value = self._convert_values_map['DateField'].to_python(value)
+        elif isinstance(value, datetime.datetime):
+            return value.date()
+        return value
+
+    def convert_timefield_value(self, value, expression, connection, context):
+        if isinstance(value, six.text_type):
+            value = self._convert_values_map['TimeField'].to_python(value)
+        elif isinstance(value, datetime.datetime):
+            value = value.time()
+        return value
+
+    def convert_uuidfield_value(self, value, expression, connection, context):
+        if value is not None:
+            value = uuid.UUID(value)
+        return value
+
+    def convert_textfield_value(self, value, expression, connection, context):
+        if value is not None:
+            value = force_text(value)
+        return value
+
 
     def last_insert_id(self, cursor, table_name, pk_name):
         """
@@ -458,6 +497,40 @@ class DatabaseOperations(BaseDatabaseOperations):
         if connector == '^':
             return 'POWER(%s)' % ','.join(sub_expressions)
         return super(DatabaseOperations, self).combine_expression(connector, sub_expressions)
+
+    def combine_duration_expression(self, connector, sub_expressions):
+        # print 'combine_duration_expression', connector, [repr(x) for x in sub_expressions]
+        seconds = False
+        microseconds = False
+        sign = 1 if connector == '+' else -1
+        sql, timedelta = sub_expressions
+        if isinstance(sql, datetime.timedelta):
+            # normalize to sql + duration
+            sql, timedelta = timedelta, sql
+        if isinstance(timedelta, datetime.timedelta):
+            seconds = ((timedelta.days * 86400) + timedelta.seconds) * sign
+            microseconds = timedelta.microseconds * sign
+        if isinstance(timedelta, six.text_type):
+            seconds = "({} / 1000000)".format(timedelta)
+            microseconds = "({} % 1000000)".format(timedelta)
+            if sign == -1:
+                microseconds = "(-1 * {})".format(microseconds)
+        out = sql
+        if seconds:
+            out = 'DATEADD(SECOND, {}, CAST({} as datetime2))'.format(seconds, sql)
+        if microseconds:
+            # DATEADD with datetime doesn't support ms, must cast up
+            out = 'DATEADD(MICROSECOND, {ms}, CAST({sql} as datetime2))'.format(
+                ms=microseconds * sign,
+                sql=out,
+            )
+        return out
+
+        # return self.combine_expression(connector, sub_expressions)
+
+    def format_for_duration_arithmetic(self, sql):
+        """Do nothing here, we will handle it in the custom function."""
+        return sql
 
     def bulk_batch_size(self, fields, objs):
         """

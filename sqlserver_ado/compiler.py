@@ -68,15 +68,15 @@ class SQLCompiler(compiler.SQLCompiler):
         match behavior of other django backends, it needs to not drop remainders.
         E.g. AVG([1, 2]) needs to yield 1.5, not 1
         """
-        for alias, aggregate in self.query.aggregate_select.items():
+        for alias, aggregate in self.query.annotation_select.items():
             sql_function = getattr(aggregate, 'sql_function', None)
             if not sql_function or sql_function not in self.connection.ops._sql_function_overrides:
                 continue
             sql_function, sql_template = self.connection.ops._sql_function_overrides[sql_function]
             if sql_function:
-                self.query.aggregate_select[alias].sql_function = sql_function
+                self.query.annotation_select[alias].sql_function = sql_function
             if sql_template:
-                self.query.aggregate_select[alias].sql_template = sql_template
+                self.query.annotation_select[alias].sql_template = sql_template
 
     def as_sql(self, with_limits=True, with_col_aliases=False, subquery=False):
         # Django #12192 - Don't execute any DB query when QS slicing results in limit 0
@@ -224,6 +224,6 @@ class SQLUpdateCompiler(compiler.SQLUpdateCompiler, SQLCompiler):
 
 
 class SQLAggregateCompiler(compiler.SQLAggregateCompiler, SQLCompiler):
-    def as_sql(self, qn=None):
+    def as_sql(self):
         self._fix_aggregates()
-        return super(SQLAggregateCompiler, self).as_sql(qn=qn)
+        return super(SQLAggregateCompiler, self).as_sql()

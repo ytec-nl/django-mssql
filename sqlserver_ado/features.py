@@ -46,6 +46,8 @@ class DatabaseFeatures(BaseDatabaseFeatures):
 
     requires_literal_defaults = True
 
+    has_native_uuid_field = True
+
     @cached_property
     def has_zoneinfo_database(self):
         return pytz is not None

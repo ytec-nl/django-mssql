@@ -124,6 +124,24 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         "iendswith": "LIKE %s ESCAPE '\\'",
     }
 
+    # The patterns below are used to generate SQL pattern lookup clauses when
+    # the right-hand side of the lookup isn't a raw string (it might be an expression
+    # or the result of a bilateral transformation).
+    # In those cases, special characters for LIKE operators (e.g. \, *, _) should be
+    # escaped on database side.
+    #
+    # Note: we use str.format() here for readability as '%' is used as a wildcard for
+    # the LIKE operator.
+    pattern_esc = r"REPLACE(REPLACE(REPLACE({}, '\\', '\\\\'), '%%', '\%%'), '_', '\_')"
+    pattern_ops = {
+        'contains': "LIKE CONCAT('%%', {}, '%%')",
+        'icontains': "LIKE CONCAT('%%', {}, '%%')",
+        'startswith': "LIKE CONCAT({}, '%%')",
+        'istartswith': "LIKE CONCAT({}, '%%')",
+        'endswith': "LIKE CONCAT('%%', {})",
+        'iendswith': "LIKE CONCAT('%%', {})",
+    }
+
     # This dictionary maps Field objects to their associated Server Server column
     # types, as strings. Column-type strings can contain format strings; they'll
     # be interpolated against the values of Field.__dict__.
@@ -139,6 +157,7 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         'DateTimeField':                'datetime2',
         'DateTimeOffsetField':          'datetimeoffset',
         'DecimalField':                 'decimal(%(max_digits)s, %(decimal_places)s)',
+        'DurationField':                'bigint',
         'FileField':                    'nvarchar(%(max_length)s)',
         'FilePathField':                'nvarchar(%(max_length)s)',
         'FloatField':                   'double precision',
