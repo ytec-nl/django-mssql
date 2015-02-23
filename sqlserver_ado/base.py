@@ -159,6 +159,8 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         'SmallIntegerField':            'smallint',
         'TextField':                    'nvarchar(max)',
         'TimeField':                    'time',
+        'URLField':                     'nvarchar(%(max_length)s)',
+        'UUIDField':                    'uniqueidentifier',
     }
 
     # Starting with Django 1.7, check constraints are no longer included in with
