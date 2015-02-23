@@ -1,6 +1,6 @@
 from __future__ import absolute_import, unicode_literals
 
-from django.db.backends import BaseDatabaseIntrospection
+from django.db.backends.base.introspection import BaseDatabaseIntrospection
 from . import ado_consts
 
 try:

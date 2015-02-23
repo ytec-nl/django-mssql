@@ -3,7 +3,7 @@ from __future__ import absolute_import, unicode_literals
 import datetime
 import django
 from django.conf import settings
-from django.db.backends import BaseDatabaseOperations
+from django.db.backends.base.operations import BaseDatabaseOperations
 
 try:
     from django.utils.encoding import smart_text

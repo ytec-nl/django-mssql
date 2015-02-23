@@ -8,13 +8,7 @@ from django.utils.log import getLogger
 from django.utils.six.moves import reduce
 from django.utils.text import force_text
 
-try:
-    from django.db.backends.schema import BaseDatabaseSchemaEditor
-except ImportError:
-    # Stub for class added in Django 1.7
-    class BaseDatabaseSchemaEditor(object):
-        pass
-
+from django.db.backends.base.schema import BaseDatabaseSchemaEditor
 
 logger = getLogger('django.db.backends.schema')
 

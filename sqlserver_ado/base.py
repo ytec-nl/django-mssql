@@ -4,81 +4,23 @@ from __future__ import absolute_import, unicode_literals
 import warnings
 
 from django.core.exceptions import ImproperlyConfigured, ValidationError
-from django.db.backends import BaseDatabaseWrapper, BaseDatabaseFeatures, BaseDatabaseValidation, BaseDatabaseClient
-from django.db.utils import IntegrityError as DjangoIntegrityError, \
-    InterfaceError as DjangoInterfaceError
-from django.utils.functional import cached_property
+from django.db.backends.base.base import BaseDatabaseWrapper
+from django.db.backends.base.client import BaseDatabaseClient
+from django.db.backends.base.introspection import FieldInfo, TableInfo
+from django.db.backends.base.validation import BaseDatabaseValidation
+
+from django.db.utils import IntegrityError as DjangoIntegrityError
 from django.utils import six
 
 from . import dbapi as Database
 
 from .introspection import DatabaseIntrospection
 from .creation import DatabaseCreation
+from .features import DatabaseFeatures
 from .operations import DatabaseOperations
 from .schema import DatabaseSchemaEditor
 
-try:
-    import pytz
-except ImportError:
-    pytz = None
-
 IntegrityError = Database.IntegrityError
-
-
-class DatabaseFeatures(BaseDatabaseFeatures):
-    uses_custom_query_class = True
-    has_bulk_insert = True
-
-    # DateTimeField doesn't support timezones, only DateTimeOffsetField
-    supports_timezones = False
-    supports_sequence_reset = False
-
-    can_return_id_from_insert = True
-
-    supports_regex_backreferencing = False
-
-    supports_tablespaces = True
-
-    # Django < 1.7
-    ignores_nulls_in_unique_constraints = False
-    # Django >= 1.7
-    supports_nullable_unique_constraints = False
-    supports_partially_nullable_unique_constraints = False
-
-    can_introspect_autofield = True
-    can_introspect_small_integer_field = True
-
-    supports_subqueries_in_group_by = False
-
-    allow_sliced_subqueries = False
-
-    uses_savepoints = True
-
-    supports_paramstyle_pyformat = False
-
-    closed_cursor_error_class = DjangoInterfaceError
-
-    # connection_persists_old_columns = True
-
-    requires_literal_defaults = True
-
-    @cached_property
-    def has_zoneinfo_database(self):
-        return pytz is not None
-
-    # Dict of test import path and list of versions on which it fails
-    failing_tests = {
-        # Some tests are known to fail with django-mssql.
-        'aggregation.tests.BaseAggregateTestCase.test_dates_with_aggregation': [(1, 6), (1, 7)],
-        'aggregation_regress.tests.AggregationTests.test_more_more_more': [(1, 6), (1, 7)],
-
-        # MSSQL throws an arithmetic overflow error.
-        'expressions_regress.tests.ExpressionOperatorTests.test_righthand_power': [(1, 7)],
-
-        # The migrations and schema tests also fail massively at this time.
-        'migrations.test_operations.OperationTests.test_alter_field_pk': [(1, 7)],
-
-    }
 
 
 def is_ip_address(value):
@@ -180,6 +122,50 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         "endswith": "LIKE %s ESCAPE '\\'",
         "istartswith": "LIKE %s ESCAPE '\\'",
         "iendswith": "LIKE %s ESCAPE '\\'",
+    }
+
+    # This dictionary maps Field objects to their associated Server Server column
+    # types, as strings. Column-type strings can contain format strings; they'll
+    # be interpolated against the values of Field.__dict__.
+    data_types = {
+        'AutoField':                    'int IDENTITY (1, 1)',
+        'BigAutoField':                 'bigint IDENTITY (1, 1)',
+        'BigIntegerField':              'bigint',
+        'BinaryField':                  'varbinary(max)',
+        'BooleanField':                 'bit',
+        'CharField':                    'nvarchar(%(max_length)s)',
+        'CommaSeparatedIntegerField':   'nvarchar(%(max_length)s)',
+        'DateField':                    'date',
+        'DateTimeField':                'datetime2',
+        'DateTimeOffsetField':          'datetimeoffset',
+        'DecimalField':                 'decimal(%(max_digits)s, %(decimal_places)s)',
+        'FileField':                    'nvarchar(%(max_length)s)',
+        'FilePathField':                'nvarchar(%(max_length)s)',
+        'FloatField':                   'double precision',
+        'GenericIPAddressField':        'nvarchar(39)',
+        'IntegerField':                 'int',
+        'IPAddressField':               'nvarchar(15)',
+        'LegacyDateField':              'datetime',
+        'LegacyDateTimeField':          'datetime',
+        'LegacyTimeField':              'time',
+        'NewDateField':                 'date',
+        'NewDateTimeField':             'datetime2',
+        'NewTimeField':                 'time',
+        'NullBooleanField':             'bit',
+        'OneToOneField':                'int',
+        'PositiveIntegerField':         'int',
+        'PositiveSmallIntegerField':    'smallint',
+        'SlugField':                    'nvarchar(%(max_length)s)',
+        'SmallIntegerField':            'smallint',
+        'TextField':                    'nvarchar(max)',
+        'TimeField':                    'time',
+    }
+
+    # Starting with Django 1.7, check constraints are no longer included in with
+    # the data_types value.
+    data_type_check_constraints = {
+        'PositiveIntegerField': '%(qn_column)s >= 0',
+        'PositiveSmallIntegerField': '%(qn_column)s >= 0',
     }
 
     def __init__(self, *args, **kwargs):
