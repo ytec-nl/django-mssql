@@ -25,7 +25,6 @@ DATABASES = {
             # 'provider': 'SQLOLEDB',
             'provider': 'SQLNCLI11',
             # 'extra_params': 'DataTypeCompatibility=80;MARS Connection=True;',
-            'use_legacy_date_fields': False,
         },
     },
     'other': {
@@ -40,7 +39,6 @@ DATABASES = {
             # 'provider': 'SQLOLEDB',
             'provider': 'SQLNCLI11',
             # 'extra_params': 'DataTypeCompatibility=80;MARS Connection=True;',
-            'use_legacy_date_fields': False,
         },
     }
 }

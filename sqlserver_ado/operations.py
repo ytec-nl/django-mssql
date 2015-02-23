@@ -46,24 +46,14 @@ class DatabaseOperations(BaseDatabaseOperations):
     def __init__(self, *args, **kwargs):
         super(DatabaseOperations, self).__init__(*args, **kwargs)
 
-        if self.connection.use_legacy_date_fields:
-            self.value_to_db_datetime = self._legacy_value_to_db_datetime
-            self.value_to_db_time = self._legacy_value_to_db_time
+        self.value_to_db_datetime = self._new_value_to_db_datetime
+        self.value_to_db_time = self._new_value_to_db_time
 
-            self._convert_values_map.update({
-                'DateField':        self._convert_values_map['LegacyDateField'],
-                'DateTimeField':    self._convert_values_map['LegacyDateTimeField'],
-                'TimeField':        self._convert_values_map['LegacyTimeField'],
-            })
-        else:
-            self.value_to_db_datetime = self._new_value_to_db_datetime
-            self.value_to_db_time = self._new_value_to_db_time
-
-            self._convert_values_map.update({
-                'DateField':        self._convert_values_map['NewDateField'],
-                'DateTimeField':    self._convert_values_map['NewDateTimeField'],
-                'TimeField':        self._convert_values_map['NewTimeField'],
-            })
+        self._convert_values_map.update({
+            'DateField':        self._convert_values_map['NewDateField'],
+            'DateTimeField':    self._convert_values_map['NewDateTimeField'],
+            'TimeField':        self._convert_values_map['NewTimeField'],
+        })
 
         if self.connection.cast_avg_to_float:
             # Need to cast as float to avoid truncating to an int
@@ -385,8 +375,7 @@ class DatabaseOperations(BaseDatabaseOperations):
         `value` is an int, containing the looked-up year.
         """
         first = datetime.datetime(value, 1, 1)
-        ms = 997000 if self.connection.use_legacy_date_fields else 999999
-        second = datetime.datetime(value, 12, 31, 23, 59, 59, ms)
+        second = datetime.datetime(value, 12, 31, 23, 59, 59, 999999)
         if settings.USE_TZ:
             tz = timezone.get_current_timezone()
             first = timezone.make_aware(first, tz)
