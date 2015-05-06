@@ -2,9 +2,10 @@ from __future__ import absolute_import, unicode_literals
 
 import datetime
 import django
+import uuid
 from django.conf import settings
 from django.db.backends.base.operations import BaseDatabaseOperations
-from django.utils.duration import duration_string
+from django.utils.encoding import force_text
 
 try:
     from django.utils.encoding import smart_text
@@ -32,7 +33,6 @@ class DatabaseOperations(BaseDatabaseOperations):
         'PositiveSmallIntegerField': (0, 99999999999),
         'PositiveIntegerField': (0, 99999999999),
     }
-
 
     _convert_values_map = {
         # custom fields
@@ -197,7 +197,6 @@ class DatabaseOperations(BaseDatabaseOperations):
         if value is not None:
             value = force_text(value)
         return value
-
 
     def last_insert_id(self, cursor, table_name, pk_name):
         """

@@ -40,7 +40,16 @@ from django.db.utils import (IntegrityError as DjangoIntegrityError,
 from django.utils import six
 from django.utils import timezone
 
-from .ado_consts import *
+from .ado_consts import (adBigInt, adBinary, adBoolean, adBSTR, adChapter,
+    adChar, adCmdStoredProc, adCmdText, adCurrency, adDate, adDBDate, adDBTime,
+    adDBTimeStamp, adDecimal, adDouble, adError, adFileTime, adFldMayBeNull,
+    adGUID, adInteger, adLongVarBinary, adLongVarChar, adLongVarWChar,
+    adNumeric, ado_error_TIMEOUT, ado_type_name, adoErrors, adParamInput,
+    adParamInputOutput, adParamUnknown, adSingle, adSmallInt, adStateClosed,
+    adTinyInt, adTypeNames, adUnsignedBigInt, adUnsignedInt, adUnsignedSmallInt,
+    adUnsignedTinyInt, adUseServer, adVarBinary, adVarChar, adVarNumeric,
+    adVarWChar, adWChar, adXactAbortRetaining, adXactCommitRetaining,
+    adXactReadCommitted)
 
 # DB API default values
 apilevel = '2.0'
@@ -532,7 +541,9 @@ class Cursor(object):
             _message = ""
             if hasattr(e, 'args'):
                 _message += str(e.args) + "\n"
-            _message += "Command:\n%s\nParameters:\n%s" % (self.cmd.CommandText, format_parameters(self.cmd.Parameters, True))
+            _message += "Command:\n{}\nParameters:\n{}".format(
+                self.cmd.CommandText, format_parameters(self.cmd.Parameters, True)
+            )
             klass = self.connection._suggest_error_class()
             self._raiseCursorError(klass, _message)
 
@@ -664,7 +675,9 @@ class Cursor(object):
         return tuple(zip(*py_columns))
 
     def fetchone(self):
-        """Fetch the next row of a query result set, returning a single sequence, or None when no more data is available.
+        """
+        Fetch the next row of a query result set, returning a single sequence,
+        or None when no more data is available.
 
         An Error (or subclass) exception is raised if the previous call to executeXXX()
         did not produce any result set or no call was issued yet.
@@ -745,12 +758,12 @@ adoBinaryTypes = (adBinary, adLongVarBinary, adVarBinary)
 adoDateTimeTypes = (adDBTime, adDBTimeStamp, adDate, adDBDate)
 
 # Required DBAPI type specifiers
-STRING   = _DbType(adoStringTypes)
-BINARY   = _DbType(adoBinaryTypes)
-NUMBER   = _DbType((adBoolean,) + adoIntegerTypes + adoLongTypes + adoExactNumericTypes + adoApproximateNumericTypes)
+STRING = _DbType(adoStringTypes)
+BINARY = _DbType(adoBinaryTypes)
+NUMBER = _DbType((adBoolean,) + adoIntegerTypes + adoLongTypes + adoExactNumericTypes + adoApproximateNumericTypes)
 DATETIME = _DbType(adoDateTimeTypes)
 # Not very useful for SQL Server, as normal row ids are usually just integers.
-ROWID    = _DbType(adoRowIdTypes)
+ROWID = _DbType(adoRowIdTypes)
 
 
 # Mapping ADO data types to Python objects.

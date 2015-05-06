@@ -6,11 +6,9 @@ import warnings
 from django.core.exceptions import ImproperlyConfigured, ValidationError
 from django.db.backends.base.base import BaseDatabaseWrapper
 from django.db.backends.base.client import BaseDatabaseClient
-from django.db.backends.base.introspection import FieldInfo, TableInfo
 from django.db.backends.base.validation import BaseDatabaseValidation
 
 from django.db.utils import IntegrityError as DjangoIntegrityError
-from django.utils import six
 
 from . import dbapi as Database
 

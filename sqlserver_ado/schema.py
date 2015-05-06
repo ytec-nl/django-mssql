@@ -1,6 +1,6 @@
 import binascii
 import datetime
-from django import VERSION
+import operator
 from django.db.backends.utils import truncate_name
 from django.db.models.fields.related import ManyToManyField
 from django.utils import six
@@ -27,7 +27,8 @@ class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
     sql_delete_column = "ALTER TABLE %(table)s DROP COLUMN %(column)s"
     sql_rename_column = "sp_rename '%(table)s.%(old_column)s', '%(new_column)s', 'COLUMN'"
 
-    sql_create_fk = "ALTER TABLE %(table)s ADD CONSTRAINT %(name)s FOREIGN KEY (%(column)s) REFERENCES %(to_table)s (%(to_column)s)"
+    sql_create_fk = "ALTER TABLE %(table)s ADD CONSTRAINT %(name)s" \
+                    " FOREIGN KEY (%(column)s) REFERENCES %(to_table)s (%(to_column)s)"
 
     sql_delete_index = "DROP INDEX %(name)s ON %(table)s"
 
@@ -58,7 +59,6 @@ BEGIN
     EXEC (@sql)
 END'''
 
-
     # Map provides a concise prefix for constraints of the same type
     constraint_type_prefix_map = {
         'UNIQUE': 'UX_',
@@ -82,7 +82,6 @@ END'''
             suffix,
         )
         return truncate_name(name, length=self.connection.ops.max_name_length(), hash_len=8)
-
 
     def alter_db_table(self, model, old_db_table, new_db_table):
         # sp_rename requires that objects not be quoted because they are string literals
@@ -140,7 +139,6 @@ END'''
         # Reset connection if required
         if self.connection.features.connection_persists_old_columns:
             self.connection.close()
-
 
     def _alter_field(self, model, old_field, new_field, old_type, new_type, old_db_params, new_db_params, strict=False):
         """Actually perform a "physical" (non-ManyToMany) field update."""
