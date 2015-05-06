@@ -9,14 +9,9 @@ Project Goals
 -------------
 
 Django-mssql is a Microsoft SQL Server database backend for Django that is
-meant to be run on Windows. Development of this project is made possible by the
-generosity of `Semiconductor Research Corporation (SRC)`_, which allows me to
-spend time making improvements.
-
-The primary goal of this project is to allow the SRC website to function and
-stay current with newer versions of Django and Microsoft SQL Server. SRC is a
-Windows shop with a large, legacy business database that makes use of many of
-the standard features you'd expect to find in a Microsoft database.
+meant to be run on Windows. Early development of this project was made possible
+by the generosity of `Semiconductor Research Corporation (SRC)`_, which allowed
+me to spend time making improvements during business hours.
 
 .. _`Semiconductor Research Corporation (SRC)`: https://www.src.org
 

@@ -1,8 +1,8 @@
 Changelog
 =========
 
-v1.7 (In Development)
----------------------
+v1.7
+----
 
 - Enabled bulk_insert database feature. :issue:`6` (Thanks João Pedro Francese)
 - Fixed string representation for Decimals in format '2.82E+3'. :issue:`55`

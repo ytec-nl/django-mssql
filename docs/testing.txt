@@ -23,7 +23,7 @@ following command.
 Running Django Test Suite
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-To `run the Django test suite`_, you will need to create a settings file that lists 
+To `run the Django test suite`_, you will need to create a settings file that lists
 'sqlserver_ado' as the :setting:`ENGINE`.
 
 Example settings:
@@ -34,14 +34,14 @@ Example settings:
         'default': {
             'ENGINE': 'sqlserver_ado',
             'NAME': 'django_framework',
-            'HOST': r'localhost\ss2008',
+            'HOST': r'localhost\ss2012',
             'USER': '',
             'PASSWORD': '',
         },
         'other': {
             'ENGINE': 'sqlserver_ado',
             'NAME': 'django_framework_other',
-            'HOST': r'localhost\ss2008',
+            'HOST': r'localhost\ss2012',
             'USER': '',
             'PASSWORD': '',
         }
