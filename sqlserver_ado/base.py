@@ -8,7 +8,6 @@ from django.db.backends import BaseDatabaseWrapper, BaseDatabaseFeatures, BaseDa
 from django.db.utils import IntegrityError as DjangoIntegrityError, \
     InterfaceError as DjangoInterfaceError
 from django.utils.functional import cached_property
-from django.utils import six
 
 from . import dbapi as Database
 
