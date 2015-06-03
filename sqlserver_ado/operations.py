@@ -186,10 +186,9 @@ class DatabaseOperations(BaseDatabaseOperations):
         return value
 
     def convert_uuidfield_value(self, value, expression, connection, context):
-        if isinstance(value, six.string_types):
-            value = uuid.UUID(value.replace('-', ''))
-        if isinstance(value, uuid.UUID):
-            return six.text_type(value)
+        if expression.output_field.get_internal_type() == 'UUIDField':
+            if isinstance(value, six.string_types):
+                value = uuid.UUID(value.replace('-', ''))
         return value
 
     def convert_textfield_value(self, value, expression, connection, context):

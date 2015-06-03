@@ -30,6 +30,7 @@ from __future__ import absolute_import, unicode_literals
 import time
 import datetime
 import re
+import uuid
 
 import decimal
 
@@ -292,6 +293,12 @@ def _configure_parameter(p, value):
     elif isinstance(value, datetime.time):
         p.Type = adBSTR
         s = value.isoformat()
+        p.Value = s
+        p.Size = len(s)
+
+    elif isinstance(value, uuid.UUID):
+        p.Type = adBSTR
+        s = str(value)
         p.Value = s
         p.Size = len(s)
 
@@ -835,6 +842,7 @@ _map_to_adotype = {
     datetime.date: adDate,
     datetime.datetime: adDate,
     datetime.time: adDate,
+    uuid.UUID: adGUID,
 }
 
 if six.PY3:
