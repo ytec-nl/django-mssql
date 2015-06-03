@@ -45,15 +45,6 @@ class DatabaseOperations(BaseDatabaseOperations):
         'NewTimeField':         mssql_fields.TimeField(),
     }
 
-    # map of sql_function: (new sql_function, new sql_template )
-    # If sql_template is None, it will not be overridden.
-    _sql_function_overrides = {
-        'STDDEV_SAMP': ('STDEV', None),
-        'STDDEV_POP': ('STDEVP', None),
-        'VAR_SAMP': ('VAR', None),
-        'VAR_POP': ('VARP', None),
-    }
-
     def __init__(self, *args, **kwargs):
         super(DatabaseOperations, self).__init__(*args, **kwargs)
 
@@ -65,10 +56,6 @@ class DatabaseOperations(BaseDatabaseOperations):
             'DateTimeField':    self._convert_values_map['NewDateTimeField'],
             'TimeField':        self._convert_values_map['NewTimeField'],
         })
-
-        if self.connection.cast_avg_to_float:
-            # Need to cast as float to avoid truncating to an int
-            self._sql_function_overrides['AVG'] = ('AVG', '%(function)s(CAST(%(field)s AS FLOAT))')
 
     def cache_key_culling_sql(self):
         return """
@@ -175,10 +162,11 @@ class DatabaseOperations(BaseDatabaseOperations):
         return value
 
     def convert_datefield_value(self, value, expression, connection, context):
-        if isinstance(value, six.text_type):
-            value = self._convert_values_map['DateField'].to_python(value)
-        elif isinstance(value, datetime.datetime):
-            return value.date()
+        if expression.output_field.get_internal_type() == 'DateField':
+            if isinstance(value, six.text_type):
+                value = self._convert_values_map['DateField'].to_python(value)
+            elif isinstance(value, datetime.datetime):
+                return value.date()
         return value
 
     def convert_timefield_value(self, value, expression, connection, context):
@@ -189,8 +177,10 @@ class DatabaseOperations(BaseDatabaseOperations):
         return value
 
     def convert_uuidfield_value(self, value, expression, connection, context):
-        if value is not None:
-            value = uuid.UUID(value)
+        if isinstance(value, six.string_types):
+            value = uuid.UUID(value.replace('-', ''))
+        if isinstance(value, uuid.UUID):
+            return six.text_type(value)
         return value
 
     def convert_textfield_value(self, value, expression, connection, context):
