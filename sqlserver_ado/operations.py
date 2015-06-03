@@ -148,8 +148,10 @@ class DatabaseOperations(BaseDatabaseOperations):
             converters.append(self.convert_textfield_value)
         elif internal_type in ['BooleanField', 'NullBooleanField']:
             converters.append(self.convert_booleanfield_value)
-        elif internal_type in 'DateField':
+        elif internal_type == 'DateField':
             converters.append(self.convert_datefield_value)
+        elif internal_type == 'DateTimeField':
+            converters.append(self.convert_datetimefield_value)
         elif internal_type == 'TimeField':
             converters.append(self.convert_timefield_value)
         elif internal_type == 'UUIDField':
@@ -169,11 +171,18 @@ class DatabaseOperations(BaseDatabaseOperations):
                 return value.date()
         return value
 
+    def convert_datetimefield_value(self, value, expression, connection, context):
+        if expression.output_field.get_internal_type() == 'DateTimeField':
+            if isinstance(value, six.text_type):
+                value = self._convert_values_map['DateTimeField'].to_python(value)
+        return value
+
     def convert_timefield_value(self, value, expression, connection, context):
-        if isinstance(value, six.text_type):
-            value = self._convert_values_map['TimeField'].to_python(value)
-        elif isinstance(value, datetime.datetime):
-            value = value.time()
+        if expression.output_field.get_internal_type() == 'TimeField':
+            if isinstance(value, six.text_type):
+                value = self._convert_values_map['TimeField'].to_python(value)
+            if isinstance(value, datetime.datetime):
+                value = value.time()
         return value
 
     def convert_uuidfield_value(self, value, expression, connection, context):
