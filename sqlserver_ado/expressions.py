@@ -47,6 +47,9 @@ setattr(Variance, 'as_microsoft', variance_as_microsoft)
 
 # Expressions
 
+
+# Functions
+
 def length_as_microsoft(self, compiler, connection):
     """
     T-SQL LEN()

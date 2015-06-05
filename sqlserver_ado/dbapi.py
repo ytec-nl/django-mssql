@@ -635,6 +635,10 @@ class Cursor(object):
         if parameter_replacements:
             operation = operation % tuple(parameter_replacements)
 
+        # Hack for modulo operator. Replacement is intentionally very specific
+        # to avoid corrupting data from inlined SQL values.
+        operation = operation.replace(' %% 1000000)', ' % 1000000)')
+
         self.cmd.CommandText = operation
         self._execute_command()
 
