@@ -509,7 +509,8 @@ class DatabaseOperations(BaseDatabaseOperations):
             microseconds = timedelta.microseconds * sign
         if isinstance(timedelta, six.text_type):
             seconds = "({} / 1000000)".format(timedelta)
-            microseconds = "({} % 1000000)".format(timedelta)
+            # Need to fix %% escaping down through dbapi
+            microseconds = "({} %% 1000000)".format(timedelta)
             if sign == -1:
                 microseconds = "(-1 * {})".format(microseconds)
         out = sql

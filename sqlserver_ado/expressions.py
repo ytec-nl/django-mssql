@@ -3,7 +3,14 @@ This file contains Microsoft SQL Server specific aggregates and overrides for
 the default Django aggregates.
 """
 
+import sys
+
 from django.db.models.aggregates import Avg, StdDev, Variance
+from django.db.models.expressions import Value
+from django.db.models.functions import Length, Substr
+
+
+# Aggregates
 
 def avg_as_microsoft(self, compiler, connection):
     """
@@ -36,3 +43,26 @@ def variance_as_microsoft(self, compiler, connection):
         function = 'VARP'
     return self.as_sql(compiler, connection, function=function)
 setattr(Variance, 'as_microsoft', variance_as_microsoft)
+
+
+# Expressions
+
+def length_as_microsoft(self, compiler, connection):
+    """
+    T-SQL LEN()
+    """
+    self.function = 'LEN'
+    return self.as_sql(compiler, connection)
+setattr(Length, 'as_microsoft', length_as_microsoft)
+
+
+def substring_as_microsoft(self, compiler, connection):
+    """
+    T-SQL SUBSTRING() requires 3 arguments. length is never implied.
+    """
+    if len(self.source_expressions) == 2:
+        self.source_expressions.append(Value(sys.maxint))
+    return self.as_sql(compiler, connection)
+setattr(Substr, 'as_microsoft', substring_as_microsoft)
+
+
