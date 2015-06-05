@@ -4,6 +4,7 @@ import datetime
 import django
 import uuid
 from django.conf import settings
+from django.db import utils
 from django.db.backends.base.operations import BaseDatabaseOperations
 from django.utils.encoding import force_text
 
@@ -496,6 +497,8 @@ class DatabaseOperations(BaseDatabaseOperations):
         return super(DatabaseOperations, self).combine_expression(connector, sub_expressions)
 
     def combine_duration_expression(self, connector, sub_expressions):
+        if connector not in ['+', '-']:
+            raise utils.DatabaseError('Invalid connector for timedelta: %s.' % connector)
         # print 'combine_duration_expression', connector, [repr(x) for x in sub_expressions]
         seconds = False
         microseconds = False
