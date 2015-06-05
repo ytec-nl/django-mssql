@@ -635,9 +635,10 @@ class Cursor(object):
         if parameter_replacements:
             operation = operation % tuple(parameter_replacements)
 
-        # Hack for modulo operator. Replacement is intentionally very specific
-        # to avoid corrupting data from inlined SQL values.
-        operation = operation.replace(' %% 1000000)', ' % 1000000)')
+        # Django will pass down many '%%' values. Need to convert these back to
+        # a single '%'. This will break raw SQL that includes '%%' as part of an
+        # inlined value. Those queries should use params.
+        operation = operation.replace('%%', '%')
 
         self.cmd.CommandText = operation
         self._execute_command()

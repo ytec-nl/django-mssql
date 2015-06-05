@@ -130,14 +130,14 @@ class DatabaseWrapper(BaseDatabaseWrapper):
     #
     # Note: we use str.format() here for readability as '%' is used as a wildcard for
     # the LIKE operator.
-    pattern_esc = r"REPLACE(REPLACE(REPLACE({}, '\\', '\\\\'), '%%', '\%%'), '_', '\_')"
+    pattern_esc = r"REPLACE(REPLACE(REPLACE({}, '\', '\\'), '%%', '\%%'), '_', '\_')"
     pattern_ops = {
-        'contains': "LIKE CONCAT('%%', {}, '%%')",
-        'icontains': "LIKE CONCAT('%%', {}, '%%')",
-        'startswith': "LIKE CONCAT({}, '%%')",
-        'istartswith': "LIKE CONCAT({}, '%%')",
-        'endswith': "LIKE CONCAT('%%', {})",
-        'iendswith': "LIKE CONCAT('%%', {})",
+        'contains': r"LIKE CONCAT('%%', {}, '%%') ESCAPE '\'",
+        'icontains': r"LIKE CONCAT('%%', {}, '%%') ESCAPE '\'",
+        'startswith': r"LIKE CONCAT({}, '%%') ESCAPE '\'",
+        'istartswith': r"LIKE CONCAT({}, '%%') ESCAPE '\'",
+        'endswith': r"LIKE CONCAT('%%', {}) ESCAPE '\'",
+        'iendswith': r"LIKE CONCAT('%%', {}) ESCAPE '\'",
     }
 
     # This dictionary maps Field objects to their associated Server Server column
