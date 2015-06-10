@@ -18,7 +18,7 @@ def as_microsoft(expression):
     def dec(func):
         setattr(expression, 'as_microsoft', func)
         return func
-    return wrapper
+    return dec
 
 
 # Aggregates
