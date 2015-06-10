@@ -2,9 +2,11 @@ from __future__ import absolute_import, unicode_literals
 
 import datetime
 import django
+import uuid
 from django.conf import settings
+from django.db import utils
 from django.db.backends.base.operations import BaseDatabaseOperations
-from django.utils.duration import duration_string
+from django.utils.encoding import force_text
 
 try:
     from django.utils.encoding import smart_text
@@ -33,7 +35,6 @@ class DatabaseOperations(BaseDatabaseOperations):
         'PositiveIntegerField': (0, 99999999999),
     }
 
-
     _convert_values_map = {
         # custom fields
         'DateTimeOffsetField':  mssql_fields.DateTimeOffsetField(),
@@ -43,15 +44,6 @@ class DatabaseOperations(BaseDatabaseOperations):
         'NewDateField':         mssql_fields.DateField(),
         'NewDateTimeField':     mssql_fields.DateTimeField(),
         'NewTimeField':         mssql_fields.TimeField(),
-    }
-
-    # map of sql_function: (new sql_function, new sql_template )
-    # If sql_template is None, it will not be overridden.
-    _sql_function_overrides = {
-        'STDDEV_SAMP': ('STDEV', None),
-        'STDDEV_POP': ('STDEVP', None),
-        'VAR_SAMP': ('VAR', None),
-        'VAR_POP': ('VARP', None),
     }
 
     def __init__(self, *args, **kwargs):
@@ -65,10 +57,6 @@ class DatabaseOperations(BaseDatabaseOperations):
             'DateTimeField':    self._convert_values_map['NewDateTimeField'],
             'TimeField':        self._convert_values_map['NewTimeField'],
         })
-
-        if self.connection.cast_avg_to_float:
-            # Need to cast as float to avoid truncating to an int
-            self._sql_function_overrides['AVG'] = ('AVG', '%(function)s(CAST(%(field)s AS FLOAT))')
 
     def cache_key_culling_sql(self):
         return """
@@ -161,8 +149,10 @@ class DatabaseOperations(BaseDatabaseOperations):
             converters.append(self.convert_textfield_value)
         elif internal_type in ['BooleanField', 'NullBooleanField']:
             converters.append(self.convert_booleanfield_value)
-        elif internal_type in 'DateField':
+        elif internal_type == 'DateField':
             converters.append(self.convert_datefield_value)
+        elif internal_type == 'DateTimeField':
+            converters.append(self.convert_datetimefield_value)
         elif internal_type == 'TimeField':
             converters.append(self.convert_timefield_value)
         elif internal_type == 'UUIDField':
@@ -175,29 +165,37 @@ class DatabaseOperations(BaseDatabaseOperations):
         return value
 
     def convert_datefield_value(self, value, expression, connection, context):
-        if isinstance(value, six.text_type):
-            value = self._convert_values_map['DateField'].to_python(value)
-        elif isinstance(value, datetime.datetime):
-            return value.date()
+        if expression.output_field.get_internal_type() == 'DateField':
+            if isinstance(value, six.text_type):
+                value = self._convert_values_map['DateField'].to_python(value)
+            elif isinstance(value, datetime.datetime):
+                return value.date()
+        return value
+
+    def convert_datetimefield_value(self, value, expression, connection, context):
+        if expression.output_field.get_internal_type() == 'DateTimeField':
+            if isinstance(value, six.text_type):
+                value = self._convert_values_map['DateTimeField'].to_python(value)
         return value
 
     def convert_timefield_value(self, value, expression, connection, context):
-        if isinstance(value, six.text_type):
-            value = self._convert_values_map['TimeField'].to_python(value)
-        elif isinstance(value, datetime.datetime):
-            value = value.time()
+        if expression.output_field.get_internal_type() == 'TimeField':
+            if isinstance(value, six.text_type):
+                value = self._convert_values_map['TimeField'].to_python(value)
+            if isinstance(value, datetime.datetime):
+                value = value.time()
         return value
 
     def convert_uuidfield_value(self, value, expression, connection, context):
-        if value is not None:
-            value = uuid.UUID(value)
+        if expression.output_field.get_internal_type() == 'UUIDField':
+            if isinstance(value, six.string_types):
+                value = uuid.UUID(value.replace('-', ''))
         return value
 
     def convert_textfield_value(self, value, expression, connection, context):
         if value is not None:
             value = force_text(value)
         return value
-
 
     def last_insert_id(self, cursor, table_name, pk_name):
         """
@@ -499,6 +497,8 @@ class DatabaseOperations(BaseDatabaseOperations):
         return super(DatabaseOperations, self).combine_expression(connector, sub_expressions)
 
     def combine_duration_expression(self, connector, sub_expressions):
+        if connector not in ['+', '-']:
+            raise utils.DatabaseError('Invalid connector for timedelta: %s.' % connector)
         # print 'combine_duration_expression', connector, [repr(x) for x in sub_expressions]
         seconds = False
         microseconds = False
@@ -512,7 +512,8 @@ class DatabaseOperations(BaseDatabaseOperations):
             microseconds = timedelta.microseconds * sign
         if isinstance(timedelta, six.text_type):
             seconds = "({} / 1000000)".format(timedelta)
-            microseconds = "({} % 1000000)".format(timedelta)
+            # Need to fix %% escaping down through dbapi
+            microseconds = "({} %% 1000000)".format(timedelta)
             if sign == -1:
                 microseconds = "(-1 * {})".format(microseconds)
         out = sql

@@ -56,6 +56,8 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     failing_tests = {
         # Some tests are known to fail with django-mssql.
         'aggregation.tests.BaseAggregateTestCase.test_dates_with_aggregation': [(1, 6), (1, 7)],
+        'aggregation.tests.ComplexAggregateTestCase.test_expression_on_aggregation': [(1, 8)],
+
         'aggregation_regress.tests.AggregationTests.test_more_more_more': [(1, 6), (1, 7)],
 
         # MSSQL throws an arithmetic overflow error.

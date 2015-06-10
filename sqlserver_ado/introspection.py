@@ -1,19 +1,10 @@
 from __future__ import absolute_import, unicode_literals
 
 from django.db.backends.base.introspection import (
-    BaseDatabaseIntrospection, FieldInfo, TableInfo,
+    BaseDatabaseIntrospection, FieldInfo, TableInfo
 )
 
 from . import ado_consts
-
-try:
-    # Added with Django 1.7
-    from django.db.backends import FileInfo
-except ImportError:
-    from collections import namedtuple
-    # Structure returned by the DB-API cursor.description interface (PEP 249)
-    FieldInfo = namedtuple('FieldInfo',
-        'name type_code display_size internal_size precision scale null_ok')
 
 AUTO_FIELD_MARKER = -1000
 BIG_AUTO_FIELD_MARKER = -1001
@@ -188,7 +179,7 @@ where
         Backends can override this to return a list of (column_name, referenced_table_name,
         referenced_column_name) for all key columns in given table.
         """
-        source_field_dict = self._name_to_index(cursor, table_name)
+        # source_field_dict = self._name_to_index(cursor, table_name)
 
         sql = """
 select
@@ -339,8 +330,10 @@ where
         for id, name, ref_table_name in list(cursor.fetchall()):
             sql = """
             select cc.name, rc.name from sys.foreign_key_columns fkc
-            inner join sys.columns rc on fkc.referenced_object_id = rc.object_id and fkc.referenced_column_id = rc.column_id
-            inner join sys.columns cc on fkc.parent_object_id = cc.object_id and fkc.parent_column_id = cc.column_id
+            inner join sys.columns rc on
+                fkc.referenced_object_id = rc.object_id and fkc.referenced_column_id = rc.column_id
+            inner join sys.columns cc on
+                fkc.parent_object_id = cc.object_id and fkc.parent_column_id = cc.column_id
             where fkc.constraint_object_id = %s
             """
             cursor.execute(sql, [id])

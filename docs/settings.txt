@@ -7,12 +7,12 @@ Settings
 DATABASES
 ---------
 
-Please see the `Django documentation on DATABASES settings`_ for a complete 
+Please see the `Django documentation on DATABASES settings`_ for a complete
 list of available settings. `Django-mssql` builds upon these settings.
- 
+
  .. _`Django documentation on DATABASES settings`: https://docs.djangoproject.com/en/1.4/ref/settings/#databases
- 
- 
+
+
 This is an example of a typical configuration::
 
     DATABASES = {
@@ -40,7 +40,7 @@ HOST
 
 Default: ``'127.0.0.1'``
 
-This defines the Microsoft SQL Server to establish a connection. This value 
+This defines the Microsoft SQL Server to establish a connection. This value
 can be a hostname or IP address.
 
 .. setting:: PORT
@@ -50,7 +50,7 @@ PORT
 
 Default: ``''`` (Empty string)
 
-This defines the network port to use when connecting to the server. If not 
+This defines the network port to use when connecting to the server. If not
 defined, the standard Microsoft SQL Server port will be used.
 
 .. setting:: NAME
@@ -77,12 +77,12 @@ PASSWORD
 
 Default: ``''`` (Empty string)
 
-When a `USER`_ is defined, this field should be the plain text password 
+When a `USER`_ is defined, this field should be the plain text password
 to use when authenticating.
 
 .. note::
-    Any user or service that can read the configuration file can 
-    will be able to see the plain-text password. Trusted connections are 
+    Any user or service that can read the configuration file can
+    will be able to see the plain-text password. Trusted connections are
     recommended.
 
 .. setting:: TEST_CREATE
@@ -103,7 +103,7 @@ application or cannot be easily created by Django's syncdb.
     DATABASES = {
         'default': {
             'NAME': 'test_legacy_database',
-            'HOST': r'servername\ss2008',
+            'HOST': r'servername\ss2012',
             'TEST_NAME': 'test_legacy_database',
             'TEST_CREATE': False,
         }
@@ -130,7 +130,7 @@ use_mars
 
 Default: ``True``
 
-Set to ``False`` to disable `Multiple Active Recordsets`. It is not recommended 
+Set to ``False`` to disable `Multiple Active Recordsets`. It is not recommended
 to disable MARS. Without MARS enabled, you will probably end up seeing the error
 "Cannot create new connection because in manual or distributed transaction mode".
 
@@ -158,11 +158,11 @@ provider
 
 Default: ``'SQLCLI10'``
 
-The SQL provider to use when connecting to the database. If this doesn't work, 
+The SQL provider to use when connecting to the database. If this doesn't work,
 try 'SQLCLI11' or 'SQLOLEDB'.
 
 .. note::
-    ``use_mars = True`` doesn't always work properly with 'SQLOLEDB' and can result in the error 
+    ``use_mars = True`` doesn't always work properly with 'SQLOLEDB' and can result in the error
     "Cannot create new connection because in manual or distributed transaction mode."
     if you try to filter a queryset with another queryset.
 
@@ -173,7 +173,7 @@ disable_avg_cast
 
 Default: ``False``
 
-This backend will automatically ``CAST`` fields used by the `AVG function`_ 
+This backend will automatically ``CAST`` fields used by the `AVG function`_
 as ``FLOAT`` to match the behavior of the core database backends. Set this
 to ``True`` if you need SQL server to retain the datatype of fields used
 with ``AVG``.
@@ -194,9 +194,9 @@ use_legacy_date_fields
 
 Default: ``False``
 
-This setting alters which data types are used for the ``DateField``, 
-``DateTimeField``, and ``TimeField`` fields. When ``True``, the fields will all 
-use the ``datetime`` data type. When ``False``, they will use ``date``, 
+This setting alters which data types are used for the ``DateField``,
+``DateTimeField``, and ``TimeField`` fields. When ``True``, the fields will all
+use the ``datetime`` data type. When ``False``, they will use ``date``,
 ``datetime``, and ``time`` data types.
 
 .. note::

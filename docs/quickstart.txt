@@ -20,7 +20,7 @@ Installation
             'default': {
                 'NAME': 'my_database',
                 'ENGINE': 'sqlserver_ado',
-                'HOST': 'dbserver\\ss2008',
+                'HOST': 'dbserver\\ss2012',
                 'USER': '',
                 'PASSWORD': '',
             }
@@ -53,18 +53,17 @@ Dependencies
 Django
 ^^^^^^
 
-Django_ 1.6 and 1.7 are supported by the current release.
+Django_ 1.7 is supported by the current release.
 
-Support for Django 1.5 requires `django-mssql v1.5`_
+Support for Django 1.6 requires `django-mssql v1.6`_
 
 .. _Django: http://www.djangoproject.com/
-.. _`django-mssql v1.5`: https://pypi.python.org/pypi/django-mssql/1.5
+.. _`django-mssql v1.6`: https://pypi.python.org/pypi/django-mssql
 
 Python
 ^^^^^^
 
-This backend requires Python 2.6 or newer. Python 3.3+ support has been added
-and should be considered experimental.
+This backend requires Python 2.7, 3.4.
 
 PyWin32
 ^^^^^^^
