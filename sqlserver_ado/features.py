@@ -55,15 +55,9 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     # Dict of test import path and list of versions on which it fails
     failing_tests = {
         # Some tests are known to fail with django-mssql.
-        'aggregation.tests.BaseAggregateTestCase.test_dates_with_aggregation': [(1, 6), (1, 7)],
+        'aggregation.tests.BaseAggregateTestCase.test_decimal_max_digits_has_no_effect': [(1, 8)],
         'aggregation.tests.ComplexAggregateTestCase.test_expression_on_aggregation': [(1, 8)],
 
-        'aggregation_regress.tests.AggregationTests.test_more_more_more': [(1, 6), (1, 7)],
-
         # MSSQL throws an arithmetic overflow error.
-        'expressions_regress.tests.ExpressionOperatorTests.test_righthand_power': [(1, 7)],
-
-        # The migrations and schema tests also fail massively at this time.
-        'migrations.test_operations.OperationTests.test_alter_field_pk': [(1, 7)],
-
+        'expressions_regress.tests.ExpressionOperatorTests.test_righthand_power': [(1, 8)],
     }
