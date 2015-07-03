@@ -106,6 +106,7 @@ class DatabaseWrapper(BaseDatabaseWrapper):
     vendor = 'microsoft'
 
     Database = Database
+    SchemaEditorClass = DatabaseSchemaEditor
 
     operators = {
         "exact": "= %s",
@@ -346,6 +347,3 @@ class DatabaseWrapper(BaseDatabaseWrapper):
             return False
         else:
             return True
-
-    def schema_editor(self, *args, **kwargs):
-        return DatabaseSchemaEditor(self, *args, **kwargs)
