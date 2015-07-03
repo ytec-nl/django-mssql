@@ -59,8 +59,11 @@ class DatabaseFeatures(BaseDatabaseFeatures):
         'aggregation.tests.ComplexAggregateTestCase.test_expression_on_aggregation': [(1, 8)],
 
         # MSSQL throws an arithmetic overflow error.
-        'expressions_regress.tests.ExpressionOperatorTests.test_righthand_power': [(1, 8)],
+        'expressions.tests.ExpressionOperatorTests.test_righthand_power': [(1, 8)],
 
         # MSSQL supports more than the long name length of 71 that is asserted
         'invalid_models_tests.tests.FieldNamesTests.test_M2M_long_column_name': [(1, 8)],
+
+        # MSSQL doesn't allow changing a field in to an IDENTITY field.
+        'schema.tests.SchemaTests.test_alter_int_pk_to_autofield_pk': [(1, 8)],
     }
