@@ -34,6 +34,8 @@ import uuid
 
 import decimal
 
+from pprint import pformat
+
 from django.conf import settings
 from django.db.utils import (IntegrityError as DjangoIntegrityError,
     DatabaseError as DjangoDatabaseError)
@@ -236,7 +238,8 @@ def format_parameters(parameters, show_value=False):
             for p in parameters
         ]
 
-    return '[' + ', '.join(desc) + ']'
+    return pformat(desc)
+    # return '[' + ', '.join(desc) + ']'
 
 
 def format_decimal_as_string(value):
