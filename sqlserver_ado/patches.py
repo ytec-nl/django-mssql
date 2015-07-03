@@ -6,8 +6,11 @@ if sys.version_info >= (2, 7):
     # in Python 2.7
     from django.db.backends.utils import CursorWrapper
     if not hasattr(CursorWrapper, '__enter__'):
-        enter = lambda self: self
-        exit = lambda self, type, value, traceback: self.cursor.__exit__(type, value, traceback)
+        def enter(self):
+            return self
+
+        def exit(self, type, value, traceback):
+            return self.cursor.__exit__(type, value, traceback)
 
         CursorWrapper.__enter__ = enter
         CursorWrapper.__exit__ = exit
