@@ -26,15 +26,6 @@ from . import fields as mssql_fields
 class DatabaseOperations(BaseDatabaseOperations):
     compiler_module = "sqlserver_ado.compiler"
 
-    # Oracle uses NUMBER(11) and NUMBER(19) for integer fields.
-    integer_field_ranges = {
-        'SmallIntegerField': (-32768, 32767),
-        'IntegerField': (-2147483648, 21474),
-        'BigIntegerField': (-9999999999999999999, 9999999999999999999),
-        'PositiveSmallIntegerField': (0, 99999999999),
-        'PositiveIntegerField': (0, 99999999999),
-    }
-
     _convert_values_map = {
         # custom fields
         'DateTimeOffsetField':  mssql_fields.DateTimeOffsetField(),
