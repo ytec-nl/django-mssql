@@ -31,6 +31,9 @@ _re_data_type_terminator = re.compile(
 )
 
 
+_re_constant = re.compile(r'\s*\(?\s*\d+\s*\)?\s*')
+
+
 class SQLCompiler(compiler.SQLCompiler):
     def resolve_columns(self, row, fields=()):
         values = []
@@ -91,6 +94,12 @@ class SQLCompiler(compiler.SQLCompiler):
                 return (None, [])
             return (None, [], [])
         return super(SQLCompiler, self).get_ordering()
+
+    def collapse_group_by(self, expressions, having):
+        expressions = super(SQLCompiler, self).collapse_group_by(expressions, having)
+        # MSSQL doesn't support having constants in the GROUP BY clause. Django
+        # does this for exists() queries that have GROUP BY.
+        return [x for x in expressions if not _re_constant.match(getattr(x, 'sql', ''))]
 
 
 class SQLInsertCompiler(compiler.SQLInsertCompiler, SQLCompiler):
