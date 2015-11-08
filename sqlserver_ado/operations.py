@@ -1,26 +1,21 @@
 from __future__ import absolute_import, unicode_literals
 
 import datetime
-import django
 import uuid
+
+import django
 from django.conf import settings
 from django.db import utils
 from django.db.backends.base.operations import BaseDatabaseOperations
-from django.utils.encoding import force_text
+from django.utils import six, timezone
+from django.utils.encoding import force_text, smart_text
 
-try:
-    from django.utils.encoding import smart_text
-except:
-    from django.utils.encoding import smart_unicode as smart_text
+from . import fields as mssql_fields
 
 try:
     import pytz
 except ImportError:
     pytz = None
-
-from django.utils import six, timezone
-
-from . import fields as mssql_fields
 
 
 class DatabaseOperations(BaseDatabaseOperations):
@@ -203,16 +198,8 @@ class DatabaseOperations(BaseDatabaseOperations):
         MSSQL implements the RETURNING SQL standard extension differently from
         the core database backends and this function is essentially a no-op.
         The SQL is altered in the SQLInsertCompiler to add the necessary OUTPUT
-        clause.
+        clause. Return None, None to bypass the core's SQL mangling.
         """
-        if django.VERSION[0] == 1 and django.VERSION[1] < 5:
-            # This gets around inflexibility of SQLInsertCompiler's need to
-            # append an SQL fragment at the end of the insert query, which also must
-            # expect the full quoted table and column name.
-            return ('/* %s */', '')
-
-        # Django #19096 - As of Django 1.5, can return None, None to bypass the
-        # core's SQL mangling.
         return (None, None)
 
     def no_limit_value(self):

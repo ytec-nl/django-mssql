@@ -1,15 +1,9 @@
 from __future__ import absolute_import, unicode_literals
 
-try:
-    from itertools import zip_longest
-except ImportError:
-    from itertools import izip_longest as zip_longest
-
-import django
-from django.db.models.sql import compiler
 import re
 
-NEEDS_AGGREGATES_FIX = django.VERSION[:2] < (1, 7)
+from django.db.models.sql import compiler
+from django.utils.six.moves import zip_longest
 
 # query_class returns the base class to use for Django queries.
 # The custom 'SqlServerQuery' class derives from django.db.models.sql.query.Query
@@ -86,8 +80,6 @@ class SQLCompiler(compiler.SQLCompiler):
         # derived tables, subqueries, and common table expressions,
         # unless TOP or FOR XML is also specified.
         if getattr(self.query, '_mssql_ordering_not_allowed', False):
-            if django.VERSION[1] == 1 and django.VERSION[2] < 6:
-                return (None, [])
             return (None, [], [])
         return super(SQLCompiler, self).get_ordering()
 
@@ -113,12 +105,7 @@ class SQLInsertCompiler(compiler.SQLInsertCompiler, SQLCompiler):
             self.return_id = False
 
         result = super(SQLInsertCompiler, self).as_sql(*args, **kwargs)
-        if isinstance(result, list):
-            # Django 1.4 wraps return in list
-            return [self._fix_insert(x[0], x[1]) for x in result]
-
-        sql, params = result
-        return self._fix_insert(sql, params)
+        return [self._fix_insert(x[0], x[1]) for x in result]
 
     def _fix_insert(self, sql, params):
         """

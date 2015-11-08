@@ -1,31 +1,18 @@
 from __future__ import absolute_import, unicode_literals
 
-from contextlib import contextmanager
 import sys
 import time
+from unittest import expectedFailure
 
 import django
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.db import connections
+from django.db.backends.base.base import NO_DB_ALIAS
 from django.db.backends.base.creation import BaseDatabaseCreation
 from django.utils import six
 from django.utils.functional import cached_property
-
-from unittest import expectedFailure
-
-try:
-    from django.utils.module_loading import import_string   # Django >= 1.7
-except ImportError:
-    from django.utils.module_loading import import_by_path as import_string
-
-
-IS_DJANGO_16 = django.VERSION[0] == 1 and django.VERSION[1] == 6
-
-try:
-    from django.db.backends.creation import NO_DB_ALIAS
-except ImportError:
-    NO_DB_ALIAS = '__no_db__'
+from django.utils.module_loading import import_string
 
 
 class DatabaseCreation(BaseDatabaseCreation):
@@ -40,7 +27,6 @@ class DatabaseCreation(BaseDatabaseCreation):
             alias=NO_DB_ALIAS,
             allow_thread_sharing=False)
         return nodb_connection
-    # Override on 1.7 and add to 1.6
     _nodb_connection = cached_property(_create_master_connection)
 
     def mark_tests_as_expected_failure(self, failing_tests):
@@ -77,8 +63,7 @@ class DatabaseCreation(BaseDatabaseCreation):
         """
         if self._test_database_create(settings):
             try:
-                with use_master_connection(self):
-                    test_database_name = super(DatabaseCreation, self)._create_test_db(verbosity, autoclobber)
+                test_database_name = super(DatabaseCreation, self)._create_test_db(verbosity, autoclobber)
             except Exception as e:
                 if 'Choose a different database name.' in str(e):
                     six.print_('Database "%s" could not be created because it already exists.' % test_database_name)
@@ -187,22 +172,3 @@ EXTERNAL NAME regex_clr.UserDefinedFunctions.REGEXP_LIKE
         with open(os.path.join(os.path.dirname(__file__), 'regex_clr.dll'), 'rb') as f:
             assembly = binascii.hexlify(f.read()).decode('ascii')
         return assembly
-
-
-@contextmanager
-def use_master_connection(creation):
-    if IS_DJANGO_16:
-        test_db_name = creation._get_test_db_name()
-        # swap in a master connection to allow add/drop of non-existant database
-        old_wrapper = creation.connection
-        try:
-            creation.connection = creation._create_master_connection()
-            # set the TEST_NAME for master connection so that it creates the
-            # right one.
-            creation.connection.settings_dict['TEST_NAME'] = test_db_name
-            yield
-        finally:
-            creation.connection = old_wrapper
-    else:
-        # Django 1.7 uses the master connection already
-        yield

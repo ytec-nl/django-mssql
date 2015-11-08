@@ -23,9 +23,6 @@ class DatabaseFeatures(BaseDatabaseFeatures):
 
     supports_tablespaces = True
 
-    # Django < 1.7
-    ignores_nulls_in_unique_constraints = False
-    # Django >= 1.7
     supports_nullable_unique_constraints = False
     supports_partially_nullable_unique_constraints = False
 
@@ -41,8 +38,6 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     supports_paramstyle_pyformat = False
 
     closed_cursor_error_class = DjangoInterfaceError
-
-    # connection_persists_old_columns = True
 
     requires_literal_defaults = True
 

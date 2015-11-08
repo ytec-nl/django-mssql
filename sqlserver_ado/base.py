@@ -4,6 +4,7 @@ from __future__ import absolute_import, unicode_literals
 import warnings
 
 from django.core.exceptions import ImproperlyConfigured, ValidationError
+from django.core.validators import validate_ipv46_address as ip_validator
 from django.db.backends.base.base import BaseDatabaseWrapper
 from django.db.backends.base.client import BaseDatabaseClient
 from django.db.backends.base.validation import BaseDatabaseValidation
@@ -25,9 +26,6 @@ def is_ip_address(value):
     """
     Returns True if value is a valid IP address, otherwise False.
     """
-    # IPv6 added with Django 1.4
-    from django.core.validators import validate_ipv46_address as ip_validator
-
     try:
         ip_validator(value)
     except ValidationError:
@@ -96,9 +94,6 @@ def make_connection_string(settings):
     return ";".join(parts)
 
 
-VERSION_SQL2000 = 8
-VERSION_SQL2005 = 9
-VERSION_SQL2008 = 10
 VERSION_SQL2012 = 11
 
 
@@ -181,8 +176,6 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         'UUIDField':                    'uniqueidentifier',
     }
 
-    # Starting with Django 1.7, check constraints are no longer included in with
-    # the data_types value.
     data_type_check_constraints = {
         'PositiveIntegerField': '%(qn_column)s >= 0',
         'PositiveSmallIntegerField': '%(qn_column)s >= 0',
@@ -328,12 +321,8 @@ class DatabaseWrapper(BaseDatabaseWrapper):
     # # implicitly committed with the transaction.
     # # Ignore them.
     def _savepoint_commit(self, sid):
-        try:
-            queries_log = self.queries_log   # Django 1.8+
-        except AttributeError:
-            queries_log = self.queries       # Django <1.8
-        if queries_log:
-            queries_log.append({
+        if self.queries_log:
+            self.queries_log.append({
                 'sql': '-- RELEASE SAVEPOINT %s -- (because assertNumQueries)' % self.ops.quote_name(sid),
                 'time': '0.000',
             })

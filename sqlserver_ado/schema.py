@@ -1,13 +1,11 @@
 import binascii
 import datetime
-import operator
 from logging import getLogger
 from django.db.backends.utils import truncate_name
 from django.db.models.fields import AutoField
 from django.db.models.fields.related import ManyToManyField
 from django.db.utils import NotSupportedError
 from django.utils import six
-from django.utils.six.moves import reduce
 from django.utils.text import force_text
 
 from django.db.backends.base.schema import BaseDatabaseSchemaEditor
