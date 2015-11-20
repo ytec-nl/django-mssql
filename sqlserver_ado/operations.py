@@ -513,7 +513,7 @@ class DatabaseOperations(BaseDatabaseOperations):
         if microseconds:
             # DATEADD with datetime doesn't support ms, must cast up
             out = 'DATEADD(MICROSECOND, {ms}, CAST({sql} as datetime2))'.format(
-                ms=microseconds * sign,
+                ms=microseconds,
                 sql=out,
             )
         return out
