@@ -135,6 +135,7 @@ END'''
             (self.sql_delete_pk, {'primary_key': True}),
             (self.sql_delete_index, {'index': True}),
             (self.sql_delete_unique, {'unique': True}),
+            (self.sql_delete_check, {'check': True}),
         ]
         for template, kwargs in constraint_types:
             names = self._constraint_names(model, [field.column], **kwargs)
