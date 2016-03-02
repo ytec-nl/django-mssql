@@ -33,10 +33,13 @@ Azure requires clustered indices
 
 From http://msdn.microsoft.com/en-us/library/windowsazure/ee336245.aspx#cir
 
-	Windows Azure SQL Database does not support tables without clustered indexes. 
+	Windows Azure SQL Database (v11 and older) does not support tables without clustered indexes. 
 	A table must have a clustered index. If a table is created without a clustered
 	constraint, a clustered index must be created before an insert operation is 
 	allowed on the table.
 
-The workaround is to dump the create SQL, add a clustered index, manually apply 
+The clustered index requirement [has been removed](http://sqlmag.com/sql-server/indexes-azure-sql-database-v12) 
+in Windows Azure SQL Database v12 and is the recommended over previous versions when possible.
+
+The workaround for older versions is to dump the create SQL, add a clustered index and manually apply 
 the SQL to the database.
