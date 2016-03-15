@@ -74,5 +74,5 @@ def ensure_three_substring_arguments(self, compiler, connection):
     T-SQL SUBSTRING() requires 3 arguments. length is never implied.
     """
     if len(self.source_expressions) == 2:
-        self.source_expressions.append(Value(sys.maxint))
+        self.source_expressions.append(Value(2 ** 31 - 1))
     return self.as_sql(compiler, connection)
