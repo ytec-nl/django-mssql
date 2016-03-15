@@ -1,6 +1,12 @@
 Changelog
 =========
 
+v1.7.1
+------
+
+- Added missing ``_hints`` to ``RawStoredProcedureQuerySet`. :issue:`83`
+  (Thanks Xiayun Sun)
+
 v1.7
 ----
 
