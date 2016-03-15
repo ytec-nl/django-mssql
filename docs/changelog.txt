@@ -7,6 +7,11 @@ v1.8 (In Development)
 - Only Django 1.8 is supported
 - MSSQL Server 2012 or newer is supported
 
+v1.7.1
+------
+
+- Added missing ``_hints`` to ``RawStoredProcedureQuerySet`. :issue:`83`
+  (Thanks Xiayun Sun)
 
 v1.7
 ----

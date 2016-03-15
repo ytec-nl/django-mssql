@@ -37,10 +37,12 @@ class RawStoredProcedureQuerySet(RawQuerySet):
 
     raw_query should only be the name of the stored procedure.
     """
-    def __init__(self, raw_query, model=None, query=None, params=None, translations=None, using=None):
+    def __init__(self, raw_query, model=None, query=None, params=None,
+            translations=None, using=None, hints=None):
         self.raw_query = raw_query
         self.model = model
         self._db = using
+        self._hints = hints or {}
         self.query = query or RawStoredProcedureQuery(sql=raw_query, using=self.db, params=params)
         self.params = params or ()
         self.translations = translations or {}
