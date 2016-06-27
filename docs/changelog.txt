@@ -6,6 +6,7 @@ v1.8 (In Development)
 
 - Only Django 1.8 is supported
 - MSSQL Server 2012 or newer is supported
+- Fixed usage of `isoformat()` for Python 2.7. (Thanks erinwyher)
 
 v1.7.1
 ------
