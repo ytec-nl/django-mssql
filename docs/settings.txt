@@ -205,3 +205,5 @@ use the ``datetime`` data type. When ``False``, they will use ``date``,
 .. versionadded:: 1.4
 
 .. deprecated:: 1.5.1
+
+.. removed:: 1.7b1
