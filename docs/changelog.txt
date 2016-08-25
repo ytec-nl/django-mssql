@@ -9,6 +9,7 @@ v1.8 (In Development)
 - Fixed usage of `isoformat()` for Python 2.7. (Thanks erinwyher)
 - Fixed error when doing a zero size slicing of [0:0]. :djangoticket:`25894`
   (Thanks Rebecca Muraya)
+- Removed code supporting Django versions prior to 1.8. (Thanks Tim Graham)
 
 v1.7.1
 ------
