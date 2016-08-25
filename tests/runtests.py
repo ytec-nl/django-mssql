@@ -11,7 +11,7 @@ import warnings
 
 import django
 from django import contrib
-from django.utils.deprecation import RemovedInDjango18Warning, RemovedInDjango19Warning
+from django.utils.deprecation import RemovedInDjango19Warning
 from django.utils._os import upath
 from django.utils import six
 
@@ -188,7 +188,7 @@ def setup(verbosity, test_labels):
         # these 'tests.migrations' modules don't actually exist, but this lets
         # us skip creating migrations for the test models.
         'auth': 'django.contrib.auth.tests.migrations',
-        'contenttypes': 'django.contrib.contenttypes.tests.migrations',
+        'contenttypes': 'contenttypes_tests.migrations',
     }
 
     if verbosity > 0:
@@ -199,11 +199,6 @@ def setup(verbosity, test_labels):
         handler = logging.StreamHandler()
         logger.addHandler(handler)
 
-    warnings.filterwarnings(
-        'ignore',
-        'django.contrib.comments is deprecated and will be removed before Django 1.8.',
-        RemovedInDjango18Warning
-    )
     warnings.filterwarnings(
         'ignore',
         'Model class django.contrib.comments.models.* Django 1.9.',
