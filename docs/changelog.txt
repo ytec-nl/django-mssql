@@ -7,6 +7,8 @@ v1.8 (In Development)
 - Only Django 1.8 is supported
 - MSSQL Server 2012 or newer is supported
 - Fixed usage of `isoformat()` for Python 2.7. (Thanks erinwyher)
+- Fixed error when doing a zero size slicing of [0:0]. :djangoticket:`25894`
+  (Thanks Rebecca Muraya)
 
 v1.7.1
 ------

@@ -49,10 +49,6 @@ class SQLCompiler(compiler.SQLCompiler):
         return row[:index_extra_select] + tuple(values)
 
     def as_sql(self, with_limits=True, with_col_aliases=False, subquery=False):
-        # Django #12192 - Don't execute any DB query when QS slicing results in limit 0
-        if with_limits and self.query.low_mark == self.query.high_mark:
-            return '', ()
-
         # Get out of the way if we're not a select query or there's no limiting involved.
         has_limit_offset = with_limits and (self.query.low_mark or self.query.high_mark is not None)
         try:
