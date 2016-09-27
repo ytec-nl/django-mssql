@@ -38,5 +38,5 @@ References
 
 
 .. _`Django-mssql`: https://bitbucket.org/Manfre/django-mssql
-.. _django-mssql.readthedocs.org: http://django-mssql.readthedocs.org/
+.. _django-mssql.readthedocs.org: https://django-mssql.readthedocs.io/
 .. _PyWin32: http://sourceforge.net/projects/pywin32/
