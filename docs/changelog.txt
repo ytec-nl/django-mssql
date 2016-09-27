@@ -10,6 +10,7 @@ v1.8 (In Development)
 - Fixed error when doing a zero size slicing of [0:0]. :djangoticket:`25894`
   (Thanks Rebecca Muraya)
 - Removed code supporting Django versions prior to 1.8. (Thanks Tim Graham)
+- Force `pywintypes.datetime` to `datetime.datetime`.
 
 v1.7.1
 ------

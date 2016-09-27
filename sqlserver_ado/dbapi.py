@@ -808,7 +808,21 @@ def _convertNumberWithCulture(variant, f):
 
 
 def _cvtComDate(comDate):
-    if isinstance(comDate, datetime.datetime):
+    import pywintypes
+
+    if isinstance(comDate, pywintypes.TimeType):
+        # Django and everything else expects a datetime.datetime, instead of the
+        # invalid pathed com subclassed "pywintypes.datetime"
+        dt = datetime.datetime(
+            year=comDate.year,
+            month=comDate.month,
+            day=comDate.day,
+            hour=comDate.hour,
+            minute=comDate.minute,
+            second=comDate.second,
+            microsecond=comDate.microsecond
+        )
+    elif isinstance(comDate, datetime.datetime):
         dt = comDate
     else:
         date_as_float = float(comDate)
