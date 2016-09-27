@@ -293,7 +293,7 @@ def _configure_parameter(p, value):
         p.Value = s
         p.Size = len(s)
 
-    elif isinstance(value, datetime.time):
+    elif isinstance(value, (datetime.time, datetime.date)):
         p.Type = adBSTR
         s = value.isoformat()
         p.Value = s
