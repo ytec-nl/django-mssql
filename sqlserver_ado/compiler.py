@@ -3,7 +3,6 @@ from __future__ import absolute_import, unicode_literals
 import re
 
 from django.db.models.sql import compiler
-from django.utils.six.moves import zip_longest
 
 # query_class returns the base class to use for Django queries.
 # The custom 'SqlServerQuery' class derives from django.db.models.sql.query.Query
@@ -29,18 +28,6 @@ _re_constant = re.compile(r'\s*\(?\s*\d+\s*\)?\s*')
 
 
 class SQLCompiler(compiler.SQLCompiler):
-    def resolve_columns(self, row, fields=()):
-        values = []
-        index_extra_select = len(self.query.extra_select)
-        for value, field in zip_longest(row[index_extra_select:], fields):
-            # print '\tfield=%s\tvalue=%s' % (repr(field), repr(value))
-            if field:
-                try:
-                    value = self.connection.ops.convert_values(value, field)
-                except ValueError:
-                    pass
-            values.append(value)
-        return row[:index_extra_select] + tuple(values)
 
     def as_sql(self, with_limits=True, with_col_aliases=False, subquery=False):
         # Get out of the way if we're not a select query or there's no limiting involved.

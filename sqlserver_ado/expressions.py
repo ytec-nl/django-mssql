@@ -3,8 +3,6 @@ This file contains Microsoft SQL Server specific aggregates and overrides for
 the default Django aggregates.
 """
 
-import sys
-
 from django.db.models.aggregates import Avg, StdDev, Variance
 from django.db.models.expressions import Value
 from django.db.models.functions import Length, Substr

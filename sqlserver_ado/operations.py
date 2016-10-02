@@ -135,12 +135,14 @@ class DatabaseOperations(BaseDatabaseOperations):
             converters.append(self.convert_textfield_value)
         elif internal_type in ['BooleanField', 'NullBooleanField']:
             converters.append(self.convert_booleanfield_value)
-        elif internal_type == 'DateField':
+        elif internal_type in ('DateField', 'NewDateField', 'LegacyDateField'):
             converters.append(self.convert_datefield_value)
-        elif internal_type == 'DateTimeField':
+        elif internal_type in ('DateTimeField', 'NewDateTimeField', 'LegacyDateTimeField'):
             converters.append(self.convert_datetimefield_value)
-        elif internal_type == 'TimeField':
+        elif internal_type in ('TimeField', 'NewTimeField', 'LegacyTimeField'):
             converters.append(self.convert_timefield_value)
+        elif internal_type == 'DateTimeOffsetField':
+            converters.append(self.convert_datetimeoffsetfield_value)
         elif internal_type == 'UUIDField':
             converters.append(self.convert_uuidfield_value)
         return converters
@@ -151,25 +153,35 @@ class DatabaseOperations(BaseDatabaseOperations):
         return value
 
     def convert_datefield_value(self, value, expression, connection, context):
-        if expression.output_field.get_internal_type() == 'DateField':
-            if isinstance(value, six.text_type):
-                value = self._convert_values_map['DateField'].to_python(value)
-            elif isinstance(value, datetime.datetime):
-                return value.date()
+        if isinstance(value, six.text_type):
+            internal_type = expression.output_field.get_internal_type()
+            if internal_type in ('DateField', 'NewDateField', 'LegacyDateField'):
+                value = self._convert_values_map[internal_type].to_python(value)
+        elif isinstance(value, datetime.datetime):
+            return value.date()
         return value
 
     def convert_datetimefield_value(self, value, expression, connection, context):
-        if expression.output_field.get_internal_type() == 'DateTimeField':
-            if isinstance(value, six.text_type):
-                value = self._convert_values_map['DateTimeField'].to_python(value)
+        if isinstance(value, six.text_type):
+            internal_type = expression.output_field.get_internal_type()
+            if internal_type in ('DateTimeField', 'NewDateTimeField', 'LegacyDateField'):
+                value = self._convert_values_map[internal_type].to_python(value)
+        return value
+
+    def convert_datetimeoffsetfield_value(self, value, expression, connection, context):
+        if isinstance(value, six.text_type):
+            internal_type = expression.output_field.get_internal_type()
+            if internal_type == 'DateTimeOffsetField':
+                value = self._convert_values_map[internal_type].to_python(value)
         return value
 
     def convert_timefield_value(self, value, expression, connection, context):
-        if expression.output_field.get_internal_type() == 'TimeField':
-            if isinstance(value, six.text_type):
-                value = self._convert_values_map['TimeField'].to_python(value)
-            if isinstance(value, datetime.datetime):
-                value = value.time()
+        if isinstance(value, six.text_type):
+            internal_type = expression.output_field.get_internal_type()
+            if internal_type in ('TimeField', 'NewTimeField', 'LegacyTimeField'):
+                value = self._convert_values_map[internal_type].to_python(value)
+        elif isinstance(value, datetime.datetime):
+            return value.time()
         return value
 
     def convert_uuidfield_value(self, value, expression, connection, context):
