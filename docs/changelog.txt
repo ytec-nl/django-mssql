@@ -11,6 +11,9 @@ v1.8 (In Development)
   (Thanks Rebecca Muraya)
 - Removed code supporting Django versions prior to 1.8. (Thanks Tim Graham)
 - Force `pywintypes.datetime` to `datetime.datetime`.
+- Fixed Read the Docs link (Thanks Adam Johnson)
+- Removed unused DatabaseError and IntegrityError declarations.
+- Changing a field type will now preserve the field's nullability.
 
 v1.7.1
 ------
