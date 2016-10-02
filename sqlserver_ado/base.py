@@ -8,8 +8,7 @@ from django.core.validators import validate_ipv46_address as ip_validator
 from django.db.backends.base.base import BaseDatabaseWrapper
 from django.db.backends.base.client import BaseDatabaseClient
 from django.db.backends.base.validation import BaseDatabaseValidation
-
-from django.db.utils import IntegrityError as DjangoIntegrityError
+from django.db.utils import IntegrityError
 
 from . import dbapi as Database
 
@@ -18,8 +17,6 @@ from .creation import DatabaseCreation
 from .features import DatabaseFeatures
 from .operations import DatabaseOperations
 from .schema import DatabaseSchemaEditor
-
-IntegrityError = Database.IntegrityError
 
 
 def is_ip_address(value):
@@ -307,7 +304,7 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         if not table_names:
             cursor.execute('DBCC CHECKCONSTRAINTS WITH ALL_CONSTRAINTS')
             if cursor.description:
-                raise DjangoIntegrityError(cursor.fetchall())
+                raise IntegrityError(cursor.fetchall())
         else:
             qn = self.ops.quote_name
             for name in table_names:
@@ -315,7 +312,7 @@ class DatabaseWrapper(BaseDatabaseWrapper):
                     qn(name)
                 ))
                 if cursor.description:
-                    raise DjangoIntegrityError(cursor.fetchall())
+                    raise IntegrityError(cursor.fetchall())
 
     # # MS SQL Server doesn't support explicit savepoint commits; savepoints are
     # # implicitly committed with the transaction.
