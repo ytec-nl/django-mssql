@@ -264,7 +264,7 @@ END'''
                     [new_default],
                 ))
         # Nullability change?
-        if old_field.null != new_field.null:
+        if old_field.null != new_field.null or old_type != new_type:
             if (self.connection.features.interprets_empty_strings_as_nulls and
                     new_field.get_internal_type() in ("CharField", "TextField")):
                 # The field is nullable in the database anyway, leave it alone
