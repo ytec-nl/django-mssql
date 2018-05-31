@@ -6,7 +6,7 @@ from django.db.models.fields import AutoField
 from django.db.models.fields.related import ManyToManyField
 from django.db.utils import NotSupportedError
 from django.utils import six
-from django.utils.text import force_text
+from django.utils.encoding import force_text
 
 from django.db.backends.base.schema import BaseDatabaseSchemaEditor
 
